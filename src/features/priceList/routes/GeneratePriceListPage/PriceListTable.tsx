@@ -237,12 +237,12 @@ export const PriceListTable = () => {
                     }
                   />
                 </TableCell>
-                <TableCell width={125}>
+                <TableCell width={150}>
                   <TextField
                     size="small"
                     InputProps={{
                       endAdornment: (
-                        <InputAdornment position="end">{'zł'}</InputAdornment>
+                        <InputAdornment position="end">{`zł/1${product.unit}`}</InputAdornment>
                       ),
                     }}
                     value={

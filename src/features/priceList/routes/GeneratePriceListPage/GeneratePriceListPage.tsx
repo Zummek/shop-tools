@@ -1,4 +1,4 @@
-import { Box, Container, Stack, Typography } from '@mui/material';
+import { Box, Button, Container, Stack, Typography } from '@mui/material';
 
 import { Header } from '../../../../components/layout/Header';
 import { useAppSelector } from '../../../../hooks/store';
@@ -9,6 +9,9 @@ import { UploadFileSection } from './UploadFileSection';
 
 export const GeneratePriceListPage = () => {
   const products = useAppSelector((state) => state.priceList.products);
+
+  const generatePriceListPdf = () => {};
+
   return (
     <Container maxWidth="lg">
       <Header />
@@ -23,8 +26,16 @@ export const GeneratePriceListPage = () => {
               direction={['column', 'row']}
               spacing={2}
               justifyContent={['center', 'space-between']}
+              alignItems="center"
             >
               <Typography variant="h4">{'Podgląd cenówek'}</Typography>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={generatePriceListPdf}
+              >
+                {'Generuj cenówki'}
+              </Button>
               <Box display="flex" alignSelf="center">
                 <SinglePriceList product={products[0]} />
               </Box>

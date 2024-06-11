@@ -1,4 +1,5 @@
 import {
+  InputAdornment,
   Paper,
   Stack,
   Table,
@@ -25,6 +26,15 @@ import { calcPricePerFullUnit, convertNumberToPrice } from '../../utils/price';
 export const PriceListTable = () => {
   const dispatch = useAppDispatch();
   const products = useAppSelector((state) => state.priceList.products);
+
+  const changePricePerFullUnit = (index: number, pricePerFullUnit: number) => {
+    dispatch(
+      updateProduct({
+        index,
+        product: { ...products[index], pricePerFullUnit },
+      })
+    );
+  };
 
   const changeUnit = (index: number, unit: ProductUnit) => {
     const product = products[index];
@@ -101,12 +111,6 @@ export const PriceListTable = () => {
 
   return (
     <Stack spacing={2}>
-      {/* {products.map((product) => (
-        <Stack key={product.name} direction="row" alignItems="center">
-          <Typography variant="body1">{product.name}</Typography>
-          <Typography variant="body1">{product.price} zł</Typography>
-        </Stack>
-      ))} */}
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -127,11 +131,9 @@ export const PriceListTable = () => {
               >
                 <TableCell component="th" scope="row">
                   <TextField
-                    label="Name"
                     size="small"
                     value={product.name}
                     fullWidth
-                    InputLabelProps={{ shrink: true }}
                     onChange={(event) => changeName(index, event.target.value)}
                   />
                 </TableCell>
@@ -139,7 +141,7 @@ export const PriceListTable = () => {
                   sx={{ textWrap: 'nowrap' }}
                   width={80}
                 >{`${convertNumberToPrice(product.price)} zł`}</TableCell>
-                <TableCell width={80}>
+                <TableCell width={50}>
                   <ToggleButtonGroup
                     value={product.unit}
                     exclusive
@@ -211,9 +213,14 @@ export const PriceListTable = () => {
                 </TableCell>
                 <TableCell width={100}>
                   <TextField
-                    label="Size"
-                    InputLabelProps={{ shrink: true }}
                     size="small"
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          {product.unitScale}
+                        </InputAdornment>
+                      ),
+                    }}
                     value={
                       product.productSizeInUnit &&
                       isFinite(product.productSizeInUnit)
@@ -230,10 +237,26 @@ export const PriceListTable = () => {
                     }
                   />
                 </TableCell>
-                <TableCell width={100}>
-                  {product.pricePerFullUnit !== null
-                    ? `${convertNumberToPrice(product.pricePerFullUnit)} zł`
-                    : '-'}
+                <TableCell width={125}>
+                  <TextField
+                    size="small"
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">{'zł'}</InputAdornment>
+                      ),
+                    }}
+                    value={
+                      product.pricePerFullUnit !== null
+                        ? convertNumberToPrice(product.pricePerFullUnit)
+                        : ''
+                    }
+                    onChange={(event) =>
+                      changePricePerFullUnit(
+                        index,
+                        event.target.value ? parseFloat(event.target.value) : 0
+                      )
+                    }
+                  />
                 </TableCell>
               </TableRow>
             ))}

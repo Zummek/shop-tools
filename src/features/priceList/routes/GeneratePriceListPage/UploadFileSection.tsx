@@ -26,14 +26,14 @@ export const UploadFileSection = () => {
     <Stack spacing={2}>
       <Stack spacing={4} direction="row" alignItems="center">
         <Button
-          variant="contained"
+          variant={fileName ? 'outlined' : 'contained'}
           color="primary"
           component="label"
           role={undefined}
           tabIndex={-1}
           startIcon={<CloudUploadIcon />}
         >
-          {'Wybierz plik'}
+          {fileName ? 'Zmień plik' : 'Wybierz plik'}
           <VisuallyHiddenInput type="file" onChange={onFileChange} />
         </Button>
         {fileName && (

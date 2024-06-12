@@ -2,6 +2,6 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  base: '/shop-tools',
+  base: '/shop-tools/',
   plugins: [react()],
 });

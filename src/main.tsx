@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { Provider } from 'react-redux';
 import { Navigate, RouterProvider, createHashRouter } from 'react-router-dom';
 
+import { BarcodesGeneratorPage } from './features/BarcodesGenerator/routes/BarcodesGeneratorPage/BarcodesGeneratorPage';
 import { GeneratePriceListPage } from './features/priceList/routes/GeneratePriceListPage/GeneratePriceListPage';
 import { store } from './store/store';
 
@@ -16,6 +17,10 @@ const router = createHashRouter(
     {
       path: '/generate-price-list',
       element: <GeneratePriceListPage />,
+    },
+    {
+      path: '/barcodes-generator',
+      element: <BarcodesGeneratorPage />,
     },
   ],
   {

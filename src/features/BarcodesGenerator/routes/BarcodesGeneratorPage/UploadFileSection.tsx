@@ -1,25 +1,23 @@
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { Alert, Button, Stack, Typography } from '@mui/material';
+import { useState } from 'react';
 
 import { VisuallyHiddenInput } from '../../../../components/inputs/VisuallyHiddenInput';
-import { useAppDispatch, useAppSelector } from '../../../../hooks/store';
-import { setProducts } from '../../store/priceListSlice';
-import { readProductsFromCsv } from '../../utils/readProductsFromCsv';
+import { ProductBarcode } from '../../types';
+import { readProductsFromCsv } from '../../utils';
 
-export const UploadFileSection = () => {
-  const fileName = useAppSelector((state) => state.priceList.fileName);
-  const dispatch = useAppDispatch();
+interface Props {
+  onBarcodesReadFromCsv: (barcodes: ProductBarcode[]) => void;
+}
+
+export const UploadFileSection = ({ onBarcodesReadFromCsv }: Props) => {
+  const [fileName, setFileName] = useState<string | null>(null);
 
   const onFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
-    dispatch(
-      setProducts({
-        fileName: file.name,
-        products: await readProductsFromCsv(file),
-      })
-    );
+    onBarcodesReadFromCsv(await readProductsFromCsv(file));
+    setFileName(file.name);
   };
 
   return (
@@ -51,7 +49,7 @@ export const UploadFileSection = () => {
           <Typography variant="body2">
             {'Pierwsze dwie linie są pomijane z względu na nagłóweki'}
           </Typography>
-          <Typography variant="body2">{'Kolumny: Nazwa, Cena noc.'}</Typography>
+          <Typography variant="body2">{'Kolumny: Nazwa, Kod'}</Typography>
           <Typography variant="body2">{'Separator: tabulator'}</Typography>
         </Stack>
       </Alert>

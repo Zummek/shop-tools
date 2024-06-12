@@ -1,16 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { Provider } from 'react-redux';
-import {
-  Navigate,
-  RouterProvider,
-  createBrowserRouter,
-} from 'react-router-dom';
+import { Navigate, RouterProvider, createHashRouter } from 'react-router-dom';
 
 import { GeneratePriceListPage } from './features/priceList/routes/GeneratePriceListPage/GeneratePriceListPage';
 import { store } from './store/store';
 
-const router = createBrowserRouter(
+const router = createHashRouter(
   [
     {
       path: '/',
@@ -19,12 +15,12 @@ const router = createBrowserRouter(
     },
     {
       path: '/generate-price-list',
-      index: true,
       element: <GeneratePriceListPage />,
     },
   ],
   {
-    basename: '/shop-tools/',
+    // NOTE: use only in brower (not hash) router
+    // basename: '/shop-tools',
   }
 );
 

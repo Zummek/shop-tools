@@ -12,15 +12,15 @@ export const SinglePriceList = ({ product }: Props) => {
     <Box
       sx={{
         border: '1px solid #d0d0d0',
-        height: '19.5mm',
-        width: '45mm',
-        maxWidth: '45mm',
-        minWidth: '45mm',
+        height: '14mm',
+        width: '40mm',
+        maxWidth: '40mm',
+        minWidth: '40mm',
         px: 1,
       }}
     >
       <Stack key={product.id} justifyContent="space-between" height="100%">
-        <Typography variant="body2" lineHeight={1.1} pt={0.5}>
+        <Typography variant="body2" lineHeight={1} pt={0.25} fontSize={13}>
           {product.name}
         </Typography>
         <Stack
@@ -29,13 +29,17 @@ export const SinglePriceList = ({ product }: Props) => {
           justifyContent="space-between"
           spacing={0}
         >
-          <Typography noWrap>
-            <Typography variant="h4" noWrap fontWeight={600}>
-              {convertNumberToPrice(product.price)}
-              <span style={{ fontSize: '0.6em', fontWeight: 400 }}>{'zł'}</span>
-            </Typography>
+          <Typography
+            variant="h5"
+            noWrap
+            fontWeight={600}
+            fontSize={24}
+            lineHeight={1.1}
+          >
+            {convertNumberToPrice(product.price)}
+            <span style={{ fontSize: '0.6em', fontWeight: 400 }}>{'zł'}</span>
           </Typography>
-          <Typography variant="caption" pb={0.5} noWrap>
+          <Typography variant="caption" noWrap fontSize={12}>
             {`${convertNumberToPrice(product.pricePerFullUnit || 0)}zł/1${product.unit}`}
           </Typography>
         </Stack>

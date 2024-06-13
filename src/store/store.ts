@@ -2,8 +2,8 @@ import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import { persistReducer, persistStore } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
 
-import { isDev } from '../utils/envs';
 import { priceListSlice } from '../features/priceList/store/priceListSlice';
+import { isDev } from '../utils/envs';
 
 const reducers = combineReducers({
   priceList: priceListSlice.reducer,

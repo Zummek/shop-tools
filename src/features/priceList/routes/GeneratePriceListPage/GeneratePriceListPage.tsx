@@ -18,6 +18,8 @@ export const GeneratePriceListPage = () => {
     content: () => componentToPrintRef.current,
   });
 
+  const productsToPrint = products.filter((p) => p.includedInPriceList);
+
   return (
     <Page headerTitle="Generuj cenówki">
       <UploadFileSection />
@@ -38,9 +40,11 @@ export const GeneratePriceListPage = () => {
             >
               {'Drukuj cenówki'}
             </Button>
-            <Box display="flex" alignSelf="center">
-              <SinglePriceList product={products[0]} />
-            </Box>
+            {!!productsToPrint.length && (
+              <Box display="flex" alignSelf="center">
+                <SinglePriceList product={productsToPrint[0]} />
+              </Box>
+            )}
           </Stack>
           <PriceListTable />
         </Stack>
@@ -48,7 +52,7 @@ export const GeneratePriceListPage = () => {
 
       <div style={{ display: 'none' }}>
         <div ref={componentToPrintRef}>
-          <PdfFullPriceList products={products} />
+          <PdfFullPriceList products={productsToPrint} />
         </div>
       </div>
     </Page>

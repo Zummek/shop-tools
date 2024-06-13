@@ -39,4 +39,5 @@ export interface Product {
   unitScale: ProductUnitWeightSize | ProductUnitVolumeSize;
   productSizeInUnit: number | null;
   pricePerFullUnit: number | null;
+  includedInPriceList: boolean;
 }

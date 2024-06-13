@@ -110,6 +110,7 @@ export const readProductsFromCsv = async (file: File): Promise<Product[]> => {
               productSizeInUnit,
               pricePerFullUnit,
               unitScale,
+              includedInPriceList: true,
             });
           }
 

@@ -1,4 +1,5 @@
 import {
+  Checkbox,
   InputAdornment,
   Paper,
   Stack,
@@ -109,6 +110,18 @@ export const PriceListTable = () => {
     );
   };
 
+  const setIncludedInPriceList = (
+    index: number,
+    includedInPriceList: boolean
+  ) => {
+    dispatch(
+      updateProduct({
+        index,
+        product: { ...products[index], includedInPriceList },
+      })
+    );
+  };
+
   return (
     <Stack spacing={2}>
       <TableContainer component={Paper}>
@@ -122,6 +135,7 @@ export const PriceListTable = () => {
               <TableCell>{'Skala'}</TableCell>
               <TableCell>{'Rozmiar'}</TableCell>
               <TableCell>{'Cena za pełną jednostkę'}</TableCell>
+              <TableCell width={60}>{'Do druku'}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -259,6 +273,14 @@ export const PriceListTable = () => {
                         index,
                         event.target.value ? parseFloat(event.target.value) : 0
                       )
+                    }
+                  />
+                </TableCell>
+                <TableCell width={42}>
+                  <Checkbox
+                    checked={product.includedInPriceList}
+                    onChange={(_event, checked) =>
+                      setIncludedInPriceList(index, checked)
                     }
                   />
                 </TableCell>

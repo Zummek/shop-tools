@@ -12,7 +12,7 @@ export const PdfFullPriceList = ({ products }: Props) => {
   return (
     <Grid container spacing={0} justifyContent="center">
       {products.map((product) => (
-        <Grid item key={product.name} width="fit-content">
+        <Grid item key={product.id} width="fit-content">
           <SinglePriceList product={product} />
         </Grid>
       ))}

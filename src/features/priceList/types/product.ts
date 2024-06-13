@@ -32,6 +32,7 @@ export const weightUnits: ProductUnitWeightSize[] = [
 export const volumeUnits = [ProductUnitVolumeSize.l, ProductUnitVolumeSize.ml];
 
 export interface Product {
+  id: string;
   name: string;
   price: number;
   unit: ProductUnit;

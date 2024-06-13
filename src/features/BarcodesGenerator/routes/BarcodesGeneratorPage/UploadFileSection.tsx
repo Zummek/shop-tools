@@ -49,7 +49,7 @@ export const UploadFileSection = ({ onBarcodesReadFromCsv }: Props) => {
           <Typography variant="body2">
             {'Pierwsze dwie linie są pomijane z względu na nagłóweki'}
           </Typography>
-          <Typography variant="body2">{'Kolumny: Nazwa, Kod'}</Typography>
+          <Typography variant="body2">{'Kolumny: Id, Nazwa, Kod'}</Typography>
           <Typography variant="body2">{'Separator: tabulator'}</Typography>
         </Stack>
       </Alert>

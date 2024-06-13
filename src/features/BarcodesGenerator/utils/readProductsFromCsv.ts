@@ -21,16 +21,19 @@ export const readProductsFromCsv = async (
           skip_records_with_empty_values: true,
           trim: true,
           relax_column_count: true,
+          columns: true,
         },
         (err, records) => {
           if (err) reject(err);
 
           for (const record of records) {
-            const [name, eanCode] = record as [string, string];
+            const id = record['Id'];
+            const name = record['Nazwa'];
+            const eanCode = record['Kod'];
 
             if (!name || !eanCode) continue;
 
-            products.push({ name, eanCode });
+            products.push({ id, name, eanCode });
           }
 
           resolve(products);

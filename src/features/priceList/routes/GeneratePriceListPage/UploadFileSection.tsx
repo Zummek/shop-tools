@@ -51,7 +51,9 @@ export const UploadFileSection = () => {
           <Typography variant="body2">
             {'Pierwsze dwie linie są pomijane z względu na nagłóweki'}
           </Typography>
-          <Typography variant="body2">{'Kolumny: Nazwa, Cena noc.'}</Typography>
+          <Typography variant="body2">
+            {'Kolumny: Id, Nazwa, Cena noc.'}
+          </Typography>
           <Typography variant="body2">{'Separator: tabulator'}</Typography>
         </Stack>
       </Alert>

@@ -64,12 +64,16 @@ export const readProductsFromCsv = async (file: File): Promise<Product[]> => {
           skip_records_with_empty_values: true,
           trim: true,
           relax_column_count: true,
+          columns: true,
         },
         (err, records) => {
           if (err) reject(err);
 
           for (const record of records) {
-            const [name, priceRaw] = record as [string, string];
+            console.log({ record });
+            const id = record['Id'];
+            const name = record['Nazwa'];
+            const priceRaw = record['Cena noc.'];
 
             if (!name || !priceRaw) continue;
 
@@ -88,7 +92,18 @@ export const readProductsFromCsv = async (file: File): Promise<Product[]> => {
               unitScale,
             });
 
+            console.log({
+              id,
+              name,
+              price,
+              unit,
+              productSizeInUnit,
+              pricePerFullUnit,
+              unitScale,
+            });
+
             products.push({
+              id,
               name,
               price,
               unit,

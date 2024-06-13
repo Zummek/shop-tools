@@ -19,7 +19,7 @@ export const SinglePriceList = ({ product }: Props) => {
         px: 1,
       }}
     >
-      <Stack key={product.name} justifyContent="space-between" height="100%">
+      <Stack key={product.id} justifyContent="space-between" height="100%">
         <Typography variant="body2" lineHeight={1.1} pt={0.5}>
           {product.name}
         </Typography>

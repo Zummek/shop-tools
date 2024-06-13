@@ -12,7 +12,7 @@ export const BarcodeList = ({ barcodes }: Props) => {
   return (
     <Grid container spacing={2} justifyContent="center">
       {barcodes.map((barcode) => (
-        <Grid item key={barcode.eanCode} xs={3}>
+        <Grid item key={barcode.id} xs={3}>
           <SingleBarcode barcode={barcode} />
         </Grid>
       ))}

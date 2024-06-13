@@ -115,6 +115,7 @@ export const PriceListTable = () => {
         <Table>
           <TableHead>
             <TableRow>
+              <TableCell>{'Id'}</TableCell>
               <TableCell>{'Produkt'}</TableCell>
               <TableCell>{'Cena'}</TableCell>
               <TableCell>{'Jednostka'}</TableCell>
@@ -126,9 +127,12 @@ export const PriceListTable = () => {
           <TableBody>
             {products.map((product, index) => (
               <TableRow
-                key={index}
+                key={product.id}
                 sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
               >
+                <TableCell sx={{ textWrap: 'nowrap' }} width={25}>
+                  {product.id}
+                </TableCell>
                 <TableCell component="th" scope="row">
                   <TextField
                     size="small"

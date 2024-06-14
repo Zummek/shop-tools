@@ -125,8 +125,8 @@ export const PriceListTable = () => {
 
   return (
     <Stack spacing={2}>
-      <TableContainer component={Paper}>
-        <Table>
+      <TableContainer component={Paper} sx={{ height: 500 }}>
+        <Table stickyHeader>
           <TableHead>
             <TableRow>
               <TableCell>{'Id'}</TableCell>
@@ -135,7 +135,9 @@ export const PriceListTable = () => {
               <TableCell>{'Jednostka'}</TableCell>
               <TableCell>{'Skala'}</TableCell>
               <TableCell>{'Rozmiar'}</TableCell>
-              <TableCell>{'Cena za pełną jednostkę'}</TableCell>
+              <TableCell sx={{ lineHeight: 1 }}>
+                {'Cena za pełną jednostkę'}
+              </TableCell>
               <TableCell width={60}>{'Do druku'}</TableCell>
             </TableRow>
           </TableHead>
@@ -159,6 +161,7 @@ export const PriceListTable = () => {
                       size="small"
                       value={product.name}
                       fullWidth
+                      error={product.name.length > 23}
                       onChange={(event) =>
                         changeName(index, event.target.value)
                       }
@@ -244,6 +247,7 @@ export const PriceListTable = () => {
                   <TableCell width={100}>
                     <TextField
                       size="small"
+                      error={product.productSizeInUnit === null}
                       InputProps={{
                         endAdornment: (
                           <InputAdornment position="end">
@@ -270,6 +274,7 @@ export const PriceListTable = () => {
                   <TableCell width={150}>
                     <TextField
                       size="small"
+                      error={product.pricePerFullUnit === null}
                       InputProps={{
                         endAdornment: (
                           <InputAdornment position="end">{`zł/1${product.unit}`}</InputAdornment>

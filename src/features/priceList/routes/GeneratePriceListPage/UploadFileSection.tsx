@@ -1,5 +1,5 @@
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import { Alert, Button, Stack, Typography } from '@mui/material';
+import { Alert, Box, Button, Stack, Typography } from '@mui/material';
 
 import { VisuallyHiddenInput } from '../../../../components/inputs/VisuallyHiddenInput';
 import { useAppDispatch, useAppSelector } from '../../../../hooks';
@@ -24,7 +24,21 @@ export const UploadFileSection = () => {
 
   return (
     <Stack spacing={2}>
-      <Stack spacing={4} direction="row" alignItems="center">
+      <Alert severity="info">
+        <Stack>
+          <Typography variant="body1">
+            {'Wybierz plik z cenami produktów w formacie .csv'}
+          </Typography>
+          <Typography variant="caption">
+            {'Pierwsze dwie linie są pomijane z względu na nagłóweki'}
+          </Typography>
+          <Typography variant="caption">
+            {'Kolumny: Id, Nazwa, Cena ew.,	Cena det.,	Cena hurt.,	Cena noc'}
+          </Typography>
+          <Typography variant="caption">{'Separator: tabulator'}</Typography>
+        </Stack>
+      </Alert>
+      <Box display="flex" justifyContent="center">
         <Button
           variant={fileName ? 'outlined' : 'contained'}
           color="primary"
@@ -32,31 +46,18 @@ export const UploadFileSection = () => {
           role={undefined}
           tabIndex={-1}
           startIcon={<CloudUploadIcon />}
+          sx={{ whiteSpace: 'nowrap' }}
         >
           {fileName ? 'Zmień plik' : 'Wybierz plik'}
           <VisuallyHiddenInput type="file" onChange={onFileChange} />
         </Button>
-        {fileName && (
-          <Typography variant="body1">
-            {'Wybrany plik: '}
-            {fileName}
-          </Typography>
-        )}
-      </Stack>
-      <Alert severity="info">
-        <Stack>
-          <Typography variant="body1">
-            {'Wybierz plik z cenami produktów w formacie .csv'}
-          </Typography>
-          <Typography variant="body2">
-            {'Pierwsze dwie linie są pomijane z względu na nagłóweki'}
-          </Typography>
-          <Typography variant="body2">
-            {'Kolumny: Id, Nazwa, [Cena ew.,	Cena det.,	Cena hurt.,	Cena noc]'}
-          </Typography>
-          <Typography variant="body2">{'Separator: tabulator'}</Typography>
-        </Stack>
-      </Alert>
+      </Box>
+      {fileName && (
+        <Typography variant="body1">
+          {'Wybrany plik: '}
+          {fileName}
+        </Typography>
+      )}
     </Stack>
   );
 };

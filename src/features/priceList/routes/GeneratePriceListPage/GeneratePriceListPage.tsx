@@ -1,26 +1,19 @@
-import {
-  Box,
-  Button,
-  Stack,
-  ToggleButton,
-  ToggleButtonGroup,
-  Typography,
-} from '@mui/material';
-import { useRef } from 'react';
+import { Box, Button, Stack, Typography } from '@mui/material';
+import { useMemo, useRef } from 'react';
 import { useReactToPrint } from 'react-to-print';
 
 import { Page } from '../../../../components/layout';
-import { useAppDispatch, useAppSelector } from '../../../../hooks';
+import { useAppSelector } from '../../../../hooks';
 import { PdfFullPriceList } from '../../components/PdfFullPriceList';
 import { SinglePriceList } from '../../components/SinglePriceList';
-import { setPriceType as setPriceTypeAction } from '../../store/priceListSlice';
-import { PriceType } from '../../types/product';
 
+import { ImportExportButtons } from './ImportExportButtons';
 import { PriceListTable } from './PriceListTable';
+import { SelectPriceType } from './SelectPriceType';
+import { UpdatePricesByUploadingFileSection } from './UpdatePricesByUploadingFileSection';
 import { UploadFileSection } from './UploadFileSection';
 
 export const GeneratePriceListPage = () => {
-  const dispatch = useAppDispatch();
   const componentToPrintRef = useRef<HTMLDivElement>(null);
   const products = useAppSelector((state) => state.priceList.products);
   const priceType = useAppSelector((state) => state.priceList.priceType);
@@ -29,74 +22,76 @@ export const GeneratePriceListPage = () => {
     content: () => componentToPrintRef.current,
   });
 
-  const setPriceType = (priceType: PriceType) => {
-    dispatch(setPriceTypeAction(priceType));
-  };
+  const productsToPrint = useMemo(
+    () => products.filter((p) => p.includedInPriceList),
+    [products]
+  );
 
-  const productsToPrint = products.filter((p) => p.includedInPriceList);
+  const productsWithoutPriceAmount = useMemo(
+    () => productsToPrint.filter((p) => p.prices[priceType] === null).length,
+    [productsToPrint, priceType]
+  );
+  const productsWithoutFullUnitPriceAmount = useMemo(
+    () => productsToPrint.filter((p) => p.pricePerFullUnit === null).length,
+    [productsToPrint]
+  );
 
   return (
     <Page headerTitle="Generuj cenówki">
-      <UploadFileSection />
+      <Stack direction="row" spacing={4}>
+        <Box flex={1} display="flex">
+          <UploadFileSection />
+        </Box>
+        <Box flex={1} display="flex">
+          <UpdatePricesByUploadingFileSection />
+        </Box>
+      </Stack>
 
       {products.length > 0 && (
         <Stack spacing={2} flex={1}>
           <Stack
-            direction={['column', 'row']}
-            spacing={2}
-            justifyContent={['center', 'space-between']}
+            direction="row"
             alignItems="center"
+            justifyContent="space-between"
           >
-            <Typography variant="h4">{'Podgląd cenówek'}</Typography>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={generatePriceListPdf}
-            >
-              {'Drukuj cenówki'}
-            </Button>
-            {!!productsToPrint.length && (
-              <Box display="flex" alignSelf="center">
-                <SinglePriceList product={productsToPrint[0]} />
-              </Box>
-            )}
-          </Stack>
+            <Stack spacing={2}>
+              <SelectPriceType />
 
-          <Stack direction="row" spacing={2} alignItems="center">
-            <Typography variant="body1">
-              {'Typ ceny wzięty pod uwagę: '}
-            </Typography>
-            <ToggleButtonGroup
-              value={priceType}
-              exclusive
-              size="small"
-              onChange={(_event, priceType) => setPriceType(priceType)}
-            >
-              <ToggleButton
-                value={PriceType.detaliczna}
-                sx={{ textTransform: 'none' }}
-              >
-                {'Detaliczna'}
-              </ToggleButton>
-              <ToggleButton
-                value={PriceType.hurtowa}
-                sx={{ textTransform: 'none' }}
-              >
-                {'Hurtowa'}
-              </ToggleButton>
-              <ToggleButton
-                value={PriceType.ewidencyjna}
-                sx={{ textTransform: 'none' }}
-              >
-                {'Ewidencyjna'}
-              </ToggleButton>
-              <ToggleButton
-                value={PriceType.nocna}
-                sx={{ textTransform: 'none' }}
-              >
-                {'Nocna'}
-              </ToggleButton>
-            </ToggleButtonGroup>
+              <Stack direction="row" spacing={4}>
+                <Typography variant="caption">
+                  {'Liczba produktów: ' + products.length}
+                </Typography>
+                <Typography variant="caption">
+                  {'Do druku: ' + productsToPrint.length}
+                </Typography>
+                <Typography variant="caption">
+                  {'Bez ceny: ' + productsWithoutPriceAmount}
+                </Typography>
+                <Typography variant="caption">
+                  {'Bez ceny jednostkowej: ' +
+                    productsWithoutFullUnitPriceAmount}
+                </Typography>
+              </Stack>
+            </Stack>
+
+            <Stack spacing={2}>
+              {!!productsToPrint.length && (
+                <Box display="flex" alignSelf="center">
+                  <SinglePriceList product={productsToPrint[0]} />
+                </Box>
+              )}
+              <Stack direction="row" spacing={2} justifyContent="flex-start">
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={generatePriceListPdf}
+                  sx={{ whiteSpace: 'nowrap' }}
+                >
+                  {'Drukuj cenówki'}
+                </Button>
+                <ImportExportButtons />
+              </Stack>
+            </Stack>
           </Stack>
 
           <PriceListTable />

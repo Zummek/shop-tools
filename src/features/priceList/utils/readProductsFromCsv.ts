@@ -70,14 +70,26 @@ export const readProductsFromCsv = async (file: File): Promise<Product[]> => {
           if (err) reject(err);
 
           for (const record of records) {
-            console.log({ record });
             const id = record['Id'];
             const name = record['Nazwa'];
-            const priceRaw = record['Cena noc.'];
+            const priceNocRaw = record['Cena noc.'];
+            const priceEwidencyjnaRaw = record['Cena ew.'];
+            const priceDetalicznaRaw = record['Cena det.'];
+            const priceHurtowaRaw = record['Cena hurt.'];
 
-            if (!name || !priceRaw) continue;
+            if (
+              !name ||
+              (!priceNocRaw &&
+                !priceEwidencyjnaRaw &&
+                !priceDetalicznaRaw &&
+                !priceHurtowaRaw)
+            )
+              continue;
 
-            const price = convertPriceToNumber(priceRaw);
+            const priceDetaliczna = convertPriceToNumber(priceDetalicznaRaw);
+            const priceNoc = convertPriceToNumber(priceNocRaw);
+            const priceEwidencyjna = convertPriceToNumber(priceEwidencyjnaRaw);
+            const priceHurtowa = convertPriceToNumber(priceHurtowaRaw);
 
             const extractedValueAndUnit = extractValueAndUnit(name);
             const unit = extractedValueAndUnit?.unit || ProductUnit.kg;
@@ -86,7 +98,7 @@ export const readProductsFromCsv = async (file: File): Promise<Product[]> => {
             const productSizeInUnit = extractedValueAndUnit?.value || null;
 
             const pricePerFullUnit = calcPricePerFullUnit({
-              price,
+              price: priceDetaliczna,
               productSizeInUnit,
               unit,
               unitScale,
@@ -95,7 +107,12 @@ export const readProductsFromCsv = async (file: File): Promise<Product[]> => {
             console.log({
               id,
               name,
-              price,
+              price: {
+                priceDetaliczna,
+                priceNoc,
+                priceEwidencyjna,
+                priceHurtowa,
+              },
               unit,
               productSizeInUnit,
               pricePerFullUnit,
@@ -105,7 +122,12 @@ export const readProductsFromCsv = async (file: File): Promise<Product[]> => {
             products.push({
               id,
               name,
-              price,
+              prices: {
+                detaliczna: priceDetaliczna,
+                nocna: priceNoc,
+                ewidencyjna: priceEwidencyjna,
+                hurtowa: priceHurtowa,
+              },
               unit,
               productSizeInUnit,
               pricePerFullUnit,

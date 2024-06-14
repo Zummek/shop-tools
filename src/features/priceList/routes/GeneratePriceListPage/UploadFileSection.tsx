@@ -2,7 +2,7 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { Alert, Button, Stack, Typography } from '@mui/material';
 
 import { VisuallyHiddenInput } from '../../../../components/inputs/VisuallyHiddenInput';
-import { useAppDispatch, useAppSelector } from '../../../../hooks/store';
+import { useAppDispatch, useAppSelector } from '../../../../hooks';
 import { setProducts } from '../../store/priceListSlice';
 import { readProductsFromCsv } from '../../utils/readProductsFromCsv';
 
@@ -52,7 +52,7 @@ export const UploadFileSection = () => {
             {'Pierwsze dwie linie są pomijane z względu na nagłóweki'}
           </Typography>
           <Typography variant="body2">
-            {'Kolumny: Id, Nazwa, Cena noc.'}
+            {'Kolumny: Id, Nazwa, [Cena ew.,	Cena det.,	Cena hurt.,	Cena noc]'}
           </Typography>
           <Typography variant="body2">{'Separator: tabulator'}</Typography>
         </Stack>

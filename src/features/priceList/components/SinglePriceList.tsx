@@ -1,5 +1,6 @@
 import { Box, Stack, Typography } from '@mui/material';
 
+import { useAppSelector } from '../../../hooks';
 import { Product } from '../types/product';
 import { convertNumberToPrice } from '../utils/price';
 
@@ -8,6 +9,12 @@ interface Props {
 }
 
 export const SinglePriceList = ({ product }: Props) => {
+  const priceType = useAppSelector((state) => state.priceList.priceType);
+  const selectedPrice = product.prices[priceType];
+  const price = selectedPrice
+    ? convertNumberToPrice(selectedPrice)
+    : 'Brak ceny';
+
   return (
     <Box
       sx={{
@@ -36,7 +43,7 @@ export const SinglePriceList = ({ product }: Props) => {
             fontSize={24}
             lineHeight={1.1}
           >
-            {convertNumberToPrice(product.price)}
+            {price}
             <span style={{ fontSize: '0.6em', fontWeight: 400 }}>{'zł'}</span>
           </Typography>
           <Typography variant="caption" noWrap fontSize={12}>

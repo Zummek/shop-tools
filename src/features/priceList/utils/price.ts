@@ -7,7 +7,9 @@ import {
 } from '../types/product';
 
 // remove `,` from price string
-export const convertPriceToNumber = (price: number | string) => {
+export const convertPriceToNumber = (price: number | string | null) => {
+  if (price === null) return null;
+
   return parseInt(price.toString().replace(',', '').replace('.', ''), 10);
 };
 
@@ -22,7 +24,7 @@ export const convertNumberToPrice = (price: number) => {
 };
 
 interface CalcPricePerFullUnitParmas {
-  price: number;
+  price: number | null;
   productSizeInUnit: number | null;
   unit: ProductUnit;
   unitScale: ProductUnitWeightSize | ProductUnitVolumeSize;
@@ -33,7 +35,7 @@ export const calcPricePerFullUnit = ({
   unit,
   unitScale,
 }: CalcPricePerFullUnitParmas) => {
-  if (!productSizeInUnit) return null;
+  if (!productSizeInUnit || !price) return null;
 
   const result =
     price /

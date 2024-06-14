@@ -1,9 +1,11 @@
 import { configureStore, combineReducers } from '@reduxjs/toolkit';
-import { persistReducer, persistStore } from 'redux-persist';
+import { createMigrate, persistReducer, persistStore } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
 
 import { priceListSlice } from '../features/priceList/store/priceListSlice';
 import { isDev } from '../utils/envs';
+
+import { storeMigrations } from './migrations';
 
 const reducers = combineReducers({
   priceList: priceListSlice.reducer,
@@ -15,6 +17,7 @@ const persistedReducer = persistReducer(
     version: 1,
     storage,
     debug: isDev,
+    migrate: createMigrate(storeMigrations, { debug: isDev }),
   },
   reducers
 );

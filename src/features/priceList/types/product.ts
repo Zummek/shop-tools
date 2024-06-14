@@ -13,6 +13,13 @@ export enum ProductUnitVolumeSize {
   ml = 'ml',
 }
 
+export enum PriceType {
+  ewidencyjna = 'ewidencyjna',
+  detaliczna = 'detaliczna',
+  hurtowa = 'hurtowa',
+  nocna = 'nocna',
+}
+
 export const productUnitVolumeSizeScale = {
   [ProductUnitVolumeSize.l]: 1,
   [ProductUnitVolumeSize.ml]: 0.001,
@@ -34,7 +41,12 @@ export const volumeUnits = [ProductUnitVolumeSize.l, ProductUnitVolumeSize.ml];
 export interface Product {
   id: string;
   name: string;
-  price: number;
+  prices: {
+    ewidencyjna: number | null;
+    detaliczna: number | null;
+    hurtowa: number | null;
+    nocna: number | null;
+  };
   unit: ProductUnit;
   unitScale: ProductUnitWeightSize | ProductUnitVolumeSize;
   productSizeInUnit: number | null;

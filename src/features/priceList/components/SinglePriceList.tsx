@@ -24,6 +24,7 @@ export const SinglePriceList = ({ product }: Props) => {
         maxWidth: '40mm',
         minWidth: '40mm',
         px: 1,
+        pb: '3mm',
       }}
     >
       <Stack key={product.id} justifyContent="space-between" height="100%">

@@ -20,6 +20,12 @@ export const GeneratePriceListPage = () => {
 
   const generatePriceListPdf = useReactToPrint({
     content: () => componentToPrintRef.current,
+    pageStyle: `
+      @page {
+        size: A4;
+        margin: 0mm;
+      }
+    `,
   });
 
   const productsToPrint = useMemo(

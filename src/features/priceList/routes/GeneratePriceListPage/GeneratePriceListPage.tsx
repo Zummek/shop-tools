@@ -94,6 +94,7 @@ export const GeneratePriceListPage = () => {
                   variant="contained"
                   color="primary"
                   onClick={generatePriceListPdf}
+                  disabled={productsToPrint.length === 0}
                   sx={{ whiteSpace: 'nowrap' }}
                 >
                   {'Drukuj cenówki'}

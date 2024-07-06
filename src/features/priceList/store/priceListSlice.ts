@@ -25,7 +25,11 @@ interface UpdateProductPayload {
   product: Product;
 }
 
-interface updatePricesAndAddMissingProductsPayload {
+interface UpdatePricesAndAddMissingProductsPayload {
+  products: Product[];
+}
+
+interface OverwriteProductsPayload {
   products: Product[];
 }
 
@@ -53,7 +57,7 @@ export const priceListSlice = createSlice({
     },
     updatePricesAndAddMissingProducts: (
       state,
-      action: { payload: updatePricesAndAddMissingProductsPayload }
+      action: { payload: UpdatePricesAndAddMissingProductsPayload }
     ) => {
       // update prices of existing products by id
       // ignore products that are not in the list
@@ -94,6 +98,12 @@ export const priceListSlice = createSlice({
     updateProduct: (state, action: { payload: UpdateProductPayload }) => {
       state.products[action.payload.index] = action.payload.product;
     },
+    overwriteProducts: (
+      state,
+      action: { payload: OverwriteProductsPayload }
+    ) => {
+      state.products = action.payload.products;
+    },
   },
 });
 
@@ -103,4 +113,5 @@ export const {
   updateProduct,
   setPriceType,
   updatePricesAndAddMissingProducts,
+  overwriteProducts,
 } = priceListSlice.actions;

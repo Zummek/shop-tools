@@ -84,11 +84,11 @@ export const GeneratePriceListPage = () => {
             </Stack>
 
             <Stack spacing={2}>
-              {!!productsToPrint.length && (
-                <Box display="flex" alignSelf="center">
-                  <SinglePriceList product={productsToPrint[0]} />
-                </Box>
-              )}
+              <Box display="flex" alignSelf="center">
+                <SinglePriceList
+                  product={productsToPrint.length ? productsToPrint[0] : null}
+                />
+              </Box>
               <Stack direction="row" spacing={2} justifyContent="flex-start">
                 <Button
                   variant="contained"

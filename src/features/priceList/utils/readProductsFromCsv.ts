@@ -119,8 +119,6 @@ export const readProductsFromCsv = async (
                 break;
             }
 
-            console.log('priceInSelectedUnit', priceInSelectedUnit, priceType);
-
             const pricePerFullUnit = calcPricePerFullUnit({
               price: priceInSelectedUnit,
               productSizeInUnit,

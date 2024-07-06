@@ -5,12 +5,12 @@ import { Product } from '../types/product';
 import { convertNumberToPrice } from '../utils/price';
 
 interface Props {
-  product: Product;
+  product: Product | null;
 }
 
 export const SinglePriceList = ({ product }: Props) => {
   const priceType = useAppSelector((state) => state.priceList.priceType);
-  const selectedPrice = product.prices[priceType];
+  const selectedPrice = product?.prices[priceType];
   const price = selectedPrice
     ? convertNumberToPrice(selectedPrice)
     : 'Brak ceny';
@@ -27,40 +27,46 @@ export const SinglePriceList = ({ product }: Props) => {
         pb: '3mm',
       }}
     >
-      <Stack key={product.id} justifyContent="space-between" height="100%">
-        <Typography variant="body1" lineHeight={1} pt={0.25} fontSize={14}>
-          {product.name}
+      {product === null ? (
+        <Typography variant="body1" textAlign="center">
+          {'Nic do druku'}
         </Typography>
-        <Stack
-          direction="row"
-          alignItems="flex-end"
-          justifyContent="space-between"
-          spacing={1}
-        >
-          <Typography
-            variant="h5"
-            noWrap
-            textOverflow="unset"
-            overflow="visible"
-            fontWeight={600}
-            fontSize={24}
-            lineHeight={1.1}
-          >
-            {price}
-            <span style={{ fontSize: '0.6em', fontWeight: 400 }}>{'zł'}</span>
+      ) : (
+        <Stack key={product.id} justifyContent="space-between" height="100%">
+          <Typography variant="body1" lineHeight={1} pt={0.25} fontSize={14}>
+            {product.name}
           </Typography>
-          <Typography
-            variant="caption"
-            noWrap
-            overflow="visible"
-            textOverflow="unset"
-            fontSize={12}
-            sx={{ bgcolor: 'white' }}
+          <Stack
+            direction="row"
+            alignItems="flex-end"
+            justifyContent="space-between"
+            spacing={1}
           >
-            {`${convertNumberToPrice(product.pricePerFullUnit || 0)}zł/1${product.unit}`}
-          </Typography>
+            <Typography
+              variant="h5"
+              noWrap
+              textOverflow="unset"
+              overflow="visible"
+              fontWeight={600}
+              fontSize={24}
+              lineHeight={1.1}
+            >
+              {price}
+              <span style={{ fontSize: '0.6em', fontWeight: 400 }}>{'zł'}</span>
+            </Typography>
+            <Typography
+              variant="caption"
+              noWrap
+              overflow="visible"
+              textOverflow="unset"
+              fontSize={12}
+              sx={{ bgcolor: 'white' }}
+            >
+              {`${convertNumberToPrice(product.pricePerFullUnit || 0)}zł/1${product.unit}`}
+            </Typography>
+          </Stack>
         </Stack>
-      </Stack>
+      )}
     </Box>
   );
 };

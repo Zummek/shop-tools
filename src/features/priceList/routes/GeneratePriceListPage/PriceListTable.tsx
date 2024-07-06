@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 
 import { useAppDispatch, useAppSelector } from '../../../../hooks';
-import { updateProduct } from '../../store/priceListSlice';
+import { overwriteProducts, updateProduct } from '../../store/priceListSlice';
 import {
   Product,
   ProductUnit,
@@ -123,6 +123,24 @@ export const PriceListTable = () => {
     );
   };
 
+  // base on product.includedInPriceList
+  const numSelected = products.filter((p) => p.includedInPriceList).length;
+  const rowCount = products.length;
+  const indeterminate = numSelected > 0 && numSelected < rowCount;
+  const allSelected = rowCount > 0 && numSelected === rowCount;
+
+  const onSelectAllClick = () => {
+    const newSelected = !allSelected;
+    dispatch(
+      overwriteProducts({
+        products: products.map((p) => ({
+          ...p,
+          includedInPriceList: newSelected,
+        })),
+      })
+    );
+  };
+
   return (
     <Stack spacing={2}>
       <TableContainer component={Paper} sx={{ height: 500 }}>
@@ -138,7 +156,20 @@ export const PriceListTable = () => {
               <TableCell sx={{ lineHeight: 1 }}>
                 {'Cena za pełną jednostkę'}
               </TableCell>
-              <TableCell width={60}>{'Do druku'}</TableCell>
+              <TableCell width={60} padding="checkbox">
+                <Stack>
+                  {'Do druku'}
+                  <Checkbox
+                    color="primary"
+                    indeterminate={indeterminate}
+                    checked={allSelected}
+                    onChange={onSelectAllClick}
+                    inputProps={{
+                      'aria-label': 'select all',
+                    }}
+                  />
+                </Stack>
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>

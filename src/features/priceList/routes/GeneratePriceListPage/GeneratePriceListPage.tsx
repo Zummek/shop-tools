@@ -6,6 +6,7 @@ import { Page } from '../../../../components/layout';
 import { useAppSelector } from '../../../../hooks';
 import { PdfFullPriceList } from '../../components/PdfFullPriceList';
 import { SinglePriceList } from '../../components/SinglePriceList';
+import { useLoadDemo } from '../../hooks/useLoadDemo';
 
 import { ImportExportButtons } from './ImportExportButtons';
 import { PriceListTable } from './PriceListTable';
@@ -14,6 +15,8 @@ import { UpdatePricesByUploadingFileSection } from './UpdatePricesByUploadingFil
 import { UploadFileSection } from './UploadFileSection';
 
 export const GeneratePriceListPage = () => {
+  const { loadDemoCsvFile } = useLoadDemo();
+
   const componentToPrintRef = useRef<HTMLDivElement>(null);
   const products = useAppSelector((state) => state.priceList.products);
   const priceType = useAppSelector((state) => state.priceList.priceType);
@@ -43,7 +46,7 @@ export const GeneratePriceListPage = () => {
   );
 
   return (
-    <Page headerTitle="Generuj cenówki">
+    <Page headerTitle="Generuj cenówki" onDemoButtonClick={loadDemoCsvFile}>
       <Stack direction="row" spacing={4}>
         <Box flex={1} display="flex">
           <UploadFileSection />

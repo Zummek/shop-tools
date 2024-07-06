@@ -2,6 +2,7 @@
 import { parse } from 'csv-parse/browser/esm';
 
 import {
+  PriceType,
   Product,
   ProductUnit,
   ProductUnitVolumeSize,
@@ -48,7 +49,10 @@ const extractValueAndUnit = (
   return null;
 };
 
-export const readProductsFromCsv = async (file: File): Promise<Product[]> => {
+export const readProductsFromCsv = async (
+  file: File,
+  priceType: PriceType
+): Promise<Product[]> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -97,25 +101,30 @@ export const readProductsFromCsv = async (file: File): Promise<Product[]> => {
               extractedValueAndUnit?.unitScale || ProductUnitWeightSize.kg;
             const productSizeInUnit = extractedValueAndUnit?.value || null;
 
-            const pricePerFullUnit = calcPricePerFullUnit({
-              price: priceDetaliczna,
-              productSizeInUnit,
-              unit,
-              unitScale,
-            });
+            let priceInSelectedUnit;
 
-            console.log({
-              id,
-              name,
-              price: {
-                priceDetaliczna,
-                priceNoc,
-                priceEwidencyjna,
-                priceHurtowa,
-              },
-              unit,
+            switch (priceType) {
+              default:
+              case PriceType.detaliczna:
+                priceInSelectedUnit = priceDetaliczna;
+                break;
+              case PriceType.nocna:
+                priceInSelectedUnit = priceNoc;
+                break;
+              case PriceType.ewidencyjna:
+                priceInSelectedUnit = priceEwidencyjna;
+                break;
+              case PriceType.hurtowa:
+                priceInSelectedUnit = priceHurtowa;
+                break;
+            }
+
+            console.log('priceInSelectedUnit', priceInSelectedUnit, priceType);
+
+            const pricePerFullUnit = calcPricePerFullUnit({
+              price: priceInSelectedUnit,
               productSizeInUnit,
-              pricePerFullUnit,
+              unit,
               unitScale,
             });
 

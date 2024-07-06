@@ -8,6 +8,7 @@ import { readProductsFromCsv } from '../../utils/readProductsFromCsv';
 
 export const UploadFileSection = () => {
   const fileName = useAppSelector((state) => state.priceList.fileName);
+  const priceType = useAppSelector((state) => state.priceList.priceType);
   const dispatch = useAppDispatch();
 
   const onFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -17,7 +18,7 @@ export const UploadFileSection = () => {
     dispatch(
       setProducts({
         fileName: file.name,
-        products: await readProductsFromCsv(file),
+        products: await readProductsFromCsv(file, priceType),
       })
     );
   };

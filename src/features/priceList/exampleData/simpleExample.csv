@@ -1,14 +1,16 @@
-Lista towarow
-Nazwa Cena noc.
-Platki owsiane Bio BP 600g	1,13
-Kasza jaglana Bp 1kg	2,21
-Mleko 300ml	3,25
-Platki owsiane Bio BP 600g	1,13
-Kasza jaglana Bp 1kg	2,21
-Mleko 300ml	3,25
-Platki owsiane Bio BP 600g	1,13
-Kasza jaglana Bp 1kg	2,21
-Mleko 300ml	3,25
-Platki owsiane Bio BP 600g	1,13
-Kasza jaglana Bp 1kg	2,21
-Mleko 300ml	3,25
+Lista towar�w
+Id	Nazwa	Na kasie	Kod	Mar�a rz.	Cena ew.	Cena det.	Cena hurt.	Cena noc.	VAT %	Ilo��	Asortyment
+101	Product A 500ml	Item A 500ml	1111111111111	54,68	129,51	20,90	20,90	20,90	8 %	0,000	Category A
+102	Product B 1l	Item B 1l	2222222222222	38,65	6,39	10,90	10,90	10,90	23 %	0,000	Category B
+103	Product C 250ml	Item C 250ml	3333333333333	36,73	6,48	10,90	10,90	10,90	23 %	0,000	Category C
+104	Product D 750ml	Item D 750ml	4444444444444	36,43	13,12	18,80	18,80	18,80	5 %	1,000	Category D
+105	Product E 490ml	Item E 490ml	5555555555555	48,79	12,03	18,80	18,80	18,80	5 %	0,000	Category E
+106	Product F 270ml	Item F 270ml	6666666666666	48,43	8,28	12,90	12,90	12,90	5 %	1,000	Category F
+107	Product G 500ml	Item G 500ml	7777777777777	36,85	13,08	18,80	18,80	18,80	5 %	2,000	Category G
+108	Product H 490ml	Item H 490ml	8888888888888	39,79	22,82	33,50	33,50	33,50	5 %	3,000	Category H
+109	Product I 1l	Item I 1l	9999999999999	28,73	28,99	45,90	45,90	45,90	23 %	0,000	Category I
+110	Product J 1kg	Item J 1kg	1010101010101	43,91	45,00	68,00	68,00	68,00	5 %	0,000	Category J
+111	Product K 490g	Item K 490g	2020202020202	43,68	28,50	43,00	43,00	43,00	5 %	1,000	Category K
+112	Product L 500g	Item L 500g	3030303030303	1932,35	1,02	25,50	25,50	25,50	23 %	0,000	Category L
+113	Product M 250g	Item M 250g	4040404040404	34,49	7,22	10,20	10,20	10,20	5 %	4,000	Category M
+114	Product N 1kg	Item N 1kg	5050505050505	49,95	32,39	51,00	51,00	51,00	5 %	2,000	Category N

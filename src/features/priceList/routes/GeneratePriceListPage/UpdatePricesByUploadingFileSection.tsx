@@ -1,20 +1,21 @@
 import { Alert, Box, Button, Stack, Typography } from '@mui/material';
 
 import { VisuallyHiddenInput } from '../../../../components/inputs';
-import { useAppDispatch, useNotify } from '../../../../hooks';
+import { useAppDispatch, useAppSelector, useNotify } from '../../../../hooks';
 import { updatePricesAndAddMissingProducts } from '../../store/priceListSlice';
 import { readProductsFromCsv } from '../../utils/readProductsFromCsv';
 
 export const UpdatePricesByUploadingFileSection = () => {
   const dispatch = useAppDispatch();
   const { notify } = useNotify();
+  const priceType = useAppSelector((state) => state.priceList.priceType);
 
   const updatePrices = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     try {
-      const products = await readProductsFromCsv(file);
+      const products = await readProductsFromCsv(file, priceType);
 
       dispatch(updatePricesAndAddMissingProducts({ products }));
       notify('success', 'Ceny zaktualizowane pomyślnie');

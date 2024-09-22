@@ -9,7 +9,7 @@ export const Header = () => {
       <Button variant="text" href="#barcodes-generator">
         {'Generuj kody kreskowe'}
       </Button>
-      <Button variant="text" disabled>
+      <Button variant="text" href="#invoice-converter">
         {'Konwenter faktur'}
       </Button>
     </Stack>

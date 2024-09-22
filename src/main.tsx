@@ -5,6 +5,7 @@ import { Provider } from 'react-redux';
 import { Navigate, RouterProvider, createHashRouter } from 'react-router-dom';
 
 import { BarcodesGeneratorPage } from './features/BarcodesGenerator/routes/BarcodesGeneratorPage/BarcodesGeneratorPage';
+import { InvoiceConverterPage } from './features/invoiceConverter/routers/InvoiceConverterPage/InvoiceConverterPage';
 import { GeneratePriceListPage } from './features/priceList/routes/GeneratePriceListPage/GeneratePriceListPage';
 import { store } from './store/store';
 
@@ -22,6 +23,10 @@ const router = createHashRouter(
     {
       path: '/barcodes-generator',
       element: <BarcodesGeneratorPage />,
+    },
+    {
+      path: '/invoice-converter',
+      element: <InvoiceConverterPage />,
     },
   ],
   {

@@ -39,6 +39,8 @@ jobs:
 
       - name: Build production project
         run: yarn build
+        env:
+          VITE_SM_API_URL: ${{ secrets.VITE_SM_API_URL }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v4

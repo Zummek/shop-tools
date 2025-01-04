@@ -2,14 +2,23 @@ import { SnackbarProvider } from 'notistack';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { Provider } from 'react-redux';
-import { Navigate, RouterProvider, createHashRouter } from 'react-router-dom';
+import {
+  Navigate,
+  RouterProvider,
+  createBrowserRouter,
+} from 'react-router-dom';
 
 import { BarcodesGeneratorPage } from './features/BarcodesGenerator/routes/BarcodesGeneratorPage/BarcodesGeneratorPage';
 import { InvoiceConverterPage } from './features/invoiceConverter/routers/InvoiceConverterPage/InvoiceConverterPage';
 import { GeneratePriceListPage } from './features/priceList/routes/GeneratePriceListPage/GeneratePriceListPage';
+import { LoginPage } from './features/smSystem/routes/LoginPage';
+import { SmSystemPageLayout } from './features/smSystem/routes/SmSystemRouter';
+import { TransfersPage } from './features/smSystem/routes/TransfersPage';
+import { ReactQueryClientProvider, setReduxStoreForAxios } from './services';
+import { AxiosInterceptorsProvider } from './services/AxiosInterceptorsProvider';
 import { store } from './store/store';
 
-const router = createHashRouter(
+const router = createBrowserRouter(
   [
     {
       path: '/',
@@ -28,18 +37,46 @@ const router = createHashRouter(
       path: '/invoice-converter',
       element: <InvoiceConverterPage />,
     },
+    {
+      path: '/sm-system',
+      element: <SmSystemPageLayout />,
+      children: [
+        {
+          index: true,
+          element: <Navigate to="/sm-system/login" />,
+        },
+        {
+          path: 'login',
+          element: <LoginPage />,
+        },
+        {
+          path: 'transfers',
+          element: <TransfersPage />,
+        },
+      ],
+    },
+    {
+      path: '*',
+      element: <Navigate to="/generate-price-list" />,
+    },
   ],
   {
     // NOTE: use only in brower (not hash) router
-    // basename: '/shop-tools',
+    basename: '/shop-tools',
   }
 );
+
+setReduxStoreForAxios(store);
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <SnackbarProvider>
       <Provider store={store}>
-        <RouterProvider router={router} />
+        <ReactQueryClientProvider>
+          <AxiosInterceptorsProvider store={store}>
+            <RouterProvider router={router} />
+          </AxiosInterceptorsProvider>
+        </ReactQueryClientProvider>
       </Provider>
     </SnackbarProvider>
   </React.StrictMode>

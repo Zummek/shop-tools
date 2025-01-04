@@ -15,12 +15,16 @@ interface Props extends StackProps {
   children: ReactNode;
   headerTitle: string;
   onDemoButtonClick?: () => void;
+  onButtonClick?: () => void;
+  buttonLabel?: string;
 }
 
 export const Page = ({
   children,
   headerTitle,
   onDemoButtonClick,
+  onButtonClick,
+  buttonLabel,
   ...props
 }: Props) => {
   const [openWarningModal, setOpenWarningModal] = useState(false);
@@ -34,7 +38,12 @@ export const Page = ({
     <Container maxWidth="lg">
       <Header />
       <Stack spacing={4} mt={4} {...props}>
-        <Box display="flex" justifyContent="space-between" alignItems="center">
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          width="100%"
+        >
           <Typography variant="h3">{headerTitle}</Typography>
           {!!onDemoButtonClick && (
             <Button
@@ -44,6 +53,16 @@ export const Page = ({
               size="small"
             >
               {'Demo'}
+            </Button>
+          )}
+          {!!onButtonClick && (
+            <Button
+              variant="outlined"
+              color="primary"
+              onClick={onButtonClick}
+              size="small"
+            >
+              {buttonLabel}
             </Button>
           )}
         </Box>

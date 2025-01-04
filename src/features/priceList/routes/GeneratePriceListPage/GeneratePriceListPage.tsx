@@ -46,7 +46,7 @@ export const GeneratePriceListPage = () => {
   );
 
   return (
-    <Page headerTitle="Generuj cenówki" onDemoButtonClick={loadDemoCsvFile}>
+    <Page headerTitle="Generuj cenówki" onButtonClick={loadDemoCsvFile}>
       <Stack direction="row" spacing={4}>
         <Box flex={1} display="flex">
           <UploadFileSection />

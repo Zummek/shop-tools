@@ -15,8 +15,10 @@ export const SmSystemPageLayout = () => {
   const isSessionExist = !!useAppSelector(
     (state) => state.smSystemUser.accessToken
   );
-  const isOnLoginPage = !!useMatch(Pages.smSystemLogin);
-  const isOnTransfersPage = !!useMatch(Pages.smSystemTransfers);
+  const isOnLoginPage = !!useMatch(Pages.smSystemLogin.replace('#', ''));
+  const isOnTransfersPage = !!useMatch(
+    Pages.smSystemTransfers.replace('#', '')
+  );
 
   useEffect(() => {
     if (!isSessionExist) navigate(Pages.smSystemLogin, { replace: true });

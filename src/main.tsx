@@ -2,11 +2,7 @@ import { SnackbarProvider } from 'notistack';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { Provider } from 'react-redux';
-import {
-  Navigate,
-  RouterProvider,
-  createBrowserRouter,
-} from 'react-router-dom';
+import { Navigate, RouterProvider, createHashRouter } from 'react-router-dom';
 
 import { BarcodesGeneratorPage } from './features/BarcodesGenerator/routes/BarcodesGeneratorPage/BarcodesGeneratorPage';
 import { InvoiceConverterPage } from './features/invoiceConverter/routers/InvoiceConverterPage/InvoiceConverterPage';
@@ -18,7 +14,7 @@ import { ReactQueryClientProvider, setReduxStoreForAxios } from './services';
 import { AxiosInterceptorsProvider } from './services/AxiosInterceptorsProvider';
 import { store } from './store/store';
 
-const router = createBrowserRouter(
+const router = createHashRouter(
   [
     {
       path: '/',
@@ -62,7 +58,7 @@ const router = createBrowserRouter(
   ],
   {
     // NOTE: use only in brower (not hash) router
-    basename: '/shop-tools',
+    // basename: '/shop-tools',
   }
 );
 

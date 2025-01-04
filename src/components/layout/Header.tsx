@@ -5,16 +5,16 @@ import { Pages } from '../../utils/pages';
 export const Header = () => {
   return (
     <Stack spacing={4} direction="row">
-      <Button variant="text" href={Pages.barcodesGenerator}>
+      <Button variant="text" href={`#${Pages.barcodesGenerator}`}>
         {'Generuj cenówki'}
       </Button>
-      <Button variant="text" href={Pages.generatePriceList}>
+      <Button variant="text" href={`#${Pages.generatePriceList}`}>
         {'Generuj kody kreskowe'}
       </Button>
-      <Button variant="text" href={Pages.invoiceConverter}>
+      <Button variant="text" href={`#${Pages.invoiceConverter}`}>
         {'Konwenter faktur'}
       </Button>
-      <Button variant="text" href={Pages.smSystem}>
+      <Button variant="text" href={`#${Pages.smSystem}`}>
         {'SM System'}
       </Button>
     </Stack>

@@ -35,6 +35,8 @@ export interface TransferListItem {
   destinationBranch: Branch | null;
   transferProducts: TransferProduct[];
   comment: string;
+  sender: User;
+  recipient?: User;
   createdAt: Date;
   createdBy: User;
   updatedAt: Date | null;

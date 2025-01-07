@@ -1,5 +1,6 @@
 import { Box, Button, Stack, Typography } from '@mui/material';
 import { DataGrid, GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
+import dayjs from 'dayjs';
 import { useState } from 'react';
 
 import { pageSize, useGetTransfers } from '../api';
@@ -23,20 +24,28 @@ const statusMessage: Record<TransferStatus, string> = {
 };
 
 const columns: GridColDef<TransferListItem>[] = [
-  { field: 'id', headerName: 'ID', width: 80 },
+  { field: 'id', headerName: 'ID', width: 60 },
+  {
+    field: 'createdAt',
+    headerName: 'Data utworzenia/\nmodifuikacji',
+    width: 150,
+    valueGetter: (value, row) => row.updatedAt || value,
+    valueFormatter: (value) => dayjs(+value).format('YYYY-MM-DD HH:mm'),
+  },
   {
     field: 'sourceBranch',
     headerName: 'Sklep źródłowy /\nNadawca',
     width: 150,
     renderCell: (params) => (
-      <Box
-        sx={{
-          lineHeight: 1.5,
-          whiteSpace: 'normal',
-        }}
-      >
+      <Typography variant="body2">
         {params.row.sourceBranch?.name}
-      </Box>
+        <br />
+        <Typography variant="caption">
+          {params.row.sender
+            ? `${params.row.sender.firstName} ${params.row.sender.lastName}`
+            : 'Brak nadawcy'}
+        </Typography>
+      </Typography>
     ),
   },
   {
@@ -44,14 +53,18 @@ const columns: GridColDef<TransferListItem>[] = [
     headerName: 'Sklep docelowy /\nOdbiorca',
     width: 150,
     renderCell: (params) => (
-      <Box
-        sx={{
-          lineHeight: 1.5,
-          whiteSpace: 'normal',
-        }}
-      >
+      <Typography variant="body2">
         {params.row.destinationBranch?.name}
-      </Box>
+        <br />
+        <Typography
+          variant="caption"
+          color={params.row.recipient ? 'black' : '#cc7000'}
+        >
+          {params.row.recipient
+            ? `${params.row.recipient?.firstName} ${params.row.recipient?.lastName}`
+            : 'Brak odbiorcy'}
+        </Typography>
+      </Typography>
     ),
   },
   {

@@ -1,3 +1,25 @@
+export const updateTransfersStatusGraphqlMutation = (
+  ids: string[],
+  status: string
+) => ({
+  query: `mutation updateTransfersStatus($ids: [ID!]!, $status: String!) {
+    transfer {
+      updateStatuses(
+        input: {
+          ids: $ids,
+          data: {
+            status: $status
+          }
+        }
+      )
+    }
+  }`,
+  variables: {
+    ids,
+    status,
+  },
+});
+
 export const getTransfersGraphqlQuery = (offset = 0, limit?: number) => ({
   query: `{
       transfers(offset: ${offset} ${limit ? `limit:${limit}` : ''}) {

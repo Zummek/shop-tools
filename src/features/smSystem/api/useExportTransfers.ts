@@ -11,11 +11,12 @@ export const useExportTransfers = () => {
   const exportTransfersRequest = async (payload: Payload) =>
     axiosInstance.post('/api/v1/transfer/export-multiple', payload);
 
-  const { mutateAsync } = useMutation({
+  const { mutateAsync, isPending } = useMutation({
     mutationFn: exportTransfersRequest,
   });
 
   return {
     exportTransfers: mutateAsync,
+    isPending,
   };
 };

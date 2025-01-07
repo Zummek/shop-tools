@@ -1,10 +1,15 @@
-import { Box, Button, Stack, Typography } from '@mui/material';
+import { LoadingButton } from '@mui/lab';
+import { Stack, Typography } from '@mui/material';
 import { DataGrid, GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 
-import { pageSize, useGetTransfers } from '../api';
-import { useExportTransfers } from '../api/useExportTransfers';
+import {
+  pageSize,
+  useGetTransfers,
+  useUpdateTransfersStatus,
+  useExportTransfers,
+} from '../api';
 import { TransferListItem, TransferStatus } from '../types';
 
 const statusColor: Record<TransferStatus, string> = {
@@ -24,10 +29,10 @@ const statusMessage: Record<TransferStatus, string> = {
 };
 
 const columns: GridColDef<TransferListItem>[] = [
-  { field: 'id', headerName: 'ID', width: 60 },
+  { field: 'id', headerName: 'ID', width: 70 },
   {
     field: 'createdAt',
-    headerName: 'Data utworzenia/\nmodifuikacji',
+    headerName: 'Data utworzenia/\nmodyfikacji',
     width: 150,
     valueGetter: (value, row) => row.updatedAt || value,
     valueFormatter: (value) => dayjs(+value).format('YYYY-MM-DD HH:mm'),
@@ -35,10 +40,10 @@ const columns: GridColDef<TransferListItem>[] = [
   {
     field: 'sourceBranch',
     headerName: 'Sklep źródłowy /\nNadawca',
-    width: 150,
+    width: 170,
     renderCell: (params) => (
       <Typography variant="body2">
-        {params.row.sourceBranch?.name}
+        {params.row.sourceBranch?.name || 'Brak'}
         <br />
         <Typography variant="caption">
           {params.row.sender
@@ -51,14 +56,18 @@ const columns: GridColDef<TransferListItem>[] = [
   {
     field: 'destinationBranch',
     headerName: 'Sklep docelowy /\nOdbiorca',
-    width: 150,
+    width: 170,
     renderCell: (params) => (
-      <Typography variant="body2">
-        {params.row.destinationBranch?.name}
+      <Typography
+        variant="body2"
+        color={params.row.destinationBranch ? 'black' : '#ff7000'}
+      >
+        {params.row.destinationBranch?.name || 'Brak'}
         <br />
         <Typography
           variant="caption"
           color={params.row.recipient ? 'black' : '#cc7000'}
+          sx={{ opacity: params.row.recipient ? 1 : 0.5 }}
         >
           {params.row.recipient
             ? `${params.row.recipient?.firstName} ${params.row.recipient?.lastName}`
@@ -105,7 +114,10 @@ export const TransfersPage = () => {
   const [selectedTransferIds, setSelectedTransferIds] = useState<string[]>([]);
 
   const { transfers, totalCount, isLoading } = useGetTransfers({ page });
-  const { exportTransfers } = useExportTransfers();
+  const { exportTransfers, isPending: isExportingTransfers } =
+    useExportTransfers();
+  const { updateTransfersStatus, isPending: isUpdatingTransfersStatus } =
+    useUpdateTransfersStatus();
 
   const handlePageChange = (_event: unknown, page: number): void =>
     setPage(page);
@@ -128,21 +140,46 @@ export const TransfersPage = () => {
     element.click();
   };
 
+  const handlePostTransfers = () => {
+    updateTransfersStatus({
+      ids: selectedTransferIds,
+      status: 'POSTED',
+    });
+  };
+
   const handleSelectionChange = (rowSelectionModel: GridRowSelectionModel) =>
     setSelectedTransferIds(rowSelectionModel as string[]);
 
   return (
     <Stack spacing={4}>
-      <Box>
-        <Button
+      <Stack direction="row" spacing={2}>
+        <LoadingButton
           variant="contained"
           color="primary"
           onClick={handleExportTransfers}
-          disabled={selectedTransferIds.length === 0}
+          disabled={
+            selectedTransferIds.length === 0 ||
+            isLoading ||
+            isUpdatingTransfersStatus
+          }
+          loading={isExportingTransfers}
         >
           {'Eksportuj do PC Market'}
-        </Button>
-      </Box>
+        </LoadingButton>
+        <LoadingButton
+          variant="contained"
+          color="primary"
+          onClick={handlePostTransfers}
+          disabled={
+            selectedTransferIds.length === 0 ||
+            isLoading ||
+            isExportingTransfers
+          }
+          loading={isUpdatingTransfersStatus}
+        >
+          {'Oznacz jako zaksięgowane'}
+        </LoadingButton>
+      </Stack>
       <DataGrid
         sx={{
           '& .MuiDataGrid-columnHeaderTitle': {

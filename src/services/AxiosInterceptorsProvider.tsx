@@ -3,7 +3,7 @@ import { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 import get from 'lodash/get';
 import { ReactNode, useEffect } from 'react';
 
-import { useLogoutUser } from '../features/smSystem/hooks';
+import { useLogoutUser } from '../features/smSystem/user/hooks';
 import { useAppSelector, useNotify } from '../hooks';
 
 import { axiosInstance } from './axiosInstance';

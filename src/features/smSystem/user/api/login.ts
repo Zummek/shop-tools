@@ -1,4 +1,4 @@
-import { axiosInstance } from '../../../services';
+import { axiosInstance } from '../../../../services';
 
 interface LoginPayload {
   companyName: string;

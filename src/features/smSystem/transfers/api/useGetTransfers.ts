@@ -1,6 +1,6 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
-import { axiosInstance } from '../../../services';
+import { axiosInstance } from '../../../../services';
 import { TransferListItem } from '../types';
 
 import { getTransfersGraphqlQuery } from './transfersGraphql';

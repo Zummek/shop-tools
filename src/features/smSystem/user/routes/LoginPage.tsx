@@ -3,11 +3,11 @@ import { LoadingButton } from '@mui/lab';
 import { Box, Paper, Stack } from '@mui/material';
 import { FormProvider } from 'react-hook-form';
 
-import logo from '../../../assets/logo/horizontal-blue-black-logo.png';
+import logo from '../../../../assets/logo/horizontal-blue-black-logo.png';
 import {
   ControlledPasswordField,
   ControlledTextField,
-} from '../../../components/inputs';
+} from '../../../../components/inputs';
 import { useLoginForm } from '../hooks';
 
 export const LoginPage = () => {

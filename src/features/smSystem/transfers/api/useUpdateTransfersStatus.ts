@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { axiosInstance } from '../../../services';
+import { axiosInstance } from '../../../../services';
 import { TransferStatus } from '../types';
 
 import { updateTransfersStatusGraphqlMutation } from './transfersGraphql';

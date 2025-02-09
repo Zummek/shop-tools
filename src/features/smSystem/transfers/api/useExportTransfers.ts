@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 
-import { axiosInstance } from '../../../services';
+import { axiosInstance } from '../../../../services';
 
 interface Payload {
   ids: number[];

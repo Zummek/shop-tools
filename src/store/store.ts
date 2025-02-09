@@ -3,7 +3,7 @@ import { createMigrate, persistReducer, persistStore } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
 
 import { priceListSlice } from '../features/priceList/store/priceListSlice';
-import { smUserSlice } from '../features/smSystem/store/smUserSlice';
+import { smUserSlice } from '../features/smSystem/user/store/smUserSlice';
 import { isDev } from '../utils/envs';
 
 import { storeMigrations } from './migrations';

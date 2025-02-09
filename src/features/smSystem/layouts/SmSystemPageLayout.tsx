@@ -5,7 +5,7 @@ import { Outlet, useMatch, useNavigate } from 'react-router-dom';
 import { Page } from '../../../components/layout';
 import { useAppSelector } from '../../../hooks';
 import { Pages } from '../../../utils';
-import { useLogoutUser } from '../hooks';
+import { useLogoutUser } from '../user/hooks';
 
 export const SmSystemPageLayout = () => {
   const navigate = useNavigate();
@@ -39,12 +39,7 @@ export const SmSystemPageLayout = () => {
       buttonLabel="Wyloguj"
     >
       <Container maxWidth={isOnLoginPage ? 'xs' : 'lg'}>
-        <Box
-          alignItems="center"
-          justifyContent="center"
-          display="flex"
-          flexDirection="column"
-        >
+        <Box display="flex" flexDirection="column">
           <Outlet />
         </Box>
       </Container>

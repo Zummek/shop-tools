@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 
-import { useAppDispatch, useNotify } from '../../../hooks';
+import { useAppDispatch, useNotify } from '../../../../hooks';
 import { clearSession } from '../store';
 
 export const useLogoutUser = () => {

@@ -3,7 +3,7 @@ import { AxiosError } from 'axios';
 import { SubmitErrorHandler, SubmitHandler, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import { useAppDispatch, useNotify } from '../../../hooks';
+import { useAppDispatch, useNotify } from '../../../../hooks';
 import { login } from '../api';
 import { setSession } from '../store';
 

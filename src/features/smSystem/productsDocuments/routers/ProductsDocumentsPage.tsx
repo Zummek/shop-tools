@@ -6,13 +6,13 @@ import { useState } from 'react';
 
 import {
   pageSize,
-  useGetTransfers,
-  useUpdateTransfersStatus,
-  useExportTransfers,
+  useExportProductsDocuments,
+  useGetProductsDocuments,
+  useUpdateProductsDocumentsStatus,
 } from '../api';
-import { TransferListItem, TransferStatus } from '../types';
+import { ProductsDocumentListItem, ProductsDocumentStatus } from '../types';
 
-const statusColor: Record<TransferStatus, string> = {
+const statusColor: Record<ProductsDocumentStatus, string> = {
   PREPARING: 'black',
   PREPARED: 'black',
   RECEIVED: 'blue',
@@ -20,7 +20,7 @@ const statusColor: Record<TransferStatus, string> = {
   CANCELED: 'red',
 };
 
-const statusMessage: Record<TransferStatus, string> = {
+const statusMessage: Record<ProductsDocumentStatus, string> = {
   CANCELED: 'Anulowany',
   POSTED: 'Zaksięgowany',
   PREPARED: 'Przygotowany',
@@ -28,8 +28,9 @@ const statusMessage: Record<TransferStatus, string> = {
   RECEIVED: 'Odebrany',
 };
 
-const columns: GridColDef<TransferListItem>[] = [
+const columns: GridColDef<ProductsDocumentListItem>[] = [
   { field: 'id', headerName: 'ID', width: 70 },
+  { field: 'name', headerName: 'Nazwa', width: 150 },
   {
     field: 'createdAt',
     headerName: 'Data utworzenia/\nmodyfikacji',
@@ -38,56 +39,17 @@ const columns: GridColDef<TransferListItem>[] = [
     valueFormatter: (value) => dayjs(+value).format('DD-MM-YYYY HH:mm'),
   },
   {
-    field: 'sourceBranch',
-    headerName: 'Sklep źródłowy /\nNadawca',
-    width: 170,
-    renderCell: (params) => (
-      <Typography variant="body2">
-        {params.row.sourceBranch?.name || 'Brak'}
-        <br />
-        <Typography variant="caption">
-          {params.row.sender
-            ? `${params.row.sender.firstName} ${params.row.sender.lastName}`
-            : 'Brak nadawcy'}
-        </Typography>
-      </Typography>
-    ),
-  },
-  {
-    field: 'destinationBranch',
-    headerName: 'Sklep docelowy /\nOdbiorca',
-    width: 170,
-    renderCell: (params) => (
-      <Typography
-        variant="body2"
-        color={params.row.destinationBranch ? 'black' : '#ff7000'}
-      >
-        {params.row.destinationBranch?.name || 'Brak'}
-        <br />
-        <Typography
-          variant="caption"
-          color={params.row.recipient ? 'black' : '#cc7000'}
-          sx={{ opacity: params.row.recipient ? 1 : 0.5 }}
-        >
-          {params.row.recipient
-            ? `${params.row.recipient?.firstName} ${params.row.recipient?.lastName}`
-            : 'Brak odbiorcy'}
-        </Typography>
-      </Typography>
-    ),
-  },
-  {
     field: 'itemsAmount',
     headerName: 'Ilość pozycji',
     width: 70,
-    renderCell: (params) => params.row.transferProducts.length,
+    renderCell: (params) => params.row.productsDocumentProducts.length,
   },
   {
     field: 'productsAmount',
     headerName: 'Ilość produktów',
     width: 90,
     renderCell: (params) =>
-      params.row.transferProducts.reduce(
+      params.row.productsDocumentProducts.reduce(
         (accumulator, tp) => accumulator + tp.amount,
         0
       ),
@@ -95,7 +57,7 @@ const columns: GridColDef<TransferListItem>[] = [
   {
     field: 'status',
     headerName: 'Status',
-    width: 120,
+    width: 140,
     renderCell: (params) => (
       <Typography color={statusColor[params.row.status]}>
         {statusMessage[params.row.status]}
@@ -107,33 +69,53 @@ const columns: GridColDef<TransferListItem>[] = [
     headerName: 'Komentarz',
     width: 100,
   },
+  {
+    field: 'sourceBranch',
+    headerName: 'Sklep źródłowy',
+    width: 170,
+    renderCell: (params) => (
+      <Typography variant="body2">
+        {params.row.sourceBranch?.name || 'Brak'}
+      </Typography>
+    ),
+  },
+  {
+    field: 'destinationBranch',
+    headerName: 'Sklep docelowy',
+    width: 170,
+    renderCell: (params) => (
+      <Typography variant="body2">
+        {params.row.destinationBranch?.name || 'Brak'}
+      </Typography>
+    ),
+  },
 ];
 
-export const TransfersPage = () => {
+export const ProductsDocumentsPage = () => {
   const [page, setPage] = useState(0);
   const [selectedTransferIds, setSelectedTransferIds] = useState<string[]>([]);
 
-  const { transfers, totalCount, isLoading } = useGetTransfers({ page });
-  const { exportTransfers, isPending: isExportingTransfers } =
-    useExportTransfers();
-  const { updateTransfersStatus, isPending: isUpdatingTransfersStatus } =
-    useUpdateTransfersStatus();
+  const { productsDocuments, totalCount, isLoading } = useGetProductsDocuments({
+    page,
+  });
+  const { exportProductsDocuments, isPending: isExportingProductsDocuments } =
+    useExportProductsDocuments();
+  const {
+    updateProductsDocumentsStatus,
+    isPending: isUpdatingProductsDocumentsStatus,
+  } = useUpdateProductsDocumentsStatus();
 
   const handlePageChange = (_event: unknown, page: number): void =>
     setPage(page);
 
-  const handleExportTransfers = () =>
-    exportTransfers({
-      exportMethod: 'PC-Market-shipped',
-      ids: selectedTransferIds.map(Number),
-    });
+  const handleExportProductsDocuments = () =>
+    exportProductsDocuments({ ids: selectedTransferIds.map(Number) });
 
-  const handlePostTransfers = () => {
-    updateTransfersStatus({
+  const handlePostProductsDocuments = () =>
+    updateProductsDocumentsStatus({
       ids: selectedTransferIds,
       status: 'POSTED',
     });
-  };
 
   const handleSelectionChange = (rowSelectionModel: GridRowSelectionModel) =>
     setSelectedTransferIds(rowSelectionModel as string[]);
@@ -144,26 +126,26 @@ export const TransfersPage = () => {
         <LoadingButton
           variant="contained"
           color="primary"
-          onClick={handleExportTransfers}
+          onClick={handleExportProductsDocuments}
           disabled={
             selectedTransferIds.length === 0 ||
             isLoading ||
-            isUpdatingTransfersStatus
+            isUpdatingProductsDocumentsStatus
           }
-          loading={isExportingTransfers}
+          loading={isExportingProductsDocuments}
         >
           {'Eksportuj do PC Market'}
         </LoadingButton>
         <LoadingButton
           variant="contained"
           color="primary"
-          onClick={handlePostTransfers}
+          onClick={handlePostProductsDocuments}
           disabled={
             selectedTransferIds.length === 0 ||
             isLoading ||
-            isExportingTransfers
+            isExportingProductsDocuments
           }
-          loading={isUpdatingTransfersStatus}
+          loading={isUpdatingProductsDocumentsStatus}
         >
           {'Oznacz jako zaksięgowane'}
         </LoadingButton>
@@ -179,7 +161,7 @@ export const TransfersPage = () => {
             alignItems: 'center',
           },
         }}
-        rows={transfers}
+        rows={productsDocuments}
         rowCount={totalCount || 0}
         columns={columns}
         pageSizeOptions={[pageSize]}

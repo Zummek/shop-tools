@@ -8,6 +8,7 @@ import { BarcodesGeneratorPage } from './features/BarcodesGenerator/routes/Barco
 import { InvoiceConverterPage } from './features/invoiceConverter/routers/InvoiceConverterPage/InvoiceConverterPage';
 import { GeneratePriceListPage } from './features/priceList/routes/GeneratePriceListPage/GeneratePriceListPage';
 import { SmSystemPageLayout } from './features/smSystem/layouts/SmSystemPageLayout';
+import { ProductsDocumentsPage } from './features/smSystem/productsDocuments/routers/ProductsDocumentsPage';
 import { TransfersPage } from './features/smSystem/transfers/routers/TransfersPage';
 import { LoginPage } from './features/smSystem/user/routes/LoginPage';
 import { ReactQueryClientProvider, setReduxStoreForAxios } from './services';
@@ -48,6 +49,10 @@ const router = createHashRouter(
         {
           path: 'transfers',
           element: <TransfersPage />,
+        },
+        {
+          path: 'products-documents',
+          element: <ProductsDocumentsPage />,
         },
       ],
     },

@@ -22,7 +22,8 @@ interface Response {
 }
 
 export const pageSize = 25;
-const getQueryKey = (page: number) => ['transfers', page];
+export const getTransfersQueryKeyBase = 'transfers';
+const getQueryKey = (page: number) => [getTransfersQueryKeyBase, page];
 
 export const useGetTransfers = ({ page }: Payload) => {
   const offset = page * pageSize;

@@ -1,33 +1,26 @@
 import { Branch, User } from '../../types/smSystem';
 
-export type TransferStatus =
+export type ProductsDocumentStatus =
   | 'PREPARING'
   | 'PREPARED'
   | 'RECEIVED'
   | 'POSTED'
   | 'CANCELED';
 
-interface TransferProduct {
+interface ProductsDocumentProduct {
   id: string;
-  // orderProduct: OrderProduct | null;
-  // transfer?: Transfer;
-  // product: any;
   amount: number;
   receivedAmount?: string | null;
-  // comment: string;
-  // receivedComment?: string | null;
 }
 
-export interface TransferListItem {
+export interface ProductsDocumentListItem {
   id: string;
-  date: string;
-  status: TransferStatus;
+  name: string;
+  status: ProductsDocumentStatus;
   sourceBranch: Branch | null;
   destinationBranch: Branch | null;
-  transferProducts: TransferProduct[];
+  productsDocumentProducts: ProductsDocumentProduct[];
   comment: string;
-  sender: User;
-  recipient?: User;
   createdAt: Date;
   createdBy: User;
   updatedAt: Date | null;

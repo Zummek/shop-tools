@@ -4,6 +4,7 @@ import { axiosInstance } from '../../../../services';
 import { TransferStatus } from '../types';
 
 import { updateTransfersStatusGraphqlMutation } from './transfersGraphql';
+import { getTransfersQueryKeyBase } from './useGetTransfers';
 
 interface Payload {
   ids: string[];
@@ -35,7 +36,7 @@ export const useUpdateTransfersStatus = () => {
   const { mutateAsync, isPending } = useMutation({
     mutationFn: updateTransfersStatusRequest,
     onSettled: () => {
-      queryClient.refetchQueries({ queryKey: ['transfers'] });
+      queryClient.refetchQueries({ queryKey: [getTransfersQueryKeyBase] });
     },
   });
 

@@ -5,23 +5,22 @@ import { axiosInstance } from '../../../../services';
 
 interface Payload {
   ids: number[];
-  exportMethod: 'PC-Market-shipped' | 'PC-Market-received';
 }
 
-export const useExportTransfers = () => {
+export const useExportProductsDocuments = () => {
   const { notify } = useNotify();
 
   const [isPending, setIsPending] = useState(false);
 
-  const exportTransfers = async ({ exportMethod, ids }: Payload) => {
+  const exportProductsDocuments = async ({ ids }: Payload) => {
     try {
       setIsPending(true);
       await Promise.all(
         ids.map(async (id) => {
-          const res = await axiosInstance.post('/api/v1/transfer/export', {
-            id,
-            exportMethod,
-          });
+          const res = await axiosInstance.post(
+            '/api/v1/productsDocument/export',
+            { id }
+          );
 
           const fileContent = res.data;
           const fileName = res.headers['content-disposition']
@@ -45,7 +44,7 @@ export const useExportTransfers = () => {
   };
 
   return {
-    exportTransfers,
+    exportProductsDocuments,
     isPending,
   };
 };

@@ -7,4 +7,5 @@ export enum Pages {
   smSystemTransfers = '/sm-system/transfers',
   smSystemImportProducts = '/sm-system/import-products',
   smSystemProductsDocuments = '/sm-system/products-documents',
+  smSystemSupplierOrders = '/sm-system/supplier-orders',
 }

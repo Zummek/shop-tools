@@ -1,5 +1,4 @@
 import { SnackbarProvider } from 'notistack';
-import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { Provider } from 'react-redux';
 import { Navigate, RouterProvider, createHashRouter } from 'react-router-dom';
@@ -8,6 +7,7 @@ import { BarcodesGeneratorPage } from './features/BarcodesGenerator/routes/Barco
 import { InvoiceConverterPage } from './features/invoiceConverter/routers/InvoiceConverterPage/InvoiceConverterPage';
 import { GeneratePriceListPage } from './features/priceList/routes/GeneratePriceListPage/GeneratePriceListPage';
 import { SmSystemPageLayout } from './features/smSystem/layouts/SmSystemPageLayout';
+import { ImportProductsPage } from './features/smSystem/products/routers/ImportProductsPage/ImportProductsPage';
 import { ProductsDocumentsPage } from './features/smSystem/productsDocuments/routers/ProductsDocumentsPage';
 import { TransfersPage } from './features/smSystem/transfers/routers/TransfersPage';
 import { LoginPage } from './features/smSystem/user/routes/LoginPage';
@@ -54,6 +54,10 @@ const router = createHashRouter(
           path: 'products-documents',
           element: <ProductsDocumentsPage />,
         },
+        {
+          path: 'import-products',
+          element: <ImportProductsPage />,
+        },
       ],
     },
     {
@@ -70,15 +74,13 @@ const router = createHashRouter(
 setReduxStoreForAxios(store);
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <SnackbarProvider>
-      <Provider store={store}>
-        <ReactQueryClientProvider>
-          <AxiosInterceptorsProvider store={store}>
-            <RouterProvider router={router} />
-          </AxiosInterceptorsProvider>
-        </ReactQueryClientProvider>
-      </Provider>
-    </SnackbarProvider>
-  </React.StrictMode>
+  <SnackbarProvider>
+    <Provider store={store}>
+      <ReactQueryClientProvider>
+        <AxiosInterceptorsProvider store={store}>
+          <RouterProvider router={router} />
+        </AxiosInterceptorsProvider>
+      </ReactQueryClientProvider>
+    </Provider>
+  </SnackbarProvider>
 );

@@ -33,7 +33,9 @@ export const Header = ({
 
   const isProductsDocumentsPage = useIsPage([Pages.smSystemProductsDocuments]);
   const isTransfersPage = useIsPage([Pages.smSystemTransfers]);
-  const showSmSystemHeader = isProductsDocumentsPage || isTransfersPage;
+  const isImportProductsPage = useIsPage([Pages.smSystemImportProducts]);
+  const showSmSystemHeader =
+    isProductsDocumentsPage || isTransfersPage || isImportProductsPage;
 
   return (
     <Stack spacing={2} direction="column">
@@ -73,6 +75,12 @@ export const Header = ({
                   variant={isProductsDocumentsPage ? 'contained' : 'outlined'}
                 >
                   {'Dokumenty'}
+                </Button>
+                <Button
+                  href={`#${Pages.smSystemImportProducts}`}
+                  variant={isImportProductsPage ? 'contained' : 'outlined'}
+                >
+                  {'Import produktów'}
                 </Button>
               </ButtonGroup>
             </Box>

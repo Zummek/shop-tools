@@ -5,5 +5,6 @@ export enum Pages {
   smSystem = '/sm-system',
   smSystemLogin = '/sm-system/login',
   smSystemTransfers = '/sm-system/transfers',
+  smSystemImportProducts = '/sm-system/import-products',
   smSystemProductsDocuments = '/sm-system/products-documents',
 }

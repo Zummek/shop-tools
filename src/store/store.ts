@@ -3,6 +3,7 @@ import { createMigrate, persistReducer, persistStore } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
 
 import { priceListSlice } from '../features/priceList/store/priceListSlice';
+import { smImportProductsSlice } from '../features/smSystem/products/store/smImportProductsSlice';
 import { smUserSlice } from '../features/smSystem/user/store/smUserSlice';
 import { isDev } from '../utils/envs';
 
@@ -11,6 +12,7 @@ import { storeMigrations } from './migrations';
 const reducers = combineReducers({
   priceList: priceListSlice.reducer,
   smSystemUser: smUserSlice.reducer,
+  smImportProducts: smImportProductsSlice.reducer,
 });
 
 const persistedReducer = persistReducer(

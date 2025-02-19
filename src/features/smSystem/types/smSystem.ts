@@ -1,10 +1,10 @@
 export interface Branch {
-  id: string;
+  id: number;
   name: string;
 }
 
 export interface User {
-  id: string;
+  id: number;
   firstName: string;
   lastName: string;
 }

@@ -35,6 +35,7 @@ module.exports = {
   },
   plugins: ['react-refresh'],
   rules: {
+    quotes: ['error', 'single'],
     'no-console': 'error',
     'object-shorthand': ['error', 'always'],
     'react/display-name': 'off',

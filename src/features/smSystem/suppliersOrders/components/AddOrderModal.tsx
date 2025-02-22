@@ -12,11 +12,11 @@ import {
   Modal,
   Select,
   Typography,
-} from "@mui/material";
-import { useState } from "react";
+} from '@mui/material';
+import { useState } from 'react';
 
-import { useFetchOrders } from "../hooks/useFetchOrders";
-import { IdName, BasicModalProps } from "../types/index";
+import { useFetchOrders } from '../hooks/useFetchOrders';
+import { IdName, BasicModalProps } from '../types/index';
 
 const AddOrderModal = ({ open, handleClose }: BasicModalProps) => {
   const { suppliers, branches } = useFetchOrders();
@@ -42,29 +42,29 @@ const AddOrderModal = ({ open, handleClose }: BasicModalProps) => {
     <Modal open={open} onClose={handleCloseModal}>
       <Box
         sx={{
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          bgcolor: "background.paper",
-          border: "2px solid #000",
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          bgcolor: 'background.paper',
+          border: '2px solid #000',
           boxShadow: 24,
           paddingX: 6,
           paddingY: 4,
           width: 175,
-          display: "flex",
-          flexDirection: "column",
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
-        <Typography variant="h6">{"Nowe zamówienie"}</Typography>
+        <Typography variant="h6">{'Nowe zamówienie'}</Typography>
 
         <FormControl fullWidth variant="outlined" margin="normal">
           <InputLabel id="supplier-select-label">
-            {"Wybierz dostawcę"}
+            {'Wybierz dostawcę'}
           </InputLabel>
           <Select
             labelId="supplier-select-label"
-            value={selectedSupplier?.id || ""}
+            value={selectedSupplier?.id || ''}
             onChange={(event) => {
               const supplierId = Number(event.target.value);
               setSelectedSupplier(
@@ -81,7 +81,7 @@ const AddOrderModal = ({ open, handleClose }: BasicModalProps) => {
           </Select>
         </FormControl>
 
-        <List sx={{ width: "100%" }}>
+        <List sx={{ width: '100%' }}>
           {branches.map(({ id, name }) => (
             <ListItem
               key={id}
@@ -114,9 +114,9 @@ const AddOrderModal = ({ open, handleClose }: BasicModalProps) => {
         <Button
           onClick={handleAddOrder}
           disabled={selectedSupplier === null || selectedBranches.length === 0}
-          sx={{ marginLeft: "auto" }}
+          sx={{ marginLeft: 'auto' }}
         >
-          {"Dodaj"}
+          {'Dodaj'}
         </Button>
       </Box>
     </Modal>

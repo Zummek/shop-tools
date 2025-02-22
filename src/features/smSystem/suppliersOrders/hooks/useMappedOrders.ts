@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
-import { OrderList } from "../types/index";
+import { OrderList } from '../types/index';
 
-import { useFetchOrders } from "./useFetchOrders";
+import { useFetchOrders } from './useFetchOrders';
 
 export const useMappedOrders = () => {
   const { orders, isFetchingLoading } = useFetchOrders();
@@ -19,9 +19,9 @@ export const useMappedOrders = () => {
     
     const newMappedOrders = orders.map((order) => ({
       id: order.id,
-      date: new Date(order.createdAt).toLocaleDateString("pl-PL"),
+      date: new Date(order.createdAt).toLocaleDateString('pl-PL'),
       supplierName: order.supplier.name,
-      branchesNames: order.branches.map((branch) => branch.name).join(", "),
+      branchesNames: order.branches.map((branch) => branch.name).join(', '),
     }));
 
     setMappedOrders(newMappedOrders);

@@ -5,11 +5,11 @@ import {
   Modal,
   Stack,
   Typography,
-} from "@mui/material";
-import { useState } from "react";
+} from '@mui/material';
+import { useState } from 'react';
 
-import { useIsPage } from "../../hooks";
-import { Pages } from "../../utils/pages";
+import { useIsPage } from '../../hooks';
+import { Pages } from '../../utils/pages';
 
 interface Props {
   headerTitle: string;
@@ -59,16 +59,16 @@ export const Header = ({
     <Stack spacing={2} direction="column">
       <Stack spacing={4} direction="row">
         <Button variant="text" href={`#${Pages.barcodesGenerator}`}>
-          {"Generuj cenówki"}
+          {'Generuj cenówki'}
         </Button>
         <Button variant="text" href={`#${Pages.generatePriceList}`}>
-          {"Generuj kody kreskowe"}
+          {'Generuj kody kreskowe'}
         </Button>
         <Button variant="text" href={`#${Pages.invoiceConverter}`}>
-          {"Konwenter faktur"}
+          {'Konwenter faktur'}
         </Button>
         <Button variant="text" href={`#${Pages.smSystem}`}>
-          {"SM System"}
+          {'SM System'}
         </Button>
       </Stack>
       <Box
@@ -80,32 +80,32 @@ export const Header = ({
         <Stack spacing={2}>
           {showSmSystemHeader && (
             <Stack spacing={2} direction="row" alignItems="center">
-              <Typography variant="h6">{"SM System:"}</Typography>
+              <Typography variant="h6">{'SM System:'}</Typography>
               <Box>
                 <ButtonGroup variant="outlined">
                   <Button
                     href={`#${Pages.smSystemTransfers}`}
-                    variant={isTransfersPage ? "contained" : "outlined"}
+                    variant={isTransfersPage ? 'contained' : 'outlined'}
                   >
-                    {"Transfery"}
+                    {'Transfery'}
                   </Button>
                   <Button
                     href={`#${Pages.smSystemProductsDocuments}`}
-                    variant={isProductsDocumentsPage ? "contained" : "outlined"}
+                    variant={isProductsDocumentsPage ? 'contained' : 'outlined'}
                   >
-                    {"Dokumenty"}
+                    {'Dokumenty'}
                   </Button>
                   <Button
                     href={`#${Pages.smSystemSuppliersOrders}`}
-                    variant={isSuppliersOrdersPage ? "contained" : "outlined"}
+                    variant={isSuppliersOrdersPage ? 'contained' : 'outlined'}
                   >
-                    {"Zamówienia u dostawców"}
+                    {'Zamówienia u dostawców'}
                   </Button>
                   <Button
                     href={`#${Pages.smSystemImportProducts}`}
-                    variant={isImportProductsPage ? "contained" : "outlined"}
+                    variant={isImportProductsPage ? 'contained' : 'outlined'}
                   >
-                    {"Import produktów"}
+                    {'Import produktów'}
                   </Button>
                 </ButtonGroup>
               </Box>
@@ -113,34 +113,34 @@ export const Header = ({
           )}
           {ShowSuppliersOrdersHeader && (
             <Stack spacing={2} direction="row" alignItems="center">
-              <Typography variant="h6">{"Zamówienia u dostawców:"}</Typography>
+              <Typography variant="h6">{'Zamówienia u dostawców:'}</Typography>
               <Box>
                 <ButtonGroup variant="outlined">
                   <Button
                     href={`#${Pages.smSystemOrders}`}
                     variant={
                       isOrdersPage || isOrdersParamPage
-                        ? "contained"
-                        : "outlined"
+                        ? 'contained'
+                        : 'outlined'
                     }
                   >
-                    {"Zamówienia"}
+                    {'Zamówienia'}
                   </Button>
                   <Button
                     href={`#${Pages.smSystemSuppliers}`}
                     variant={
                       isSuppliersPage || isSuppliersParamPage
-                        ? "contained"
-                        : "outlined"
+                        ? 'contained'
+                        : 'outlined'
                     }
                   >
-                    {"Dostawcy"}
+                    {'Dostawcy'}
                   </Button>
                   <Button
                     href={`#${Pages.smSystemProducts}`}
-                    variant={isProductsPage ? "contained" : "outlined"}
+                    variant={isProductsPage ? 'contained' : 'outlined'}
                   >
-                    {"Produkty"}
+                    {'Produkty'}
                   </Button>
                 </ButtonGroup>
               </Box>
@@ -156,7 +156,7 @@ export const Header = ({
             onClick={() => setOpenWarningModal(true)}
             size="small"
           >
-            {"Demo"}
+            {'Demo'}
           </Button>
         )}
         {!!onButtonClick && (
@@ -178,23 +178,23 @@ export const Header = ({
       >
         <Stack
           sx={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
             width: 400,
-            bgcolor: "background.paper",
+            bgcolor: 'background.paper',
             boxShadow: 24,
             p: 4,
           }}
           spacing={4}
         >
           <Typography id="modal-modal-title" variant="h6" component="h2">
-            {"Załadować demo?"}
+            {'Załadować demo?'}
           </Typography>
           <Typography id="modal-modal-description" sx={{ mt: 2 }}>
             {
-              "Załadowanie demo spowoduje utratę wprowadzonych danych. Czy na pewno chcesz kontynuować?"
+              'Załadowanie demo spowoduje utratę wprowadzonych danych. Czy na pewno chcesz kontynuować?'
             }
           </Typography>
           <Stack direction="row" spacing={2} justifyContent="flex-end">
@@ -202,14 +202,14 @@ export const Header = ({
               variant="outlined"
               onClick={() => setOpenWarningModal(false)}
             >
-              {"Zamknij"}
+              {'Zamknij'}
             </Button>
             <Button
               variant="contained"
               color="error"
               onClick={handleDemoButtonClick}
             >
-              {"Załaduj demo"}
+              {'Załaduj demo'}
             </Button>
           </Stack>
         </Stack>

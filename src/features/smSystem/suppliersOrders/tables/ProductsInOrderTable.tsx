@@ -1,8 +1,8 @@
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import { DataGrid, GridColDef, GridRowParams } from "@mui/x-data-grid";
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import { DataGrid, GridColDef, GridRowParams } from '@mui/x-data-grid';
 
-import { ProductsInOrderTableProps } from "../types/index";
-import "../../../../styles/styles.css";
+import { ProductsInOrderTableProps } from '../types/index';
+import '../../../../styles/styles.css';
 
 const ProductsInOrderTable = ({
   products,
@@ -11,31 +11,31 @@ const ProductsInOrderTable = ({
 }: ProductsInOrderTableProps) => {
   const columns: GridColDef[] = [
     {
-      field: "lp",
-      headerName: "LP",
+      field: 'lp',
+      headerName: 'LP',
       width: 50,
     },
     {
-      field: "name",
-      headerName: "Nazwa produktu",
+      field: 'name',
+      headerName: 'Nazwa produktu',
       width: 200,
     },
     {
-      field: "totalToOrder",
-      headerName: "Suma",
+      field: 'totalToOrder',
+      headerName: 'Suma',
       width: 60,
     },
     {
-      field: "action",
-      headerName: "",
+      field: 'action',
+      headerName: '',
       width: 50,
       renderCell: () => (
         <div
           style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            height: "100%",
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
           }}
         >
           <ChevronRightIcon style={{ fontSize: 30 }} />
@@ -58,11 +58,11 @@ const ProductsInOrderTable = ({
       hideFooter
       getRowId={(row) => row.lp}
       getRowClassName={(params) =>
-        params.row.lp === selectedProductLp ? "selected-row" : ""
+        params.row.lp === selectedProductLp ? 'selected-row' : ''
       }
       initialState={{
         sorting: {
-          sortModel: [{ field: "id", sort: "asc" }],
+          sortModel: [{ field: 'id', sort: 'asc' }],
         },
       }}
     />

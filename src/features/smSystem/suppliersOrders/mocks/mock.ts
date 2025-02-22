@@ -1,4 +1,4 @@
-import { IdName } from "../types/index"
+import { IdName } from '../types/index'
 
 export const branches: IdName[] = [
   {

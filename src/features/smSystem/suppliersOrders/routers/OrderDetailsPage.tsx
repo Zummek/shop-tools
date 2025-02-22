@@ -1,16 +1,16 @@
-import { Button, CircularProgress, Stack, Typography } from "@mui/material";
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Button, CircularProgress, Stack, Typography } from '@mui/material';
+import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 
-import { useMappedOrderDetails } from "../hooks/useMappedOrderDetails";
-import ProductDetailsInOrderTable from "../tables/ProductDetailsInOrderTable";
-import ProductsInOrderTable from "../tables/ProductsInOrderTable";
-import { MappedOrderDetails, ProductInOrderWithTotal } from "../types/index";
+import { useMappedOrderDetails } from '../hooks/useMappedOrderDetails';
+import ProductDetailsInOrderTable from '../tables/ProductDetailsInOrderTable';
+import ProductsInOrderTable from '../tables/ProductsInOrderTable';
+import { MappedOrderDetails, ProductInOrderWithTotal } from '../types/index';
 
 const generateTxtFile = (content: string, fileName: string) => {
-  const blob = new Blob([content], { type: "text/plain" });
+  const blob = new Blob([content], { type: 'text/plain' });
   const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
+  const link = document.createElement('a');
   link.href = url;
   link.download = fileName;
   link.click();
@@ -61,9 +61,9 @@ export const OrderDetailsPage = () => {
       <Typography
         variant="h6"
         color="error"
-        sx={{ textAlign: "center", marginTop: 2 }}
+        sx={{ textAlign: 'center', marginTop: 2 }}
       >
-        {"Order not found"}
+        {'Order not found'}
       </Typography>
     );
   }
@@ -73,9 +73,9 @@ export const OrderDetailsPage = () => {
       <Typography
         variant="h6"
         color="error"
-        sx={{ textAlign: "center", marginTop: 2 }}
+        sx={{ textAlign: 'center', marginTop: 2 }}
       >
-        {"Products not found"}
+        {'Products not found'}
       </Typography>
     );
   }
@@ -84,7 +84,7 @@ export const OrderDetailsPage = () => {
   const branchesNames = editableMappedOrderDetails.branchesNames;
   const date = new Date(
     editableMappedOrderDetails.createdAt
-  ).toLocaleDateString("pl-PL");
+  ).toLocaleDateString('pl-PL');
 
   const handleDownload = () => {
     const content =
@@ -93,7 +93,7 @@ export const OrderDetailsPage = () => {
         .map((product) => {
           return `${product.lp}. ${product.product.name}\tx${product.totalToOrder}`;
         })
-        .join("\n");
+        .join('\n');
     const fileName = `${supplierName} ${date} ${branchesNames}.txt`;
     generateTxtFile(content, fileName);
   };
@@ -114,9 +114,9 @@ export const OrderDetailsPage = () => {
       <Typography
         variant="h5"
         color="primary"
-        sx={{ flexGrow: 1, textAlign: "center" }}
+        sx={{ flexGrow: 1, textAlign: 'center' }}
       >
-        {supplierName} {" - "} {date} {" - "} {branchesNames}
+        {supplierName} {' - '} {date} {' - '} {branchesNames}
       </Typography>
 
       <Stack spacing={4} direction="row">
@@ -131,17 +131,17 @@ export const OrderDetailsPage = () => {
               variant="outlined"
               color="primary"
               onClick={handleSave}
-              sx={{ width: "80px", height: "40px" }}
+              sx={{ width: '80px', height: '40px' }}
             >
-              {"Zapisz"}
+              {'Zapisz'}
             </Button>
             <Button
               variant="outlined"
               color="primary"
               onClick={handleDownload}
-              sx={{ width: "80px", height: "40px" }}
+              sx={{ width: '80px', height: '40px' }}
             >
-              {"Pobierz"}
+              {'Pobierz'}
             </Button>
           </Stack>
         </Stack>
@@ -152,18 +152,18 @@ export const OrderDetailsPage = () => {
               variant="h5"
               color="primary"
               sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                height: "100%",
-                width: "30%",
-                textAlign: "center",
-                whiteSpace: "pre-line",
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '100%',
+                width: '30%',
+                textAlign: 'center',
+                whiteSpace: 'pre-line',
               }}
             >
               {selectedProductData.product.name}
-              {"\n"}
-              {"Suma: "}
+              {'\n'}
+              {'Suma: '}
               {selectedProductData.totalToOrder}
             </Typography>
           </Stack>

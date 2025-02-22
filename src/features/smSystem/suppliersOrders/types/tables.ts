@@ -1,4 +1,4 @@
-import {MappedOrderDetails} from "./index";
+import {MappedOrderDetails} from './index';
 
 export interface ProductsInOrder {
   lp: number;

@@ -1,43 +1,43 @@
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import { DataGrid, GridColDef, GridRowParams } from "@mui/x-data-grid";
-import { useNavigate } from "react-router-dom";
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import { DataGrid, GridColDef, GridRowParams } from '@mui/x-data-grid';
+import { useNavigate } from 'react-router-dom';
 
-import { Pages } from "../../../../utils";
-import { OrderList } from "../types/index";
+import { Pages } from '../../../../utils';
+import { OrderList } from '../types/index';
 
 const OrdersTable = ({ orders }: { orders: OrderList[] }) => {
   const columns: GridColDef[] = [
     {
-      field: "id",
-      headerName: "ID",
+      field: 'id',
+      headerName: 'ID',
       width: 50,
     },
     {
-      field: "supplierName",
-      headerName: "Dostawca",
+      field: 'supplierName',
+      headerName: 'Dostawca',
       width: 200,
     },
     {
-      field: "date",
-      headerName: "Data",
+      field: 'date',
+      headerName: 'Data',
       width: 110,
     },
     {
-      field: "branchesNames",
-      headerName: "Wybrane sklepy",
+      field: 'branchesNames',
+      headerName: 'Wybrane sklepy',
       width: 240,
     },
     {
-      field: "action",
-      headerName: "",
+      field: 'action',
+      headerName: '',
       width: 50,
       renderCell: () => (
         <div
           style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            height: "100%",
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
           }}
         >
           <ChevronRightIcon style={{ fontSize: 30 }} />
@@ -63,7 +63,7 @@ const OrdersTable = ({ orders }: { orders: OrderList[] }) => {
       pagination
       initialState={{
         sorting: {
-          sortModel: [{ field: "id", sort: "desc" }],
+          sortModel: [{ field: 'id', sort: 'desc' }],
         },
         pagination: {
           paginationModel: { pageSize: 5, page: 0 },

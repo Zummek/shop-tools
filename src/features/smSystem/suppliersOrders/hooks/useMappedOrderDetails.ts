@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
-import { MappedOrderDetails, ProductInOrderWithTotal } from "../types/index";
+import { MappedOrderDetails, ProductInOrderWithTotal } from '../types/index';
 
-import { useFetchOrders } from "./useFetchOrders";
+import { useFetchOrders } from './useFetchOrders';
 
 export const useMappedOrderDetails = (orderId: string | undefined) => {
   const { orders, isFetchingLoading } = useFetchOrders();
@@ -33,7 +33,7 @@ export const useMappedOrderDetails = (orderId: string | undefined) => {
       return
     }
 
-    const branchesNames = order.branches.map((branch) => branch.name).join(", ");
+    const branchesNames = order.branches.map((branch) => branch.name).join(', ');
     
     const productsInOrderWithTotal: ProductInOrderWithTotal[] = order.productsInOrder.map(
       (productInOrder, index) => {

@@ -1,7 +1,7 @@
-import { DataGrid, GridColDef, GridRowModel } from "@mui/x-data-grid";
-import { useEffect, useState } from "react";
+import { DataGrid, GridColDef, GridRowModel } from '@mui/x-data-grid';
+import { useEffect, useState } from 'react';
 
-import { ProductDetailsInOrderTableProps } from "../types/index";
+import { ProductDetailsInOrderTableProps } from '../types/index';
 
 const ProductDetailsInOrderTable = ({
   editableOrderDetails,
@@ -72,7 +72,7 @@ const ProductDetailsInOrderTable = ({
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "ArrowRight") {
+      if (event.key === 'ArrowRight') {
         setSelectedProductLp((prevSelectedProduct) => {
           if (!prevSelectedProduct) return 0;
 
@@ -85,10 +85,10 @@ const ProductDetailsInOrderTable = ({
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
 
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener('keydown', handleKeyDown);
     };
   }, [editableOrderDetails, setSelectedProductLp]);
 
@@ -110,12 +110,12 @@ const ProductDetailsInOrderTable = ({
   }));
 
   const columns: GridColDef[] = [
-    { field: "id", headerName: "ID", width: 50 },
-    { field: "branch", headerName: "Sklep", width: 100 },
-    { field: "stock", headerName: "Stan", width: 100 },
-    { field: "sales", headerName: "Sprzedaż", width: 100 },
-    { field: "toOrderProp", headerName: "Propozycja", width: 100 },
-    { field: "toOrder", headerName: "Ilość", width: 100, editable: true },
+    { field: 'id', headerName: 'ID', width: 50 },
+    { field: 'branch', headerName: 'Sklep', width: 100 },
+    { field: 'stock', headerName: 'Stan', width: 100 },
+    { field: 'sales', headerName: 'Sprzedaż', width: 100 },
+    { field: 'toOrderProp', headerName: 'Propozycja', width: 100 },
+    { field: 'toOrder', headerName: 'Ilość', width: 100, editable: true },
   ];
 
   return (
@@ -129,11 +129,11 @@ const ProductDetailsInOrderTable = ({
       processRowUpdate={handleRowEdit}
       initialState={{
         sorting: {
-          sortModel: [{ field: "id", sort: "asc" }],
+          sortModel: [{ field: 'id', sort: 'asc' }],
         },
       }}
       getRowClassName={(params) =>
-        errorRows.includes(params.row.id) ? "error-row" : ""
+        errorRows.includes(params.row.id) ? 'error-row' : ''
       }
     />
   );

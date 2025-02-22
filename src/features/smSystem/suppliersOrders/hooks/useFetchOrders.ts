@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
 
-import { suppliers as suppliersMock, branches as branchesMock, orderDetailsMock } from "../mocks/mock";
-import { IdName, OrderDetails } from "../types";
+import { suppliers as suppliersMock, branches as branchesMock, orderDetailsMock } from '../mocks/mock';
+import { IdName, OrderDetails } from '../types';
 
 export const useFetchOrders = () => {
   const [ordersDetails, setOrdersDetails] = useState<OrderDetails[]>([]);

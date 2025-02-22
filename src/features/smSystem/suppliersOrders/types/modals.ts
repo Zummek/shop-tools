@@ -1,4 +1,4 @@
-import {IdName} from "./index";
+import {IdName} from './index';
 
 export interface BasicModalProps {
   open: boolean;

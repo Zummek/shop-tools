@@ -1,9 +1,9 @@
-import { Stack, Button, CircularProgress } from "@mui/material";
-import { useState } from "react";
+import { Stack, Button, CircularProgress } from '@mui/material';
+import { useState } from 'react';
 
-import AddOrderModal from "../components/AddOrderModal";
-import { useMappedOrders } from "../hooks/useMappedOrders";
-import OrdersTable from "../tables/OrdersTable";
+import AddOrderModal from '../components/AddOrderModal';
+import { useMappedOrders } from '../hooks/useMappedOrders';
+import OrdersTable from '../tables/OrdersTable';
 
 export const OrdersPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -29,9 +29,9 @@ export const OrdersPage = () => {
             variant="outlined"
             color="primary"
             onClick={handleOpenModal}
-            sx={{ width: "110px", height: "50px", ml: "auto" }}
+            sx={{ width: '110px', height: '50px', ml: 'auto' }}
           >
-            {"Nowe zamówienie"}
+            {'Nowe zamówienie'}
           </Button>
         </Stack>
       </Stack>

@@ -4,6 +4,8 @@ export enum InvoiceProvider {
   bezGluten = 'Bez Gluten',
   medicaline = 'Medicaline',
   szupex = 'Szupex',
+  sfd = 'SFD',
+  sylveco = 'Sylveco',
 }
 
 export interface Contractor {

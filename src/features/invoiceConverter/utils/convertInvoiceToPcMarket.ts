@@ -4,6 +4,8 @@ import { convertInternalInvoiceToPcMarket } from './convertInternalInvoiceToPcMa
 import { readInvoiceFromBezGluten } from './readInvoiceFromBezGluten';
 import { readInvoiceFromDary } from './readInvoiceFromDary';
 import { readInvoiceFromMedicaline } from './readInvoiceFromMedicaline';
+import { readInvoiceFromSfd } from './readInvoiceFromSfd';
+import { readInvoiceFromSylveco } from './readInvoiceFromSylveco';
 import { readInvoiceFromSzupex } from './readInvoiceFromSzupex';
 import { readInvoiceFromWiesiolek } from './readInvoiceFromWiesiolek';
 
@@ -23,6 +25,10 @@ export const convertInvoiceToPcMarket = async (
     invoice = await readInvoiceFromDary(file);
   else if (provider === InvoiceProvider.szupex)
     invoice = await readInvoiceFromSzupex(file);
+  else if (provider === InvoiceProvider.sfd)
+    invoice = await readInvoiceFromSfd(file);
+  else if (provider === InvoiceProvider.sylveco)
+    invoice = await readInvoiceFromSylveco(file);
   else return 'Error';
 
   const x = await convertInternalInvoiceToPcMarket(invoice);

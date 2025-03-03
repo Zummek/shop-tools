@@ -12,6 +12,8 @@ export const detectInvoiceProvider = async (
   if (fileText.includes('5322116337') || fileText.includes('5321690962'))
     return InvoiceProvider.medicaline;
   if (fileText.includes('553-10-10-123')) return InvoiceProvider.szupex;
+  if (fileText.includes('754-302-22-22')) return InvoiceProvider.sfd;
+  if (fileText.includes('5170422903')) return InvoiceProvider.sylveco;
 
   return null;
 };

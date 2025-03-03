@@ -2,7 +2,7 @@
 // eslint-disable-next-line import/no-unresolved
 import { parse } from 'csv-parse/browser/esm';
 
-import { Invoice, InvoideProvider, ProductGroup } from '../types';
+import { Invoice, InvoiceProvider, ProductGroup } from '../types';
 
 import { convertDotPriceToPrice } from './convertInternalInvoiceToPcMarket';
 
@@ -64,6 +64,6 @@ export const readInvoiceFromBezGluten = async (
     paymentDeadline: null,
     paymentWay: null,
     products: productsGroups,
-    provider: InvoideProvider.bezGluten,
+    provider: InvoiceProvider.bezGluten,
   };
 };

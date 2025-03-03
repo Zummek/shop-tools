@@ -1,8 +1,9 @@
-export enum InvoideProvider {
+export enum InvoiceProvider {
   dary = 'Dary Natury',
   wiesiolek = 'wiesiolek',
   bezGluten = 'Bez Gluten',
   medicaline = 'Medicaline',
+  szupex = 'Szupex',
 }
 
 export interface Contractor {
@@ -14,9 +15,9 @@ export interface Contractor {
 export interface Product {
   id: string;
   name: string;
-  barcode: string;
+  barcode: string | null;
   vat: number | 'zw';
-  unit: string;
+  unit: string | null;
   netPrice: string;
   category: string | null;
 }
@@ -27,7 +28,7 @@ export interface ProductGroup {
 }
 
 export interface Invoice {
-  provider: InvoideProvider;
+  provider: InvoiceProvider;
   documentNumber: string;
   date: Date | null;
   paymentWay: string | null;

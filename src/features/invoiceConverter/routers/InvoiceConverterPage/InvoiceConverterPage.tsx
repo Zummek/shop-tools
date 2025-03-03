@@ -7,14 +7,14 @@ import { useState } from 'react';
 
 import { VisuallyHiddenInput } from '../../../../components/inputs';
 import { Page } from '../../../../components/layout';
-import { InvoideProvider } from '../../types';
+import { InvoiceProvider } from '../../types';
 import { convertInvoiceToPcMarket } from '../../utils/convertInvoiceToPcMarket';
 import { detectInvoiceProvider } from '../../utils/detectInvoiceProvider';
 
 export const InvoiceConverterPage = () => {
   const [currentFile, setCurrentFile] = useState<File | null>(null);
   const [detectedInvoiceProvider, setDetectedInvoiceProvider] =
-    useState<InvoideProvider | null>(null);
+    useState<InvoiceProvider | null>(null);
 
   const onFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

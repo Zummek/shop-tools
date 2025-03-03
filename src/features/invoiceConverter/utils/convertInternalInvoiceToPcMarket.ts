@@ -19,32 +19,46 @@ const convertPriceToDotPrice = (price: string) => {
 export const convertInternalInvoiceToPcMarket = async (
   invoice: Invoice
 ): Promise<string> => {
+  const {
+    documentNumber = '',
+    date = null,
+    paymentWay = '',
+    paymentDeadline = null,
+    exhibitor = null,
+    recipient = null,
+    products,
+  } = invoice;
+
+  const formattedDate = date ? dayjs(date).format('DD.MM.YYYY') : '';
+  const paymentDays =
+    paymentDeadline && date ? dayjs(paymentDeadline).diff(date, 'days') : '';
+  const exhibitorName = exhibitor?.name || '';
+  const exhibitorNip = exhibitor ? formatNip(exhibitor.nip) : '';
+  const recipientName = recipient?.name || '';
+  const recipientNip = recipient ? formatNip(recipient.nip) : '';
+
   let fileContent = `TypPolskichLiter:LA
 TypDok:FW
-NrDok:${invoice.documentNumber !== null ? invoice.documentNumber : null}
-Data:${invoice.date !== null ? dayjs(invoice.date).format('DD.MM.YYYY') : null}
-SposobPlatn:${invoice.paymentWay !== null ? invoice.paymentWay : null}
-TerminPlatn:${
-    invoice.paymentDeadline !== null && invoice.date !== null
-      ? dayjs(invoice.paymentDeadline).diff(invoice.date, 'days')
-      : null
-  }
-NazwaWystawcy:${invoice.exhibitor !== null ? invoice.exhibitor.name : null}
-NIPWystawcy:${invoice.exhibitor !== null ? formatNip(invoice.exhibitor.nip) : null}
-NazwaOdbiorcy:${invoice.recipient !== null ? invoice.recipient.name : null}
-NIPOdbiorcy:${invoice.recipient !== null ? formatNip(invoice.recipient.nip) : null}
-IloscLini:${invoice.products.length}\n`;
+NrDok:${documentNumber}
+Data:${formattedDate}
+SposobPlatn:${paymentWay}
+TerminPlatn:${paymentDays}
+NazwaWystawcy:${exhibitorName}
+NIPWystawcy:${exhibitorNip}
+NazwaOdbiorcy:${recipientName}
+NIPOdbiorcy:${recipientNip}
+IloscLini:${products.length}\n`;
 
   invoice.products.forEach((pg) => {
     const price = convertPriceToDotPrice(pg.product.netPrice);
     const value = (parseFloat(price) * pg.amount).toFixed(2);
 
-    fileContent += `Linia:Nazwa{${pg.product.name}}Kod{${pg.product.barcode}}Vat{${
-      pg.product.vat
-    }}Jm{${pg.product.unit}}Asortyment{${
-      pg.product.category || ''
+    fileContent += `Linia:Nazwa{${pg.product.name}}Kod{${
+      pg.product.barcode ?? ''
+    }}Vat{${pg.product.vat ?? ''}}Jm{${pg.product.unit ?? ''}}Asortyment{${
+      pg.product.category ?? ''
     }}Sww{}PKWiU{}Ilosc{${pg.amount}}Cena{n${convertPriceToDotPrice(
-      pg.product.netPrice
+      pg.product.netPrice ?? ''
     )}}Wartosc{n${value}}CenaSp{}\n`;
   });
 

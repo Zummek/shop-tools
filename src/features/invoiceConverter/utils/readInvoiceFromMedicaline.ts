@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import dayjs from 'dayjs';
 
-import { Invoice, InvoideProvider, ProductGroup } from '../types';
+import { Invoice, InvoiceProvider, ProductGroup } from '../types';
 
 import { convertDotPriceToPrice } from './convertInternalInvoiceToPcMarket';
 import { readXmlToJson } from './readXmlToJson';
@@ -54,6 +54,6 @@ export const readInvoiceFromMedicaline = async (
     paymentDeadline: null,
     paymentWay: null,
     products: productsGroups,
-    provider: InvoideProvider.medicaline,
+    provider: InvoiceProvider.medicaline,
   };
 };

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import dayjs from 'dayjs';
 
-import { Contractor, Invoice, InvoideProvider, ProductGroup } from '../types';
+import { Contractor, Invoice, InvoiceProvider, ProductGroup } from '../types';
 
 import { convertDotPriceToPrice } from './convertInternalInvoiceToPcMarket';
 import { readXmlToJson } from './readXmlToJson';
@@ -54,6 +54,6 @@ export const readInvoiceFromWiesiolek = async (
     paymentDeadline: dayjs(invoiceHeader['termin-platnosci'][0]).toDate(),
     paymentWay: null,
     products: productGroups,
-    provider: InvoideProvider.wiesiolek,
+    provider: InvoiceProvider.wiesiolek,
   };
 };

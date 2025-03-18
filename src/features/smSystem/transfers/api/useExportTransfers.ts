@@ -18,7 +18,7 @@ export const useExportTransfers = () => {
       setIsPending(true);
       await Promise.all(
         ids.map(async (id) => {
-          const res = await axiosInstance.post('/api/v1/transfer/export', {
+          const res = await axiosInstance.post('/api/v1/transfers/export/', {
             id,
             exportMethod,
           });

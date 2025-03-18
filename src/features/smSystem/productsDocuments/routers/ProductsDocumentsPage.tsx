@@ -15,7 +15,6 @@ import { ProductsDocumentListItem, ProductsDocumentStatus } from '../types';
 const statusColor: Record<ProductsDocumentStatus, string> = {
   PREPARING: 'black',
   PREPARED: 'black',
-  RECEIVED: 'blue',
   POSTED: 'green',
   CANCELED: 'red',
 };
@@ -25,7 +24,6 @@ const statusMessage: Record<ProductsDocumentStatus, string> = {
   POSTED: 'Zaksięgowany',
   PREPARED: 'Przygotowany',
   PREPARING: 'W trakcie tworzenia',
-  RECEIVED: 'Odebrany',
 };
 
 const columns: GridColDef<ProductsDocumentListItem>[] = [
@@ -36,23 +34,13 @@ const columns: GridColDef<ProductsDocumentListItem>[] = [
     headerName: 'Data utworzenia/\nmodyfikacji',
     width: 150,
     valueGetter: (value, row) => row.updatedAt || value,
-    valueFormatter: (value) => dayjs(+value).format('DD-MM-YYYY HH:mm'),
+    valueFormatter: (value) => dayjs(value).format('DD-MM-YYYY HH:mm'),
   },
   {
     field: 'itemsAmount',
     headerName: 'Ilość pozycji',
     width: 70,
-    renderCell: (params) => params.row.productsDocumentProducts.length,
-  },
-  {
-    field: 'productsAmount',
-    headerName: 'Ilość produktów',
-    width: 90,
-    renderCell: (params) =>
-      params.row.productsDocumentProducts.reduce(
-        (accumulator, tp) => accumulator + tp.amount,
-        0
-      ),
+    renderCell: (params) => params.row.documentProductsAmount,
   },
   {
     field: 'status',
@@ -70,22 +58,12 @@ const columns: GridColDef<ProductsDocumentListItem>[] = [
     width: 100,
   },
   {
-    field: 'sourceBranch',
-    headerName: 'Sklep źródłowy',
+    field: 'branch',
+    headerName: 'Sklep',
     width: 170,
     renderCell: (params) => (
       <Typography variant="body2">
-        {params.row.sourceBranch?.name || 'Brak'}
-      </Typography>
-    ),
-  },
-  {
-    field: 'destinationBranch',
-    headerName: 'Sklep docelowy',
-    width: 170,
-    renderCell: (params) => (
-      <Typography variant="body2">
-        {params.row.destinationBranch?.name || 'Brak'}
+        {params.row.branch?.name || 'Brak'}
       </Typography>
     ),
   },

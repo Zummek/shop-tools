@@ -1,32 +1,48 @@
 import { axiosInstance } from '../../../../services';
 
 interface LoginPayload {
-  companyName: string;
-  email: string;
+  username: string;
   password: string;
 }
 
 interface LoginResponse {
-  status: string;
-  message: string;
-  data:
-    | {
-        tokenType: string;
-        token: string;
-      }
-    | undefined;
+  access: string;
+  refresh: string;
+  user: {
+    pk: number;
+    username: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    defaultBranch: {
+      id: number;
+      name: string;
+    };
+  };
 }
 
-export const login = async ({ companyName, password, email }: LoginPayload) => {
-  const response = await axiosInstance.post<LoginResponse>('/api/v1/login', {
-    companyName,
-    email,
+const endpoint = '/api/v1/auth/login';
+
+export const login = async ({ username, password }: LoginPayload) => {
+  const response = await axiosInstance.post<LoginResponse>(endpoint, {
+    username,
     password,
   });
 
-  const accessToken = response.data.data?.token;
+  const { access, refresh, user } = response.data;
 
-  if (!accessToken) return null;
+  if (!access || !refresh || !user) return null;
 
-  return { accessToken };
+  return {
+    accessToken: access,
+    refreshToken: refresh,
+    user: {
+      id: user.pk,
+      username: user.username,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      defaultBranch: user.defaultBranch,
+    },
+  };
 };

@@ -1,37 +1,26 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
 import { axiosInstance } from '../../../../services';
+import { ListResponse } from '../../app/types';
 import { TransferListItem } from '../types';
-
-import { getTransfersGraphqlQuery } from './transfersGraphql';
 
 interface Payload {
   page: number;
 }
 
-interface Response {
-  data: {
-    transfers: {
-      node: TransferListItem[];
-      pageInfo: {
-        totalCount: number;
-        hasNextPage: number;
-      };
-    };
-  };
-}
+type Response = ListResponse<TransferListItem>;
 
 export const pageSize = 25;
 export const getTransfersQueryKeyBase = 'transfers';
 const getQueryKey = (page: number) => [getTransfersQueryKeyBase, page];
+const endpoint = '/api/v1/transfers/';
 
 export const useGetTransfers = ({ page }: Payload) => {
   const offset = page * pageSize;
 
   const getTransfersRequest = async () => {
-    const response = await axiosInstance.post<Response>(
-      '/graphql',
-      getTransfersGraphqlQuery(offset, pageSize)
+    const response = await axiosInstance.get<Response>(
+      `${endpoint}?offset=${offset}&limit=${pageSize}`
     );
     return response.data;
   };
@@ -42,9 +31,9 @@ export const useGetTransfers = ({ page }: Payload) => {
     placeholderData: keepPreviousData,
   });
 
-  const transfers: TransferListItem[] = data?.data.transfers.node || [];
-  const hasNextPage = !!data?.data.transfers.pageInfo.hasNextPage;
-  const totalCount = data?.data.transfers.pageInfo.totalCount || null;
+  const transfers: TransferListItem[] = data?.results || [];
+  const hasNextPage = !!data?.next;
+  const totalCount = data?.count || null;
 
   return {
     transfers,

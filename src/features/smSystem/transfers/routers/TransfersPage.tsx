@@ -10,9 +10,10 @@ import {
   useUpdateTransfersStatus,
   useExportTransfers,
 } from '../api';
-import { TransferListItem, TransferStatus } from '../types';
+import { TransferListItem } from '../types';
+import { TransferStatusEnum } from '../utils/transfers';
 
-const statusColor: Record<TransferStatus, string> = {
+const statusColor: Record<TransferStatusEnum, string> = {
   PREPARING: 'black',
   PREPARED: 'black',
   RECEIVED: 'blue',
@@ -20,7 +21,7 @@ const statusColor: Record<TransferStatus, string> = {
   CANCELED: 'red',
 };
 
-const statusMessage: Record<TransferStatus, string> = {
+const statusMessage: Record<TransferStatusEnum, string> = {
   CANCELED: 'Anulowany',
   POSTED: 'Zaksięgowany',
   PREPARED: 'Przygotowany',
@@ -29,13 +30,13 @@ const statusMessage: Record<TransferStatus, string> = {
 };
 
 const columns: GridColDef<TransferListItem>[] = [
-  { field: 'id', headerName: 'ID', width: 70 },
+  { field: 'humanId', headerName: 'ID', width: 70 },
   {
     field: 'createdAt',
     headerName: 'Data utworzenia/\nmodyfikacji',
     width: 150,
     valueGetter: (value, row) => row.updatedAt || value,
-    valueFormatter: (value) => dayjs(+value).format('DD-MM-YYYY HH:mm'),
+    valueFormatter: (value) => dayjs(value).format('DD-MM-YYYY HH:mm'),
   },
   {
     field: 'sourceBranch',
@@ -46,9 +47,7 @@ const columns: GridColDef<TransferListItem>[] = [
         {params.row.sourceBranch?.name || 'Brak'}
         <br />
         <Typography variant="caption">
-          {params.row.sender
-            ? `${params.row.sender.firstName} ${params.row.sender.lastName}`
-            : 'Brak nadawcy'}
+          {params.row.sender.name || 'Brak nadawcy'}
         </Typography>
       </Typography>
     ),
@@ -66,12 +65,10 @@ const columns: GridColDef<TransferListItem>[] = [
         <br />
         <Typography
           variant="caption"
-          color={params.row.recipient ? 'black' : '#cc7000'}
-          sx={{ opacity: params.row.recipient ? 1 : 0.5 }}
+          color={params.row.receiver ? 'black' : '#cc7000'}
+          sx={{ opacity: params.row.receiver ? 1 : 0.5 }}
         >
-          {params.row.recipient
-            ? `${params.row.recipient?.firstName} ${params.row.recipient?.lastName}`
-            : 'Brak odbiorcy'}
+          {params.row.receiver?.name || 'Brak odbiorcy'}
         </Typography>
       </Typography>
     ),
@@ -80,17 +77,8 @@ const columns: GridColDef<TransferListItem>[] = [
     field: 'itemsAmount',
     headerName: 'Ilość pozycji',
     width: 70,
-    renderCell: (params) => params.row.transferProducts.length,
-  },
-  {
-    field: 'productsAmount',
-    headerName: 'Ilość produktów',
-    width: 90,
-    renderCell: (params) =>
-      params.row.transferProducts.reduce(
-        (accumulator, tp) => accumulator + tp.amount,
-        0
-      ),
+    align: 'center',
+    renderCell: (params) => params.row.transferProductsAmount,
   },
   {
     field: 'status',
@@ -111,7 +99,7 @@ const columns: GridColDef<TransferListItem>[] = [
 
 export const TransfersPage = () => {
   const [page, setPage] = useState(0);
-  const [selectedTransferIds, setSelectedTransferIds] = useState<string[]>([]);
+  const [selectedTransferIds, setSelectedTransferIds] = useState<number[]>([]);
 
   const { transfers, totalCount, isLoading } = useGetTransfers({ page });
   const { exportTransfers, isPending: isExportingTransfers } =
@@ -131,12 +119,12 @@ export const TransfersPage = () => {
   const handlePostTransfers = () => {
     updateTransfersStatus({
       ids: selectedTransferIds,
-      status: 'POSTED',
+      status: TransferStatusEnum.POSTED,
     });
   };
 
   const handleSelectionChange = (rowSelectionModel: GridRowSelectionModel) =>
-    setSelectedTransferIds(rowSelectionModel as string[]);
+    setSelectedTransferIds(rowSelectionModel as number[]);
 
   return (
     <Stack spacing={4}>

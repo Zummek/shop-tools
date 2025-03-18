@@ -3,7 +3,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { axiosInstance } from '../../../../services';
 import { ProductsDocumentStatus } from '../types';
 
-import { updateProductsDocumentStatusGraphqlMutation } from './productsDocumentsGraphql';
 import { getProductsDocumentsListQueryKeyBase } from './useGetProductsDocuments';
 
 interface Payload {
@@ -11,18 +10,7 @@ interface Payload {
   status: ProductsDocumentStatus;
 }
 
-interface Response {
-  data: {
-    productsDocument: {
-      updateStatus: {
-        node: Array<{
-          id: string;
-          status: ProductsDocumentStatus;
-        }>;
-      };
-    };
-  };
-}
+const endpoint = `/api/v1/products-documents/status/`;
 
 export const useUpdateProductsDocumentsStatus = () => {
   const queryClient = useQueryClient();
@@ -31,10 +19,10 @@ export const useUpdateProductsDocumentsStatus = () => {
     ids,
     status,
   }: Payload) =>
-    axiosInstance.post<Response>(
-      '/graphql',
-      updateProductsDocumentStatusGraphqlMutation(ids, status)
-    );
+    axiosInstance.patch<Response>(endpoint, {
+      productsDocumentIds: ids,
+      status,
+    });
 
   const { mutateAsync, isPending } = useMutation({
     mutationFn: updateProductsDocumentStatusRequest,

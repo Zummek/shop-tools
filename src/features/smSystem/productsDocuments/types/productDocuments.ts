@@ -1,28 +1,21 @@
-import { Branch, User } from '../../types/smSystem';
+import { SimpleBranch } from '../../branches/types';
+import { SimpleUser } from '../../user/types';
 
 export type ProductsDocumentStatus =
   | 'PREPARING'
   | 'PREPARED'
-  | 'RECEIVED'
   | 'POSTED'
   | 'CANCELED';
-
-interface ProductsDocumentProduct {
-  id: string;
-  amount: number;
-  receivedAmount?: string | null;
-}
 
 export interface ProductsDocumentListItem {
   id: string;
   name: string;
   status: ProductsDocumentStatus;
-  sourceBranch: Branch | null;
-  destinationBranch: Branch | null;
-  productsDocumentProducts: ProductsDocumentProduct[];
+  branch: SimpleBranch | null;
   comment: string;
+  documentProductsAmount: number;
   createdAt: Date;
-  createdBy: User;
+  createdBy: SimpleUser | null;
   updatedAt: Date | null;
-  updatedBy: User | null;
+  updatedBy: SimpleUser | null;
 }

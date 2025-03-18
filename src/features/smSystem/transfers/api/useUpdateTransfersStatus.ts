@@ -1,37 +1,23 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { axiosInstance } from '../../../../services';
-import { TransferStatus } from '../types';
+import { Transfer } from '../types';
+import { TransferStatusEnum } from '../utils/transfers';
 
-import { updateTransfersStatusGraphqlMutation } from './transfersGraphql';
 import { getTransfersQueryKeyBase } from './useGetTransfers';
 
 interface Payload {
-  ids: string[];
-  status: TransferStatus;
+  ids: number[];
+  status: TransferStatusEnum;
 }
 
-interface Response {
-  data: {
-    transfer: {
-      updateStatus: {
-        node: Array<{
-          id: string;
-          status: TransferStatus;
-        }>;
-      };
-    };
-  };
-}
+const endpoint = `/api/v1/transfers/status/`;
 
 export const useUpdateTransfersStatus = () => {
   const queryClient = useQueryClient();
 
   const updateTransfersStatusRequest = async ({ ids, status }: Payload) =>
-    axiosInstance.post<Response>(
-      '/graphql',
-      updateTransfersStatusGraphqlMutation(ids, status)
-    );
+    axiosInstance.patch<Transfer>(endpoint, { transferIds: ids, status });
 
   const { mutateAsync, isPending } = useMutation({
     mutationFn: updateTransfersStatusRequest,

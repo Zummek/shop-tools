@@ -19,7 +19,7 @@ export const updateTokenInterceptor = () => {
   return new Promise<void>((resolve) => {
     const accessToken = store.getState().smSystemUser.accessToken;
     axiosInstance.defaults.headers.common.Authorization = accessToken
-      ? accessToken
+      ? `Bearer ${accessToken}`
       : undefined;
     resolve();
   });

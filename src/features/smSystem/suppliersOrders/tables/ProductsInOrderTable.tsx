@@ -2,7 +2,6 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { DataGrid, GridColDef, GridRowParams } from '@mui/x-data-grid';
 
 import { ProductsInOrderTableProps } from '../types/index';
-import '../../../../styles/styles.css';
 
 const ProductsInOrderTable = ({
   products,
@@ -63,6 +62,11 @@ const ProductsInOrderTable = ({
       initialState={{
         sorting: {
           sortModel: [{ field: 'id', sort: 'asc' }],
+        },
+      }}
+      sx={{
+        '& .selected-row': {
+          backgroundColor: '#ebebeb',
         },
       }}
     />

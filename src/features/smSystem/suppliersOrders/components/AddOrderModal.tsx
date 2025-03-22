@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 
-import { useFetchOrders } from '../hooks/useFetchOrders';
+import { useFetchOrders } from '../api/useFetchOrders';
 import { IdName, BasicModalProps } from '../types/index';
 
 const AddOrderModal = ({ open, handleClose }: BasicModalProps) => {

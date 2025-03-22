@@ -2,7 +2,7 @@ import { Button, CircularProgress, Stack, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
-import { useMappedOrderDetails } from '../hooks/useMappedOrderDetails';
+import { useMappedOrderDetails } from '../api/useMappedOrderDetails';
 import ProductDetailsInOrderTable from '../tables/ProductDetailsInOrderTable';
 import ProductsInOrderTable from '../tables/ProductsInOrderTable';
 import { MappedOrderDetails, ProductInOrderWithTotal } from '../types/index';

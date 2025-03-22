@@ -1,8 +1,9 @@
 import { Stack, Button, CircularProgress } from '@mui/material';
 import { useState } from 'react';
 
+import { useGetOrders } from '../api/useGetOrders';
+import { useMappedOrders } from '../api/useMappedOrders';
 import AddOrderModal from '../components/AddOrderModal';
-import { useMappedOrders } from '../hooks/useMappedOrders';
 import OrdersTable from '../tables/OrdersTable';
 
 export const OrdersPage = () => {
@@ -11,7 +12,7 @@ export const OrdersPage = () => {
   const handleCloseModal = () => setIsModalOpen(false);
 
   const { mappedOrders, loading } = useMappedOrders();
-
+  useGetOrders();
   if (loading) {
     return (
       <Stack width="100%" alignItems="center" paddingTop={8}>

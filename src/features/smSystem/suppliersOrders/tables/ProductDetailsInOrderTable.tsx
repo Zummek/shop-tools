@@ -135,6 +135,12 @@ const ProductDetailsInOrderTable = ({
       getRowClassName={(params) =>
         errorRows.includes(params.row.id) ? 'error-row' : ''
       }
+      sx={{
+        '& .error-row': {
+          backgroundColor: 'red',
+          color: 'white',
+        },
+      }}
     />
   );
 };

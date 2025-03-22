@@ -66,10 +66,6 @@ const router = createHashRouter(
           path: 'suppliers-orders',
           children: [
             {
-              index: true,
-              element: <Navigate to="orders" replace />,
-            },
-            {
               path: 'suppliers',
               element: <SuppliersPage />,
             },
@@ -83,6 +79,7 @@ const router = createHashRouter(
             },
             {
               path: 'orders',
+              index: true,
               element: <OrdersPage />,
             },
             {

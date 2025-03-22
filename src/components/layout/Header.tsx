@@ -34,27 +34,26 @@ export const Header = ({
   const isProductsDocumentsPage = useIsPage([Pages.smSystemProductsDocuments]);
   const isTransfersPage = useIsPage([Pages.smSystemTransfers]);
   const isImportProductsPage = useIsPage([Pages.smSystemImportProducts]);
-  const isSuppliersOrdersPage = window.location.hash.startsWith(
-    `#${Pages.smSystemSuppliersOrders}`
-  );
-  const showSmSystemHeader =
-    isProductsDocumentsPage ||
-    isTransfersPage ||
-    isImportProductsPage ||
-    isSuppliersOrdersPage;
 
   const isSuppliersPage = useIsPage([Pages.smSystemSuppliers]);
-  const isSuppliersParamPage = useIsPage([Pages.smSystemSuppliersDetails]);
+  const isSuppliersParamPage = useIsPage([Pages.smSystemSupplierDetails]);
   const isProductsPage = useIsPage([Pages.smSystemProducts]);
   const isOrdersPage = useIsPage([Pages.smSystemOrders]);
-  const isOrdersParamPage = useIsPage([Pages.smSystemOrdersDetails]);
+  const isOrdersParamPage = useIsPage([Pages.smSystemOrderDetails]);
 
-  const ShowSuppliersOrdersHeader =
+  const showSuppliersOrdersHeader =
     isOrdersPage ||
     isOrdersParamPage ||
     isSuppliersPage ||
     isSuppliersParamPage ||
     isProductsPage;
+
+  const showSmSystemHeader =
+    isProductsDocumentsPage ||
+    isTransfersPage ||
+    isImportProductsPage ||
+    showSuppliersOrdersHeader;
+
   return (
     <Stack spacing={2} direction="column">
       <Stack spacing={4} direction="row">
@@ -96,8 +95,10 @@ export const Header = ({
                     {'Dokumenty'}
                   </Button>
                   <Button
-                    href={`#${Pages.smSystemSuppliersOrders}`}
-                    variant={isSuppliersOrdersPage ? 'contained' : 'outlined'}
+                    href={`#${Pages.smSystemOrders}`}
+                    variant={
+                      showSuppliersOrdersHeader ? 'contained' : 'outlined'
+                    }
                   >
                     {'Zamówienia u dostawców'}
                   </Button>
@@ -111,7 +112,7 @@ export const Header = ({
               </Box>
             </Stack>
           )}
-          {ShowSuppliersOrdersHeader && (
+          {showSuppliersOrdersHeader && (
             <Stack spacing={2} direction="row" alignItems="center">
               <Typography variant="h6">{'Zamówienia u dostawców:'}</Typography>
               <Box>

@@ -1,11 +1,10 @@
 import { Button, CircularProgress, Stack, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
 
-import { useMappedOrderDetails } from '../api/useMappedOrderDetails';
+import { OrderDetails } from '../../app/types/index';
+import { useGetOrderDetails } from '../api/useGetOrderDetails';
 import ProductDetailsInOrderTable from '../tables/ProductDetailsInOrderTable';
 import ProductsInOrderTable from '../tables/ProductsInOrderTable';
-import { MappedOrderDetails, ProductInOrderWithTotal } from '../types/index';
 
 const generateTxtFile = (content: string, fileName: string) => {
   const blob = new Blob([content], { type: 'text/plain' });
@@ -18,96 +17,100 @@ const generateTxtFile = (content: string, fileName: string) => {
 };
 
 export const OrderDetailsPage = () => {
-  const { orderId } = useParams<{ orderId: string }>();
+  const getIdFromUrl = () => {
+    const url = window.location.hash;
+    const match = url.match(/orders\/(\d+)/);
 
-  const { mappedOrderDetails, isLoading, minLp } =
-    useMappedOrderDetails(orderId);
+    if (match) {
+      const id = parseInt(match[1], 10);
+      return Number.isInteger(id) ? id : 0;
+    }
+    return 0;
+  };
 
-  const [editableMappedOrderDetails, setEditableMappedOrderDetails] =
-    useState<MappedOrderDetails | null>(null);
-  const [selectedProductLp, setSelectedProductLp] = useState<number>(0);
-  const [selectedProductData, setSelectedProductData] =
-    useState<ProductInOrderWithTotal | null>(null);
-  const [isDetailsLoading, setIsDetailsLoading] = useState<boolean>(true);
+  const id = getIdFromUrl();
+  const { orderDetails, isLoading, isError } = useGetOrderDetails(id);
 
-  useEffect(() => {
-    if (isLoading) return;
-
-    setSelectedProductLp(minLp ?? 0);
-    setEditableMappedOrderDetails(mappedOrderDetails);
-    setIsDetailsLoading(false);
-  }, [mappedOrderDetails, isLoading, minLp]);
+  const [editableOrderDetails, setEditableOrderDetails] =
+    useState<OrderDetails | null>(null);
+  const [selectedProductId, setSelectedProductId] = useState<number>(0);
 
   useEffect(() => {
-    if (!editableMappedOrderDetails) return;
+    if (orderDetails) {
+      setEditableOrderDetails(orderDetails);
+      const minProductId = Math.min(
+        ...orderDetails.products_to_order.map((product) => product.id)
+      );
+      setSelectedProductId(minProductId);
+    }
+  }, [orderDetails]);
 
-    const product = editableMappedOrderDetails.productsInOrder.find(
-      (product) => product.lp === selectedProductLp
-    );
-
-    setSelectedProductData(product || null);
-  }, [selectedProductLp, editableMappedOrderDetails]);
-
-  if (isDetailsLoading || (!selectedProductData && selectedProductLp)) {
+  if (isLoading) {
     return (
       <Stack width="100%" alignItems="center" paddingTop={8}>
         <CircularProgress />
       </Stack>
     );
   }
-
-  if (!editableMappedOrderDetails) {
+  if (isError || !orderDetails) {
     return (
       <Typography
         variant="h6"
         color="error"
         sx={{ textAlign: 'center', marginTop: 2 }}
       >
-        {'Order not found'}
+        {'Błąd pobierania danych'}
       </Typography>
     );
   }
+  if (!editableOrderDetails) return null;
 
-  if (!minLp || !selectedProductData) {
-    return (
-      <Typography
-        variant="h6"
-        color="error"
-        sx={{ textAlign: 'center', marginTop: 2 }}
-      >
-        {'Products not found'}
-      </Typography>
-    );
-  }
+  editableOrderDetails.products_to_order.sort((a, b) => a.id - b.id);
 
-  const supplierName = editableMappedOrderDetails.supplier.name;
-  const branchesNames = editableMappedOrderDetails.branchesNames;
-  const date = new Date(
-    editableMappedOrderDetails.createdAt
-  ).toLocaleDateString('pl-PL');
+  const supplierName = editableOrderDetails.supplier.name;
+  const branchesNames = editableOrderDetails.selected_branches
+    .map((branch) => branch.name)
+    .join(', ');
+  const date = new Date(editableOrderDetails.updated_at).toLocaleDateString(
+    'pl-PL'
+  );
 
   const handleDownload = () => {
     const content =
       `${supplierName} ${date} ${branchesNames}\n\n` +
-      editableMappedOrderDetails.productsInOrder
+      editableOrderDetails.products_to_order
         .map((product) => {
-          return `${product.lp}. ${product.product.name}\tx${product.totalToOrder}`;
+          const totalToOrder = product.orders_per_branch.reduce(
+            (sum, order) => sum + order.to_order_amount,
+            0
+          );
+
+          return `${product.id}. ${product.name}\tx${totalToOrder}`;
         })
         .join('\n');
+
     const fileName = `${supplierName} ${date} ${branchesNames}.txt`;
     generateTxtFile(content, fileName);
   };
 
-  const handleSave = () => {};
+  const productsInOrderTableData = editableOrderDetails.products_to_order.map(
+    ({ id, name, orders_per_branch }) => {
+      const totalToOrder = orders_per_branch.reduce(
+        (sum, order) => sum + order.to_order_amount,
+        0
+      );
 
-  const productsInOrderTableData =
-    editableMappedOrderDetails.productsInOrder.map(
-      ({ lp, product, totalToOrder }) => ({
-        lp,
-        name: product.name,
+      return {
+        id,
+        name,
         totalToOrder,
-      })
-    );
+      };
+    }
+  );
+
+  const selectedProduct = productsInOrderTableData.find(
+    (product) => product.id === selectedProductId
+  );
 
   return (
     <Stack spacing={2} width="100%" alignItems="center">
@@ -123,18 +126,10 @@ export const OrderDetailsPage = () => {
         <Stack spacing={1} width={379} height={418}>
           <ProductsInOrderTable
             products={productsInOrderTableData}
-            selectedProductLp={selectedProductLp}
-            setSelectedProductLp={setSelectedProductLp}
+            selectedProductId={selectedProductId}
+            setSelectedProductId={setSelectedProductId}
           />
           <Stack spacing={1} direction="row" justifyContent="center">
-            <Button
-              variant="outlined"
-              color="primary"
-              onClick={handleSave}
-              sx={{ width: '80px', height: '40px' }}
-            >
-              {'Zapisz'}
-            </Button>
             <Button
               variant="outlined"
               color="primary"
@@ -161,19 +156,24 @@ export const OrderDetailsPage = () => {
                 whiteSpace: 'pre-line',
               }}
             >
-              {selectedProductData.product.name}
-              {'\n'}
-              {'Suma: '}
-              {selectedProductData.totalToOrder}
+              {selectedProduct && (
+                <>
+                  {selectedProduct.id}
+                  {'\n'}
+                  {selectedProduct.name}
+                  {'\n'}
+                  {'Suma: '}
+                  {selectedProduct.totalToOrder}
+                </>
+              )}
             </Typography>
           </Stack>
 
           <Stack height={214}>
             <ProductDetailsInOrderTable
-              editableOrderDetails={editableMappedOrderDetails}
-              setEditableOrderDetails={setEditableMappedOrderDetails}
-              selectedProductLp={selectedProductLp}
-              setSelectedProductLp={setSelectedProductLp}
+              editableOrderDetails={editableOrderDetails}
+              selectedProductId={selectedProductId}
+              setSelectedProductId={setSelectedProductId}
             />
           </Stack>
         </Stack>

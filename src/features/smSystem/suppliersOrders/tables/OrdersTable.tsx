@@ -3,14 +3,34 @@ import { DataGrid, GridColDef, GridRowParams } from '@mui/x-data-grid';
 import { useNavigate } from 'react-router-dom';
 
 import { Pages } from '../../../../utils';
-import { OrderList } from '../types/index';
+import { OrdersList } from '../../app/types/index';
 
-const OrdersTable = ({ orders }: { orders: OrderList[] }) => {
+const OrdersTable = ({ orders }: { orders: OrdersList }) => {
+  const rows = orders.map((order) => {
+    const formatDate = (dateString: string): string => {
+      const date = new Date(dateString);
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+
+      return `${day}-${month}-${year}`;
+    };
+
+    return {
+      id: order.id,
+      supplierName: order.supplier.name,
+      selectedBranches: order.selected_branches
+        .map((branch) => branch.name)
+        .join(', '),
+      updatedAt: formatDate(order.updated_at),
+    };
+  });
+
   const columns: GridColDef[] = [
     {
       field: 'id',
       headerName: 'ID',
-      width: 50,
+      width: 100,
     },
     {
       field: 'supplierName',
@@ -18,14 +38,19 @@ const OrdersTable = ({ orders }: { orders: OrderList[] }) => {
       width: 200,
     },
     {
-      field: 'date',
-      headerName: 'Data',
-      width: 110,
+      field: 'selectedBranches',
+      headerName: 'Wybrane sklepy',
+      width: 350,
     },
     {
-      field: 'branchesNames',
-      headerName: 'Wybrane sklepy',
-      width: 240,
+      field: 'updatedAt',
+      headerName: 'Data utworzenia \n Data modyfikacji',
+      width: 180,
+      renderHeader: () => (
+        <div style={{ whiteSpace: 'pre-line' }}>
+          {'Data utworzenia / \n Data modyfikacji'}
+        </div>
+      ),
     },
     {
       field: 'action',
@@ -54,20 +79,20 @@ const OrdersTable = ({ orders }: { orders: OrderList[] }) => {
 
   return (
     <DataGrid
-      rows={orders}
+      rows={rows}
       columns={columns}
       disableColumnSorting
       disableColumnMenu
       disableRowSelectionOnClick
       onRowClick={handleRowClick}
-      pagination
+      hideFooter
       initialState={{
         sorting: {
           sortModel: [{ field: 'id', sort: 'desc' }],
         },
-        pagination: {
-          paginationModel: { pageSize: 5, page: 0 },
-        },
+      }}
+      localeText={{
+        noRowsLabel: 'Brak zamówień',
       }}
     />
   );

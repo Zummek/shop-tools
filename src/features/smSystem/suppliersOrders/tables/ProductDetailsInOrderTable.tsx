@@ -1,113 +1,16 @@
+import { Stack, Typography } from '@mui/material';
 import { DataGrid, GridColDef, GridRowModel } from '@mui/x-data-grid';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
-import { ProductDetailsInOrderTableProps } from '../types/index';
+import { ProductDetailsInOrderTableProps } from '../../app/types';
+import { useUpdateOrderDetails } from '../api/useUpdateOrderDetails';
 
 const ProductDetailsInOrderTable = ({
   editableOrderDetails,
-  setEditableOrderDetails,
-  selectedProductLp,
-  setSelectedProductLp,
+  selectedProductId,
+  setSelectedProductId,
 }: ProductDetailsInOrderTableProps) => {
   const [errorRows, setErrorRows] = useState<number[]>([]);
-
-  const handleRowEdit = (updatedRow: GridRowModel) => {
-    setEditableOrderDetails((prevOrder) => {
-      if (!prevOrder) return prevOrder;
-
-      const updatedProducts = prevOrder.productsInOrder.map((prod) => {
-        if (prod.lp !== selectedProductLp) return prod;
-
-        const updatedOrders = prod.ordersPerBranch.map((order) => {
-          if (order.branch.id !== updatedRow.id) return order;
-          if (order.toOrder === null) return order;
-
-          const newToOrder = Number(updatedRow.toOrder);
-          const isValidInput = Number.isInteger(newToOrder) && newToOrder >= 0;
-          const error = !isValidInput;
-
-          if (error) {
-            setErrorRows((prevErrorRows) => {
-              const newErrorRows = [...prevErrorRows, order.branch.id];
-              setTimeout(() => {
-                setErrorRows((prevErrorRows) =>
-                  prevErrorRows.filter((id) => id !== order.branch.id)
-                );
-              }, 1500);
-              return newErrorRows;
-            });
-
-            return {
-              ...order,
-              toOrder: order.toOrder,
-              error: true,
-            };
-          }
-
-          return {
-            ...order,
-            toOrder: newToOrder,
-            error: false,
-          };
-        });
-
-        return {
-          ...prod,
-          ordersPerBranch: updatedOrders,
-          totalToOrder: updatedOrders.reduce(
-            (sum, order) => sum + (order.toOrder ?? 0),
-            0
-          ),
-        };
-      });
-
-      return {
-        ...prevOrder,
-        productsInOrder: updatedProducts,
-      };
-    });
-
-    return updatedRow;
-  };
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'ArrowRight') {
-        setSelectedProductLp((prevSelectedProduct) => {
-          if (!prevSelectedProduct) return 0;
-
-          const nextProductLp = prevSelectedProduct + 1;
-          if (nextProductLp <= editableOrderDetails.productsInOrder.length)
-            return nextProductLp;
-
-          return prevSelectedProduct;
-        });
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [editableOrderDetails, setSelectedProductLp]);
-
-  const product = editableOrderDetails.productsInOrder.find(
-    (productInOrder) => productInOrder.lp === selectedProductLp
-  );
-
-  if (!product) {
-    setSelectedProductLp(0);
-    return null;
-  }
-
-  const rows = product.ordersPerBranch.map((order) => ({
-    id: order.branch.id,
-    branch: order.branch.name,
-    toOrderProp: order.originalToOrder,
-    toOrder: order.toOrder,
-    stock: order.stockAmountAtOrderTime,
-  }));
 
   const columns: GridColDef[] = [
     { field: 'id', headerName: 'ID', width: 50 },
@@ -118,30 +21,124 @@ const ProductDetailsInOrderTable = ({
     { field: 'toOrder', headerName: 'Ilość', width: 100, editable: true },
   ];
 
-  return (
-    <DataGrid
-      rows={rows}
-      columns={columns}
-      disableColumnSorting
-      disableColumnMenu
-      disableRowSelectionOnClick
-      hideFooter
-      processRowUpdate={handleRowEdit}
-      initialState={{
-        sorting: {
-          sortModel: [{ field: 'id', sort: 'asc' }],
-        },
-      }}
-      getRowClassName={(params) =>
-        errorRows.includes(params.row.id) ? 'error-row' : ''
+  const { updateOrderDetails, isLoading, isError } = useUpdateOrderDetails();
+
+  const processRowUpdate = (updatedRow: GridRowModel) => {
+    const updatedProduct = editableOrderDetails.products_to_order.find(
+      (prod) => prod.id === selectedProductId
+    );
+
+    if (updatedProduct) {
+      const updatedOrder = updatedProduct.orders_per_branch.find(
+        (order) => order.branch.id === updatedRow.id
+      );
+
+      if (updatedOrder) {
+        const newToOrder = Number(updatedRow.toOrder);
+        const isValidInput = Number.isInteger(newToOrder) && newToOrder >= 0;
+        const error = !isValidInput;
+
+        if (error) {
+          setErrorRows((prevErrorRows) => {
+            const newErrorRows = [...prevErrorRows, updatedOrder.branch.id];
+            setTimeout(() => {
+              setErrorRows((prevErrorRows) =>
+                prevErrorRows.filter((id) => id !== updatedOrder.branch.id)
+              );
+            }, 1500);
+            return newErrorRows;
+          });
+        } else {
+          updateOrderDetails({
+            orderId: editableOrderDetails.id,
+            branchId: updatedOrder.branch.id,
+            productId: updatedProduct.id,
+            toOrderAmount: newToOrder,
+          });
+        }
       }
-      sx={{
-        '& .error-row': {
-          backgroundColor: 'red',
-          color: 'white',
-        },
-      }}
-    />
+    }
+  };
+
+  const product = editableOrderDetails.products_to_order.find(
+    (productInOrder) => productInOrder.id === selectedProductId
+  );
+
+  if (!product) {
+    setSelectedProductId(0);
+    return (
+      <DataGrid
+        rows={[]}
+        columns={columns}
+        disableColumnSorting
+        disableColumnMenu
+        disableRowSelectionOnClick
+        hideFooter
+      />
+    );
+  }
+
+  const rows = product.orders_per_branch.map((order) => ({
+    id: order.branch.id,
+    branch: order.branch.name,
+    toOrderProp: order.to_order_proposal_amount,
+    toOrder: order.to_order_amount,
+  }));
+
+  return (
+    <Stack>
+      <Stack height={214}>
+        <DataGrid
+          rows={rows}
+          columns={columns}
+          disableColumnSorting
+          disableColumnMenu
+          disableRowSelectionOnClick
+          hideFooter
+          processRowUpdate={(updatedRow: GridRowModel) => {
+            processRowUpdate(updatedRow);
+            return updatedRow;
+          }}
+          initialState={{
+            sorting: {
+              sortModel: [{ field: 'id', sort: 'asc' }],
+            },
+          }}
+          getRowClassName={(params) =>
+            errorRows.includes(params.row.id) ? 'error-row' : ''
+          }
+          sx={{
+            '& .error-row': {
+              backgroundColor: '#ffcccc',
+              color: '#900',
+            },
+          }}
+          localeText={{
+            noRowsLabel: 'Brak sklepów',
+          }}
+        />
+      </Stack>
+      <Stack>
+        {isLoading && (
+          <Typography
+            variant="h6"
+            color="primary"
+            sx={{ textAlign: 'center', marginTop: 1 }}
+          >
+            {'Trwa Zapisywanie'}
+          </Typography>
+        )}
+        {isError && (
+          <Typography
+            variant="h6"
+            color="primary"
+            sx={{ textAlign: 'center', marginTop: 1 }}
+          >
+            {'Błąd zapisu'}
+          </Typography>
+        )}
+      </Stack>
+    </Stack>
   );
 };
 

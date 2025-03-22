@@ -1,8 +1,7 @@
-import { Stack, Button, CircularProgress } from '@mui/material';
+import { Stack, Button, CircularProgress, Typography } from '@mui/material';
 import { useState } from 'react';
 
 import { useGetOrders } from '../api/useGetOrders';
-import { useMappedOrders } from '../api/useMappedOrders';
 import AddOrderModal from '../components/AddOrderModal';
 import OrdersTable from '../tables/OrdersTable';
 
@@ -11,9 +10,27 @@ export const OrdersPage = () => {
   const handleOpenModal = () => setIsModalOpen(true);
   const handleCloseModal = () => setIsModalOpen(false);
 
-  const { mappedOrders, loading } = useMappedOrders();
-  useGetOrders();
-  if (loading) {
+  const {
+    orders,
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+    isError,
+  } = useGetOrders();
+
+  if (isError) {
+    return (
+      <Typography
+        variant="h6"
+        color="error"
+        sx={{ textAlign: 'center', marginTop: 2 }}
+      >
+        {'Błąd pobierania danych'}
+      </Typography>
+    );
+  }
+  if (isLoading) {
     return (
       <Stack width="100%" alignItems="center" paddingTop={8}>
         <CircularProgress />
@@ -21,16 +38,38 @@ export const OrdersPage = () => {
     );
   }
 
+  const handleLoadMore = (event: React.MouseEvent) => {
+    event.preventDefault();
+    if (hasNextPage && !isFetchingNextPage) fetchNextPage();
+  };
+
   return (
     <Stack width="100%" alignItems="center">
-      <Stack spacing={1} width={652} height={429}>
-        <OrdersTable orders={mappedOrders} />
-        <Stack>
+      <Stack spacing={1} width={910} height={376}>
+        <OrdersTable orders={orders} />
+
+        <Stack direction="row">
+          {hasNextPage && (
+            <Button
+              variant="outlined"
+              color="primary"
+              onClick={handleLoadMore}
+              sx={{ width: '180px', height: '50px' }}
+            >
+              {'Załaduj więcej'}
+            </Button>
+          )}
+          {isFetchingNextPage && (
+            <Stack paddingLeft={1} width="50px" height="50px">
+              <CircularProgress />
+            </Stack>
+          )}
+
           <Button
             variant="outlined"
             color="primary"
             onClick={handleOpenModal}
-            sx={{ width: '110px', height: '50px', ml: 'auto' }}
+            sx={{ width: '180px', height: '50px', ml: 'auto' }}
           >
             {'Nowe zamówienie'}
           </Button>

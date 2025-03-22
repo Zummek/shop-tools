@@ -4,7 +4,6 @@ import get from 'lodash/get';
 import { ReactNode, useEffect } from 'react';
 
 import { useLogoutUser } from '../features/smSystem/user/hooks';
-import { useRefreshToken } from '../features/smSystem/user/hooks/useRefreshToken';
 import { useAppSelector, useNotify } from '../hooks';
 
 import { axiosInstance } from './axiosInstance';
@@ -44,8 +43,6 @@ export const AxiosInterceptorsProvider = ({
   const { logoutUser } = useLogoutUser();
   const accessToken = useAppSelector((state) => state.smSystemUser.accessToken);
 
-  const { refreshToken } = useRefreshToken();
-
   const isCurrentSessionExist = accessToken !== null;
   const axiosResponse = axiosInstance.interceptors.response;
 
@@ -66,11 +63,12 @@ export const AxiosInterceptorsProvider = ({
       ) {
         originalRequest._retry = true;
 
-        const accessToken = await refreshToken();
-        if (accessToken) {
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-          return axiosInstance(originalRequest);
-        }
+        // Not implemented on BE
+        // const accessToken = await refreshToken();
+        // if (accessToken) {
+        //   originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        //   return axiosInstance(originalRequest);
+        // }
 
         logoutUser(isCurrentSessionExist);
         throw error;
@@ -109,14 +107,7 @@ export const AxiosInterceptorsProvider = ({
     return () => {
       axiosResponse.eject(responseInterceptors);
     };
-  }, [
-    axiosResponse,
-    isCurrentSessionExist,
-    logoutUser,
-    notify,
-    refreshToken,
-    store,
-  ]);
+  }, [axiosResponse, isCurrentSessionExist, logoutUser, notify, store]);
 
   return <>{children}</>;
 };

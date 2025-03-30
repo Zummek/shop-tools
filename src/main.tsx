@@ -9,6 +9,10 @@ import { GeneratePriceListPage } from './features/priceList/routes/GeneratePrice
 import { SmSystemPageLayout } from './features/smSystem/layouts/SmSystemPageLayout';
 import { ImportProductsPage } from './features/smSystem/products/routers/ImportProductsPage/ImportProductsPage';
 import { ProductsDocumentsPage } from './features/smSystem/productsDocuments/routers/ProductsDocumentsPage';
+import { OrderDetailsPage } from './features/smSystem/suppliersOrders/routers/OrderDetailsPage';
+import { OrdersPage } from './features/smSystem/suppliersOrders/routers/OrdersPage';
+import { ProductsPage } from './features/smSystem/suppliersOrders/routers/ProductsPage';
+import { SuppliersPage } from './features/smSystem/suppliersOrders/routers/SuppliersPage';
 import { TransfersPage } from './features/smSystem/transfers/routers/TransfersPage';
 import { LoginPage } from './features/smSystem/user/routes/LoginPage';
 import { ReactQueryClientProvider, setReduxStoreForAxios } from './services';
@@ -57,6 +61,32 @@ const router = createHashRouter(
         {
           path: 'import-products',
           element: <ImportProductsPage />,
+        },
+        {
+          path: 'suppliers-orders',
+          children: [
+            {
+              path: 'suppliers',
+              element: <SuppliersPage />,
+            },
+            {
+              path: 'suppliers/:supplierId',
+              element: <SuppliersPage />,
+            },
+            {
+              path: 'products',
+              element: <ProductsPage />,
+            },
+            {
+              path: 'orders',
+              index: true,
+              element: <OrdersPage />,
+            },
+            {
+              path: 'orders/:orderId',
+              element: <OrderDetailsPage />,
+            },
+          ],
         },
       ],
     },

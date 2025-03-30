@@ -1,6 +1,5 @@
 import { Store } from '@reduxjs/toolkit';
 import axios from 'axios';
-import applyCaseMiddleware from 'axios-case-converter';
 
 import { smApiUrl } from '../utils';
 
@@ -26,13 +25,12 @@ export const updateTokenInterceptor = () => {
   });
 };
 
-export const axiosInstance = applyCaseMiddleware(
-  axios.create({
-    baseURL: smApiUrl,
-    headers: {},
-    validateStatus: (status: number) => {
-      return (status >= 200 && status < 300) || status === 404;
-    },
-    timeout: 30000, // 30 seconds
-  })
-);
+export const axiosInstance = axios.create({
+  baseURL: smApiUrl,
+  // baseURL: 'http://localhost:8000/',
+  headers: {},
+  validateStatus: (status: number) => {
+    return (status >= 200 && status < 300) || status === 404;
+  },
+  timeout: 30000, // 30 seconds
+});

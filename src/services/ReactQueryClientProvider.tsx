@@ -16,6 +16,10 @@ interface ReactQueryClientProviderProps {
   children: ReactNode;
 }
 
-export const ReactQueryClientProvider = ({ children }: ReactQueryClientProviderProps) => {
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+export const ReactQueryClientProvider = ({
+  children,
+}: ReactQueryClientProviderProps) => {
+  return (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
 };

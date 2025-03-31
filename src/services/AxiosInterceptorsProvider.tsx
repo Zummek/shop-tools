@@ -20,7 +20,7 @@ type APIError = AxiosError & {
   };
 };
 
-const standardErrorMsgKey = 'common:errorOccurredTryAgain';
+const standardErrorMsgKey = 'Wystąpił błąd, spróbuj ponownie';
 
 const getResponseErrorsMessageMsg = (errorRequest: APIError) => {
   switch (errorRequest.code) {

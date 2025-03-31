@@ -1,42 +1,33 @@
 import { useMutation } from '@tanstack/react-query';
 
 import { axiosInstance } from '../../../../services';
+import { ImportProductsStatus } from '../types';
 
 interface Payload {
-  productsFile: File;
-  productIdsToRemove: string[];
-  categoryIdsToRemove: string[];
+  productsImportTaskId: number;
+  notListedProductIdsToRemove: number[];
 }
 
 interface Response {
-  data: {
-    id: string;
-  };
+  id: number;
+  status: ImportProductsStatus;
+  error_message: string | null;
 }
 
 export const useImportProducts = () => {
   const importProductsRequest = async ({
-    productsFile,
-    productIdsToRemove,
-    categoryIdsToRemove,
+    productsImportTaskId,
+    notListedProductIdsToRemove,
   }: Payload) => {
-    const formData = new FormData();
-    formData.append('TXTData', productsFile);
-    formData.append('productIdsToRemove', JSON.stringify(productIdsToRemove));
-    formData.append('categoryIdsToRemove', JSON.stringify(categoryIdsToRemove));
-
     const res = await axiosInstance.post<Response>(
-      '/api/v1/products/import',
-      formData,
+      `/api/v1/products/import/${productsImportTaskId}/`,
       {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+        notListedProductIdsToRemove,
       }
     );
 
     return {
-      processId: res.data.data.id,
+      processId: res.data.id,
     };
   };
 

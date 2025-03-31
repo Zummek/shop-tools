@@ -4,14 +4,8 @@ import { useState } from 'react';
 import { ImportProductsStep1 } from './ImportProductsStep1';
 import { ImportProductsStep2 } from './ImportProductsStep2';
 import { ImportProductsStep3 } from './ImportProductsStep3';
-import { ImportProductsStep4 } from './ImportProductsStep4';
 
-const steps = [
-  'Wybierz plik',
-  'Przedgląd produktów',
-  'Przedgląd kategorii',
-  'Import',
-];
+const steps = ['Wybierz plik', 'Przedgląd produktów', 'Import'];
 
 export const ImportProductsPage = () => {
   const [activeStep, setActiveStep] = useState(0);
@@ -33,10 +27,7 @@ export const ImportProductsPage = () => {
       {activeStep === 1 && (
         <ImportProductsStep2 onNextStep={() => setActiveStep(2)} />
       )}
-      {activeStep === 2 && (
-        <ImportProductsStep3 onNextStep={() => setActiveStep(3)} />
-      )}
-      {activeStep === 3 && <ImportProductsStep4 />}
+      {activeStep === 2 && <ImportProductsStep3 />}
     </Stack>
   );
 };

@@ -112,7 +112,6 @@ export const TransfersPage = () => {
 
   const handleExportTransfers = () =>
     exportTransfers({
-      exportMethod: 'PC-Market-shipped',
       ids: selectedTransferIds.map(Number),
     });
 

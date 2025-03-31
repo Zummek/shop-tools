@@ -8,8 +8,7 @@ import { login } from '../api';
 import { setSession } from '../store';
 
 const formSchema = z.object({
-  companyName: z.string().nonempty(),
-  email: z.string().email(),
+  username: z.string().nonempty(),
   password: z.string().nonempty(),
 });
 
@@ -26,13 +25,13 @@ export const useLoginForm = () => {
 
   const onSubmit: SubmitHandler<LoginFormValues> = async (data) => {
     try {
-      const { ...payload } = data;
-      const response = await login(payload);
+      const { username, password } = data;
+      const response = await login({ username, password });
       if (!response) {
-        notify('error', 'Nieprawidłowy email lub hasło');
+        notify('error', 'Nieprawidłowa nazwa użytkownika lub hasło');
         return;
       }
-      dispatch(setSession({ accessToken: response.accessToken }));
+      dispatch(setSession(response));
     } catch (err: unknown) {
       if (err instanceof AxiosError) {
         const { response } = err;
@@ -45,7 +44,7 @@ export const useLoginForm = () => {
         }
 
         if (response?.status === 401) {
-          notify('error', 'Nieprawidłowy email lub hasło');
+          notify('error', 'Nieprawidłowa nazwa użytkownika lub hasło');
           return;
         }
       }
@@ -54,7 +53,9 @@ export const useLoginForm = () => {
     }
   };
 
-  const onError: SubmitErrorHandler<LoginFormValues> = () => {};
+  const onError: SubmitErrorHandler<LoginFormValues> = () => {
+    notify('error', 'Wystąpił błąd podczas logowania');
+  };
 
   const onSubmitPress = handleSubmit(onSubmit, onError);
 

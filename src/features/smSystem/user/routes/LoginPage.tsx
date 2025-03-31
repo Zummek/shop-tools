@@ -29,22 +29,11 @@ export const LoginPage = () => {
         <form onSubmit={form.handleSubmit(() => onSubmitPress())}>
           <Stack spacing={4} mt={4} mb={8}>
             <ControlledTextField
-              id="companyName"
-              name="companyName"
+              id="username"
+              name="username"
               type="text"
-              label="Nazwa firmy"
-              autoComplete="organization"
-              autoCapitalize="off"
-              margin="normal"
-              fullWidth
-              alwaysShowLabel
-            />
-            <ControlledTextField
-              id="email"
-              name="email"
-              type="email"
-              label="Adres e-mail"
-              autoComplete="email"
+              label="Nazwa użytkownika"
+              autoComplete="username"
               autoCapitalize="off"
               margin="normal"
               fullWidth

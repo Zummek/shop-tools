@@ -1,28 +1,18 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
 import { axiosInstance } from '../../../../services';
+import { ListResponse } from '../../app/types';
 import { ProductsDocumentListItem } from '../types';
-
-import { getProductsDocumentsGraphqlQuery } from './productsDocumentsGraphql';
 
 interface Payload {
   page: number;
 }
 
-interface Response {
-  data: {
-    productsDocuments: {
-      node: ProductsDocumentListItem[];
-      pageInfo: {
-        totalCount: number;
-        hasNextPage: number;
-      };
-    };
-  };
-}
+type Response = ListResponse<ProductsDocumentListItem>;
 
 export const pageSize = 25;
 export const getProductsDocumentsListQueryKeyBase = 'productsDocumentsList';
+const endpoint = '/api/v1/products-documents/';
 const getQueryKey = (page: number) => [
   getProductsDocumentsListQueryKeyBase,
   page,
@@ -32,9 +22,8 @@ export const useGetProductsDocuments = ({ page }: Payload) => {
   const offset = page * pageSize;
 
   const getProductsDocumentsRequest = async () => {
-    const response = await axiosInstance.post<Response>(
-      '/graphql',
-      getProductsDocumentsGraphqlQuery(offset, pageSize)
+    const response = await axiosInstance.get<Response>(
+      `${endpoint}?offset=${offset}&limit=${pageSize}`
     );
     return response.data;
   };
@@ -45,10 +34,9 @@ export const useGetProductsDocuments = ({ page }: Payload) => {
     placeholderData: keepPreviousData,
   });
 
-  const productsDocuments: ProductsDocumentListItem[] =
-    data?.data.productsDocuments.node || [];
-  const hasNextPage = !!data?.data.productsDocuments.pageInfo.hasNextPage;
-  const totalCount = data?.data.productsDocuments.pageInfo.totalCount || null;
+  const productsDocuments: ProductsDocumentListItem[] = data?.results || [];
+  const hasNextPage = !!data?.next;
+  const totalCount = data?.count || null;
 
   return {
     productsDocuments,

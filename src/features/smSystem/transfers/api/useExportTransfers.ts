@@ -5,7 +5,6 @@ import { axiosInstance } from '../../../../services';
 
 interface Payload {
   ids: number[];
-  exportMethod: 'PC-Market-shipped' | 'PC-Market-received';
 }
 
 export const useExportTransfers = () => {
@@ -13,29 +12,28 @@ export const useExportTransfers = () => {
 
   const [isPending, setIsPending] = useState(false);
 
-  const exportTransfers = async ({ exportMethod, ids }: Payload) => {
+  const exportTransfers = async ({ ids }: Payload) => {
     try {
       setIsPending(true);
-      await Promise.all(
-        ids.map(async (id) => {
-          const res = await axiosInstance.post('/api/v1/transfer/export', {
-            id,
-            exportMethod,
-          });
-
-          const fileContent = res.data;
-          const fileName = res.headers['content-disposition']
-            .split('=')[1]
-            .replace(/"/g, '');
-
-          const element = document.createElement('a');
-          const file = new Blob([fileContent], { type: 'text/csv' });
-          element.href = URL.createObjectURL(file);
-          element.download = fileName;
-          document.body.appendChild(element);
-          element.click();
-        })
+      const res = await axiosInstance.get(
+        `/api/v1/transfers/export-multiple/?ids=${ids.join(',')}`,
+        {
+          responseType: 'blob',
+        }
       );
+
+      const fileContent = res.data;
+      const contentType = res.headers['contentType'];
+      const fileName = res.headers['contentDisposition']
+        .split('=')[1]
+        .replace(/"/g, '');
+
+      const element = document.createElement('a');
+      const file = new Blob([fileContent], { type: contentType });
+      element.href = URL.createObjectURL(file);
+      element.download = fileName;
+      document.body.appendChild(element);
+      element.click();
     } catch (error) {
       notify('error', 'Nie udało się wyeksportować dokumentów');
       setIsPending(false);

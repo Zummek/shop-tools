@@ -1,15 +1,16 @@
 export interface ImportProductPreparedProduct {
   id: string;
   name: string;
-  bardcode: string;
+  bardcodes: string[];
+  internalId: string;
+  vat: number;
+  deletedAt: string | null;
 }
 
 export interface ImportProduct {
   id: string;
   internalId: string;
   name: string;
-  categoryId: string;
-  description: string;
   barcodes: string[];
   vat: number;
   netPrice: number;
@@ -20,10 +21,9 @@ export interface ImportProduct {
   updatedAt: string;
 }
 
-export interface ImportCategory {
-  id: string;
-  name: string;
-  description: string | null;
-  parentId: string | null;
-  hierarchyLevel: number;
+export enum ImportProductsStatus {
+  PREPARED = 'PREPARED',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
 }

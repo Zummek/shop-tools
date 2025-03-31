@@ -4,6 +4,7 @@ import get from 'lodash/get';
 import { ReactNode, useEffect } from 'react';
 
 import { useLogoutUser } from '../features/smSystem/user/hooks';
+import { useRefreshToken } from '../features/smSystem/user/hooks/useRefreshToken';
 import { useAppSelector, useNotify } from '../hooks';
 
 import { axiosInstance } from './axiosInstance';
@@ -19,7 +20,7 @@ type APIError = AxiosError & {
   };
 };
 
-const standardErrorMsgKey = 'common:errorOccurredTryAgain';
+const standardErrorMsgKey = 'Wystąpił błąd, spróbuj ponownie';
 
 const getResponseErrorsMessageMsg = (errorRequest: APIError) => {
   switch (errorRequest.code) {
@@ -43,6 +44,8 @@ export const AxiosInterceptorsProvider = ({
   const { logoutUser } = useLogoutUser();
   const accessToken = useAppSelector((state) => state.smSystemUser.accessToken);
 
+  const { refreshToken } = useRefreshToken();
+
   const isCurrentSessionExist = accessToken !== null;
   const axiosResponse = axiosInstance.interceptors.response;
 
@@ -63,12 +66,11 @@ export const AxiosInterceptorsProvider = ({
       ) {
         originalRequest._retry = true;
 
-        // Not implemented on BE
-        // const accessToken = await refreshToken();
-        // if (accessToken) {
-        //   originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-        //   return axiosInstance(originalRequest);
-        // }
+        const accessToken = await refreshToken();
+        if (accessToken) {
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+          return axiosInstance(originalRequest);
+        }
 
         logoutUser(isCurrentSessionExist);
         throw error;
@@ -107,7 +109,14 @@ export const AxiosInterceptorsProvider = ({
     return () => {
       axiosResponse.eject(responseInterceptors);
     };
-  }, [axiosResponse, isCurrentSessionExist, logoutUser, notify, store]);
+  }, [
+    axiosResponse,
+    isCurrentSessionExist,
+    logoutUser,
+    notify,
+    refreshToken,
+    store,
+  ]);
 
   return <>{children}</>;
 };

@@ -1,36 +1,30 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-import { ImportCategory, ImportProduct } from '../types';
+import { PrepareImportProductsResponse } from '../api';
+import { ImportProductPreparedProduct } from '../types';
 
 interface SmImportProductsState {
   productsFile: File | null;
-  notListedProducts: ImportProduct[];
-  notListedCategories: ImportCategory[];
-  listedProductsAmount: number;
-  listedCategoriesAmount: number;
-  productIdsToRemove: string[];
-  categoryIdsToRemove: string[];
+  productsImportTaskId: number | null;
+  productsToCreateAmount: number;
+  productsToUpdateAmount: number;
+  productsNotListedAmount: number;
+  productsNotListed: ImportProductPreparedProduct[];
+  productIdsToRemove: number[];
 }
 
 const initialState: SmImportProductsState = {
   productsFile: null,
-  notListedProducts: [],
-  notListedCategories: [],
-  listedProductsAmount: 0,
-  listedCategoriesAmount: 0,
+  productsImportTaskId: null,
+  productsToCreateAmount: 0,
+  productsToUpdateAmount: 0,
+  productsNotListedAmount: 0,
+  productsNotListed: [],
   productIdsToRemove: [],
-  categoryIdsToRemove: [],
 };
 
 interface SetFilePayload {
   productsFile: File;
-}
-
-interface LoadPreparedImportPayload {
-  notListedProducts: ImportProduct[];
-  notListedCategories: ImportCategory[];
-  listedProductsAmount: number;
-  listedCategoriesAmount: number;
 }
 
 export const smImportProductsSlice = createSlice({
@@ -39,27 +33,27 @@ export const smImportProductsSlice = createSlice({
   reducers: {
     clearStateAndSetNewFile: (state, action: { payload: SetFilePayload }) => {
       state.productsFile = action.payload.productsFile;
-      state.notListedProducts = [];
-      state.notListedCategories = [];
-      state.listedProductsAmount = 0;
-      state.listedCategoriesAmount = 0;
+      state.productsNotListed = [];
+      state.productsToCreateAmount = 0;
+      state.productsToUpdateAmount = 0;
+      state.productsNotListedAmount = 0;
       state.productIdsToRemove = [];
-      state.categoryIdsToRemove = [];
     },
     loadPreparedImport: (
       state,
-      action: { payload: LoadPreparedImportPayload }
+      action: { payload: PrepareImportProductsResponse }
     ) => {
-      state.notListedProducts = action.payload.notListedProducts;
-      state.notListedCategories = action.payload.notListedCategories;
-      state.listedProductsAmount = action.payload.listedProductsAmount;
-      state.listedCategoriesAmount = action.payload.listedCategoriesAmount;
+      state.productsNotListed = action.payload.summary.productsNotListed;
+      state.productsToCreateAmount =
+        action.payload.summary.productsToCreateAmount;
+      state.productsToUpdateAmount =
+        action.payload.summary.productsToUpdateAmount;
+      state.productsNotListedAmount =
+        action.payload.summary.productsNotListedAmount;
+      state.productsImportTaskId = action.payload.id;
     },
-    setProductsIdsToRemove: (state, action: { payload: string[] }) => {
+    setProductsIdsToRemove: (state, action: { payload: number[] }) => {
       state.productIdsToRemove = action.payload;
-    },
-    setCategoriesIdsToRemove: (state, action: { payload: string[] }) => {
-      state.categoryIdsToRemove = action.payload;
     },
   },
 });
@@ -67,6 +61,5 @@ export const smImportProductsSlice = createSlice({
 export const {
   clearStateAndSetNewFile,
   loadPreparedImport,
-  setCategoriesIdsToRemove,
   setProductsIdsToRemove,
 } = smImportProductsSlice.actions;

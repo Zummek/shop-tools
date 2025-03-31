@@ -1,72 +1,82 @@
-import { Box, Button, Stack, Typography } from '@mui/material';
-import { DataGrid, GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
+import { CircularProgress, Stack, Typography } from '@mui/material';
+import { useEffect, useState } from 'react';
 
-import { useAppDispatch, useAppSelector } from '../../../../../hooks';
-import { setCategoriesIdsToRemove } from '../../store';
-import { ImportCategory } from '../../types';
+import { useAppSelector } from '../../../../../hooks';
+import { useImportProducts } from '../../api';
+import { useGetImportProductsStatus } from '../../api/useGetImportProductsStatus';
 
-interface Props {
-  onNextStep: () => void;
-}
+export const ImportProductsStep3 = () => {
+  const [isImporting, setIsImporting] = useState(false);
 
-const columns: GridColDef<ImportCategory>[] = [
-  { field: 'id', headerName: 'ID', width: 70 },
-  { field: 'name', headerName: 'Nazwa', width: 300 },
-];
+  const { importProducts, isError } = useImportProducts();
+  const { getImportProductsStatus, importProgress } =
+    useGetImportProductsStatus();
 
-export const ImportProductsStep3 = ({ onNextStep }: Props) => {
-  const dispatch = useAppDispatch();
+  const { productIdsToRemove, productsFile, productsImportTaskId } =
+    useAppSelector((state) => state.smImportProducts);
 
-  const { notListedCategories, categoryIdsToRemove } = useAppSelector(
-    (state) => state.smImportProducts
-  );
+  const getImportProductsStatusUntilCompleted = async (processId: number) => {
+    setTimeout(async () => {
+      const statusData = await getImportProductsStatus({ processId });
 
-  const setCategoriesSelection = (
-    selectedCategories: GridRowSelectionModel
-  ) => {
-    dispatch(setCategoriesIdsToRemove(selectedCategories as string[]));
+      if (statusData?.status === 'IN_PROGRESS')
+        getImportProductsStatusUntilCompleted(processId);
+      else setIsImporting(false);
+    }, 3000);
   };
 
+  const importProductProcess = async () => {
+    if (!productsFile || !productsImportTaskId) return;
+
+    setIsImporting(true);
+
+    const { processId } = await importProducts({
+      productsImportTaskId,
+      notListedProductIdsToRemove: productIdsToRemove,
+    });
+    getImportProductsStatusUntilCompleted(processId);
+  };
+
+  useEffect(() => {
+    importProductProcess();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
-    <Stack spacing={2} maxWidth={800}>
-      <Typography variant="h6">{'Podsumowanie kategorii'}</Typography>
-      <Typography>
-        {'Liczba kategorii, które zostaną dodane lub zaktualizowane: ' +
-          notListedCategories.length}
-      </Typography>
-      <Typography>
-        {'Kategorie, które nie znajdują się w pliku (' +
-          notListedCategories.length +
-          ')'}
-      </Typography>
-      <Typography>
-        {
-          'Możesz usunąc masowo kategorie, które nie znajdują się w importowanym pliku. Aby to zrobić zaznacz je na liście poniżej.'
-        }
-      </Typography>
-      <Typography variant="h6">
-        {notListedCategories.length === 0
-          ? 'Brak kategorii do usunięcia'
-          : 'Zaznacz kategorie do usunięcia z bazy'}
-      </Typography>
-      <DataGrid
-        rows={notListedCategories}
-        columns={columns}
-        disableColumnSorting
-        disableColumnMenu
-        checkboxSelection
-        hideFooterPagination
-        onRowSelectionModelChange={setCategoriesSelection}
-      />
-      <Box>
-        <Button variant="contained" onClick={onNextStep}>
-          {notListedCategories.length > 0 &&
-            (categoryIdsToRemove.length
-              ? 'Usuń wybrane i przejdź dalej'
-              : 'Przejdź dalej')}
-          {notListedCategories.length === 0 && 'Przejdź dalej'}
-        </Button>
-      </Box>
+    <Stack spacing={2} alignItems="center">
+      {isImporting && (
+        <>
+          <Typography variant="h6">{'Importuję produkty...'}</Typography>
+          <CircularProgress />
+          <Typography>
+            {'Proszę czekać, trwa importowanie produktów...'}
+          </Typography>
+        </>
+      )}
+      {(isError || importProgress?.status === 'FAILED') && (
+        <>
+          <Typography variant="h6">{'Wystąpił błąd'}</Typography>
+          <Typography variant="h6">{importProgress?.errorMessage}</Typography>
+        </>
+      )}
+      {importProgress?.status === 'COMPLETED' && (
+        <>
+          <Typography variant="h6">{'Import zakończony'}</Typography>
+          <Typography>{'Produkty zostały zaimportowane pomyślnie'}</Typography>
+          <Typography variant="body2">
+            {`Utworzono ${importProgress?.summary?.productsCreatedAmount} produktów`}
+          </Typography>
+          <Typography variant="body2">
+            {`Zaktualizowano ${importProgress?.summary?.productsUpdatedAmount} produktów`}
+          </Typography>
+          <Typography variant="body2">
+            {`Przywrócono ${importProgress?.summary?.productsReactivatedAmount} produktów`}
+          </Typography>
+          <Typography variant="body2">
+            {`Usunięto ${importProgress?.summary?.productsDeletedAmount} produktów`}
+          </Typography>
+        </>
+      )}
     </Stack>
   );
 };

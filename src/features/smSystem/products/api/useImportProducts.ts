@@ -5,7 +5,7 @@ import { ImportProductsStatus } from '../types';
 
 interface Payload {
   productsImportTaskId: number;
-  notListedProductIdsToRemove: number[];
+  notListedProductsIdsToRemove: number[];
 }
 
 interface Response {
@@ -17,12 +17,12 @@ interface Response {
 export const useImportProducts = () => {
   const importProductsRequest = async ({
     productsImportTaskId,
-    notListedProductIdsToRemove,
+    notListedProductsIdsToRemove,
   }: Payload) => {
     const res = await axiosInstance.post<Response>(
       `/api/v1/products/import/${productsImportTaskId}/`,
       {
-        notListedProductIdsToRemove,
+        notListedProductsIdsToRemove,
       }
     );
 

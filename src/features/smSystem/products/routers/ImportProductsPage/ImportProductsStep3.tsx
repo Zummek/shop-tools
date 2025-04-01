@@ -32,7 +32,7 @@ export const ImportProductsStep3 = () => {
 
     const { processId } = await importProducts({
       productsImportTaskId,
-      notListedProductIdsToRemove: productIdsToRemove,
+      notListedProductsIdsToRemove: productIdsToRemove,
     });
     getImportProductsStatusUntilCompleted(processId);
   };

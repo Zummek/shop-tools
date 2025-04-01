@@ -31,7 +31,9 @@ export const axiosInstance = applyCaseMiddleware(
     baseURL: smApiUrl,
     headers: {},
     validateStatus: (status: number) => {
-      return (status >= 200 && status < 300) || status === 404;
+      return (
+        (status >= 200 && status < 300) || status === 404 || status === 400
+      );
     },
     timeout: 30000, // 30 seconds
   })

@@ -2,7 +2,11 @@ import { Box, Button, Stack, Typography } from '@mui/material';
 import { DataGrid, GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
 import { useEffect } from 'react';
 
-import { useAppDispatch, useAppSelector } from '../../../../../hooks';
+import {
+  useAppDispatch,
+  useAppSelector,
+  useNotify,
+} from '../../../../../hooks';
 import { usePrepareImportProducts } from '../../api';
 import { loadPreparedImport, setProductsIdsToRemove } from '../../store';
 import { ImportProductPreparedProduct } from '../../types';
@@ -24,6 +28,7 @@ const columns: GridColDef<ImportProductPreparedProduct>[] = [
 
 export const ImportProductsStep2 = ({ onNextStep }: Props) => {
   const dispatch = useAppDispatch();
+  const { notify } = useNotify();
 
   const { isPending, prepareImportProducts } = usePrepareImportProducts();
 
@@ -39,8 +44,26 @@ export const ImportProductsStep2 = ({ onNextStep }: Props) => {
   const prepareImport = async () => {
     if (!productsFile) return;
 
-    const res = await prepareImportProducts({ productsFile });
-    dispatch(loadPreparedImport(res.data));
+    try {
+      const res = await prepareImportProducts({ productsFile });
+      if (res.status === 200) {
+        dispatch(loadPreparedImport(res.data));
+      } else {
+        notify(
+          'error',
+          'Wystąpił błąd podczas importowania produktów: ' + res.data
+        );
+        // eslint-disable-next-line no-console
+        console.error(res.data);
+      }
+    } catch (error) {
+      notify(
+        'error',
+        'Wystąpił błąd podczas importowania produktów: ' + JSON.stringify(error)
+      );
+      // eslint-disable-next-line no-console
+      console.error(error);
+    }
   };
 
   useEffect(() => {

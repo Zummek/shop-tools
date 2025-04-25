@@ -62,7 +62,7 @@ export const AxiosInterceptorsProvider = ({
         httpCode === 401 &&
         !originalRequest._retry &&
         originalRequest.url &&
-        !originalRequest.url.endsWith('refresh')
+        !originalRequest.url.endsWith('auth/token/refresh/')
       ) {
         originalRequest._retry = true;
 

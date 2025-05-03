@@ -133,13 +133,15 @@ export const SupplierDetailsPage = () => {
   };
 
   const handleSave = () => {
-    const payload = {
-      id: dataSupplierDetails.id,
-      name: dataSupplierDetails.name,
-      branches_ids: selectedBranches,
-      products_ids: selectedProducts,
-    };
-    updateSupplierDetails(payload);
+    if (selectedBranches.length > 0 && selectedProducts.length > 0) {
+      const payload = {
+        id: dataSupplierDetails.id,
+        name: dataSupplierDetails.name,
+        branches_ids: selectedBranches,
+        products_ids: selectedProducts,
+      };
+      updateSupplierDetails(payload);
+    }
   };
     
 

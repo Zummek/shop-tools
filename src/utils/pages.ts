@@ -9,7 +9,6 @@ export enum Pages {
   smSystemProductsDocuments = '/sm-system/products-documents',
   smSystemSuppliers = '/sm-system/suppliers-orders/suppliers',
   smSystemSupplierDetails = '/sm-system/suppliers-orders/suppliers/:supplierId',
-  smSystemProducts = '/sm-system/suppliers-orders/products',
   smSystemOrders = '/sm-system/suppliers-orders/orders',
   smSystemOrderDetails = '/sm-system/suppliers-orders/orders/:orderId',
 }

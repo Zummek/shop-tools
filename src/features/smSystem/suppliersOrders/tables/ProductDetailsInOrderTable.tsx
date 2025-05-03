@@ -6,7 +6,7 @@ import { ProductDetailsInOrderTableProps } from '../../app/types';
 import { useUpdateOrderDetails } from '../api/useUpdateOrderDetails';
 
 const ProductDetailsInOrderTable = ({
-  editableOrderDetails,
+  orderDetails,
   selectedProductId,
   setSelectedProductId,
 }: ProductDetailsInOrderTableProps) => {
@@ -24,7 +24,7 @@ const ProductDetailsInOrderTable = ({
   const { updateOrderDetails, isLoading, isError } = useUpdateOrderDetails();
 
   const processRowUpdate = (updatedRow: GridRowModel) => {
-    const updatedProduct = editableOrderDetails.products_to_order.find(
+    const updatedProduct = orderDetails.products_to_order.find(
       (prod) => prod.id === selectedProductId
     );
 
@@ -50,7 +50,7 @@ const ProductDetailsInOrderTable = ({
           });
         } else {
           updateOrderDetails({
-            orderId: editableOrderDetails.id,
+            orderId: orderDetails.id,
             branchId: updatedOrder.branch.id,
             productId: updatedProduct.id,
             toOrderAmount: newToOrder,
@@ -60,7 +60,7 @@ const ProductDetailsInOrderTable = ({
     }
   };
 
-  const product = editableOrderDetails.products_to_order.find(
+  const product = orderDetails.products_to_order.find(
     (productInOrder) => productInOrder.id === selectedProductId
   );
 
@@ -74,6 +74,9 @@ const ProductDetailsInOrderTable = ({
         disableColumnMenu
         disableRowSelectionOnClick
         hideFooter
+        localeText={{
+          noRowsLabel: 'Wybierz produkt',
+        }}
       />
     );
   }

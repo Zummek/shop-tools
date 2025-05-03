@@ -1,46 +1,36 @@
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { DataGrid, GridColDef, GridPaginationModel, GridRowParams } from '@mui/x-data-grid';
 import { FetchNextPageOptions, InfiniteData, InfiniteQueryObserverResult } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
 
-import { Pages } from '../../../../utils';
-import { GetOrdersResponse } from '../api/useGetOrders';
+import { GetSuppliersResponse } from '../../api/useGetSuppliers';
 
-const OrdersTable = ({
+const SuppliersTable = ({
   data,
   isFetchingNextPage,
   fetchNextPage,
   page,
   setPage,
+  handleRowClick,
 }: {
-  data: InfiniteData<GetOrdersResponse> | undefined;
+  data: InfiniteData<GetSuppliersResponse> | undefined;
   isFetchingNextPage: boolean;
   fetchNextPage: (
     options?: FetchNextPageOptions
-  ) => Promise<InfiniteQueryObserverResult<InfiniteData<GetOrdersResponse>, Error>>;
+  ) => Promise<InfiniteQueryObserverResult<InfiniteData<GetSuppliersResponse>, Error>>;
   page: number;
   setPage: (page: number) => void;
+  handleRowClick: (params: GridRowParams) => void;
 }) => {
   const columns: GridColDef[] = [
     {
       field: 'id',
       headerName: 'ID',
-      width: 100,
+      width: 70,
     },
     {
-      field: 'supplierName',
+      field: 'name',
       headerName: 'Dostawca',
-      width: 200,
-    },
-    {
-      field: 'selectedBranches',
-      headerName: 'Wybrane sklepy',
-      width: 350,
-    },
-    {
-      field: 'createdAt',
-      headerName: 'Data utworzenia',
-      width: 180,
+      width: 400,
     },
     {
       field: 'action',
@@ -61,7 +51,6 @@ const OrdersTable = ({
     },
   ];
 
-  const navigate = useNavigate();
   if (!data) {
     return (
       <DataGrid
@@ -79,39 +68,17 @@ const OrdersTable = ({
       />
     );
   }
-
-  const orders = data?.pages?.[page]?.results ?? [];
-  const rows = orders.map((order) => {
-    const formatDate = (dateString: string): string => {
-      const dateObj = new Date(dateString);
-      
-      const day = String(dateObj.getDate()).padStart(2, '0');
-      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-      const year = dateObj.getFullYear();
-      
-      const time = dateObj.toLocaleTimeString('pl-PL', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      });
-    
-      const date = `${day}-${month}-${year} ${time}`;
-      return date;
-    };
-
-    return {
-      id: order.id,
-      supplierName: order.supplier?.name ?? '–',
-      selectedBranches: order.selected_branches?.map(b => b.name).join(', ') ?? '',
-      createdAt: formatDate(order.created_at),
+  
+  const suppliers = data?.pages?.[page]?.results ?? [];
+  const rows = suppliers
+    .map((supplier) => {
+      return {
+        id: supplier.id,
+        name: supplier.name,
+        branchesCount: supplier.branches.length,
     };
   });
 
-
-  const handleRowClick = (params: GridRowParams) => {
-    navigate(`${Pages.smSystemOrders}/${params.id}`);
-  };
-  
   const handlePaginationChange = (model: GridPaginationModel) => {
     const nextPageIndex = model.page;
   
@@ -132,8 +99,7 @@ const OrdersTable = ({
       setPage(nextPageIndex);
     }
   };
-  
-  
+
   return (
     <DataGrid
       rows={rows}
@@ -149,10 +115,10 @@ const OrdersTable = ({
       paginationMode="server"
       rowCount={data?.pages[0].count}
       localeText={{
-        noRowsLabel: 'Brak zamówień',
+        noRowsLabel: 'Brak dostawców',
       }}
     />
   );
 };
 
-export default OrdersTable;
+export default SuppliersTable;

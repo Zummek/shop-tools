@@ -37,7 +37,6 @@ export const Header = ({
 
   const isSuppliersPage = useIsPage([Pages.smSystemSuppliers]);
   const isSuppliersParamPage = useIsPage([Pages.smSystemSupplierDetails]);
-  const isProductsPage = useIsPage([Pages.smSystemProducts]);
   const isOrdersPage = useIsPage([Pages.smSystemOrders]);
   const isOrdersParamPage = useIsPage([Pages.smSystemOrderDetails]);
 
@@ -45,8 +44,7 @@ export const Header = ({
     isOrdersPage ||
     isOrdersParamPage ||
     isSuppliersPage ||
-    isSuppliersParamPage ||
-    isProductsPage;
+    isSuppliersParamPage;
 
   const showSmSystemHeader =
     isProductsDocumentsPage ||
@@ -136,12 +134,6 @@ export const Header = ({
                     }
                   >
                     {'Dostawcy'}
-                  </Button>
-                  <Button
-                    href={`#${Pages.smSystemProducts}`}
-                    variant={isProductsPage ? 'contained' : 'outlined'}
-                  >
-                    {'Produkty'}
                   </Button>
                 </ButtonGroup>
               </Box>

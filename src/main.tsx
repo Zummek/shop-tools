@@ -11,7 +11,7 @@ import { ImportProductsPage } from './features/smSystem/products/routers/ImportP
 import { ProductsDocumentsPage } from './features/smSystem/productsDocuments/routers/ProductsDocumentsPage';
 import { OrderDetailsPage } from './features/smSystem/suppliersOrders/routers/OrderDetailsPage';
 import { OrdersPage } from './features/smSystem/suppliersOrders/routers/OrdersPage';
-import { ProductsPage } from './features/smSystem/suppliersOrders/routers/ProductsPage';
+import { SupplierDetailsPage } from './features/smSystem/suppliersOrders/routers/SupplierDetailsPage';
 import { SuppliersPage } from './features/smSystem/suppliersOrders/routers/SuppliersPage';
 import { TransfersPage } from './features/smSystem/transfers/routers/TransfersPage';
 import { LoginPage } from './features/smSystem/user/routes/LoginPage';
@@ -71,11 +71,7 @@ const router = createHashRouter(
             },
             {
               path: 'suppliers/:supplierId',
-              element: <SuppliersPage />,
-            },
-            {
-              path: 'products',
-              element: <ProductsPage />,
+              element: <SupplierDetailsPage />,
             },
             {
               path: 'orders',

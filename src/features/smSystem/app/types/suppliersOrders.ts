@@ -29,6 +29,8 @@ export interface Supplier {
   branches: SimpleBranch[];
 }
 
+export type SuppliersList = Supplier[];
+
 export interface Branch {
   id: number;
   name: string;
@@ -59,6 +61,7 @@ export interface OrderDetails {
   products_to_order: ProductsToOrder[]
   created_at: string;
   updated_at: string
+  detail?: string;
 }
 
 export interface CreateOrderInput {
@@ -73,12 +76,12 @@ export interface ProductInOrder {
 
 export interface ProductsInOrderTableProps {
   products: ProductInOrder[];
-  selectedProductId: number ;
+  selectedProductId: number;
   setSelectedProductId: React.Dispatch<React.SetStateAction<number>>;
 }
 
 export interface ProductDetailsInOrderTableProps {
-  editableOrderDetails: OrderDetails;
+  orderDetails: OrderDetails;
   selectedProductId: number;
   setSelectedProductId: React.Dispatch<React.SetStateAction<number>>;
 }
@@ -86,4 +89,49 @@ export interface ProductDetailsInOrderTableProps {
 export interface BasicModalProps {
   open: boolean;
   handleClose: () => void;
+}
+
+interface OrderConditions {
+  id: number;
+  lower_bound: number;
+  upper_bound: number;
+  to_order_amount: number;
+}
+
+interface OrderConditionsPerBranch {
+  branch: SimpleBranch;
+  order_conditions: OrderConditions[];
+}
+
+export interface ProductConditions {
+  id: number;
+  name: string;
+  order_conditions_per_branch: OrderConditionsPerBranch[];
+}
+
+export interface SupplierDetails {
+  id: number;
+  name: string;
+  branches: SimpleBranch[];
+  products: ProductConditions[];
+  detail?: string;
+}
+
+export interface ProductBranch {
+  branch: SimpleBranch[];
+  stock: number;
+  stock_updated_at: string | null;
+  net_price: number;
+  net_price_updated_at: string | null;
+}
+
+export interface Product {
+  id: number;
+  name: string;
+  internal_id: string;
+  barcodes: string[];
+  vat: number | null;
+  branches: ProductBranch[];
+  created_at: string;
+  updated_at: string;
 }

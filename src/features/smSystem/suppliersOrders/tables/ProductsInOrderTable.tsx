@@ -1,6 +1,5 @@
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { DataGrid, GridColDef, GridRowParams } from '@mui/x-data-grid';
-import { useEffect } from 'react';
 
 import { ProductsInOrderTableProps } from '../../app/types';
 
@@ -47,25 +46,6 @@ const ProductsInOrderTable = ({
   const handleRowClick = (params: GridRowParams) => {
     setSelectedProductId(params.row.id);
   };
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'ArrowRight' && selectedProductId !== 0) {
-        const currentIndex = products.findIndex(
-          (product) => product.id === selectedProductId
-        );
-
-        if (currentIndex !== -1 && currentIndex < products.length - 1)
-          setSelectedProductId(products[currentIndex + 1].id);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [products, selectedProductId, setSelectedProductId]);
 
   return (
     <DataGrid

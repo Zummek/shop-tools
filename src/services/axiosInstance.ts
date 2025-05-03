@@ -27,7 +27,6 @@ export const updateTokenInterceptor = () => {
 
 export const axiosInstance = axios.create({
   baseURL: smApiUrl,
-  // baseURL: 'http://localhost:8000/',
   headers: {},
   validateStatus: (status: number) => {
     return (status >= 200 && status < 300) || status === 404;

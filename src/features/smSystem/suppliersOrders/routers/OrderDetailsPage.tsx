@@ -1,7 +1,6 @@
-import { Button, CircularProgress, Stack, Typography } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { Button, CircularProgress, Stack, TextField, Typography } from '@mui/material';
+import { useState } from 'react';
 
-import { OrderDetails } from '../../app/types/index';
 import { useGetOrderDetails } from '../api/useGetOrderDetails';
 import ProductDetailsInOrderTable from '../tables/ProductDetailsInOrderTable';
 import ProductsInOrderTable from '../tables/ProductsInOrderTable';
@@ -29,21 +28,32 @@ export const OrderDetailsPage = () => {
   };
 
   const id = getIdFromUrl();
-  const { orderDetails, isLoading, isError } = useGetOrderDetails(id);
+  const { data, isLoading, isError } = useGetOrderDetails(id);
 
-  const [editableOrderDetails, setEditableOrderDetails] =
-    useState<OrderDetails | null>(null);
   const [selectedProductId, setSelectedProductId] = useState<number>(0);
 
-  useEffect(() => {
-    if (orderDetails) {
-      setEditableOrderDetails(orderDetails);
-      const minProductId = Math.min(
-        ...orderDetails.products_to_order.map((product) => product.id)
+  const [filterText, setFilterText] = useState('');
+
+  const productsInOrderTableData = data?.products_to_order.map(
+    ({ id, name, orders_per_branch }) => {
+      const totalToOrder = orders_per_branch.reduce(
+        (sum, order) => sum + order.to_order_amount,
+        0
       );
-      setSelectedProductId(minProductId);
+  
+      return {
+        id,
+        name,
+        totalToOrder,
+      };
     }
-  }, [orderDetails]);
+  );
+  
+  const filteredProductsInOrderTableData = productsInOrderTableData?.filter((product) =>
+    product.name.toLowerCase().includes(filterText.toLowerCase())
+  );
+  
+
 
   if (isLoading) {
     return (
@@ -52,7 +62,8 @@ export const OrderDetailsPage = () => {
       </Stack>
     );
   }
-  if (isError || !orderDetails) {
+  
+  if (isError || !data) {
     return (
       <Typography
         variant="h6"
@@ -63,22 +74,50 @@ export const OrderDetailsPage = () => {
       </Typography>
     );
   }
-  if (!editableOrderDetails) return null;
 
-  editableOrderDetails.products_to_order.sort((a, b) => a.id - b.id);
+  if (!data) {
+    return (
+      <Typography
+        variant="h6"
+        color="error"
+        sx={{ textAlign: 'center', marginTop: 2 }}
+      >
+        {'Brak danych'}
+      </Typography>
+    );
+  }
+  
+  if (data.detail === 'No SupplierOrder matches the given query.') {
+    return (
+      <Typography
+        variant="h6"
+        color="error"
+        sx={{ textAlign: 'center', marginTop: 2, whiteSpace: 'pre-line' }}
+      >
+        {'Nie znaleziono zamówienia o podanym ID. \n Upewnij się, że wybrany dostawca ma podpięte wszystkie wybrane sklepy'}
+      </Typography>
+    );
+  }
 
-  const supplierName = editableOrderDetails.supplier.name;
-  const branchesNames = editableOrderDetails.selected_branches
+  const productsToOrder = data.products_to_order || [];
+  productsToOrder.sort((a, b) => a.id - b.id);
+
+  const supplierName = data.supplier.name;
+  const branchesNames = data.selected_branches
     .map((branch) => branch.name)
     .join(', ');
-  const date = new Date(editableOrderDetails.updated_at).toLocaleDateString(
-    'pl-PL'
-  );
+    const dateObj = new Date(data.updated_at);
+    const date = `${dateObj.toLocaleDateString('pl-PL')} ${dateObj.toLocaleTimeString('pl-PL', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    })}`;
+    
 
   const handleDownload = () => {
     const content =
       `${supplierName} ${date} ${branchesNames}\n\n` +
-      editableOrderDetails.products_to_order
+      data.products_to_order
         .map((product) => {
           const totalToOrder = product.orders_per_branch.reduce(
             (sum, order) => sum + order.to_order_amount,
@@ -93,22 +132,7 @@ export const OrderDetailsPage = () => {
     generateTxtFile(content, fileName);
   };
 
-  const productsInOrderTableData = editableOrderDetails.products_to_order.map(
-    ({ id, name, orders_per_branch }) => {
-      const totalToOrder = orders_per_branch.reduce(
-        (sum, order) => sum + order.to_order_amount,
-        0
-      );
-
-      return {
-        id,
-        name,
-        totalToOrder,
-      };
-    }
-  );
-
-  const selectedProduct = productsInOrderTableData.find(
+  const selectedProduct = productsInOrderTableData?.find(
     (product) => product.id === selectedProductId
   );
 
@@ -125,19 +149,27 @@ export const OrderDetailsPage = () => {
       <Stack spacing={4} direction="row">
         <Stack spacing={1} width={379} height={418}>
           <ProductsInOrderTable
-            products={productsInOrderTableData}
+            products={filteredProductsInOrderTableData ?? []}
             selectedProductId={selectedProductId}
             setSelectedProductId={setSelectedProductId}
           />
-          <Stack spacing={1} direction="row" justifyContent="center">
+          <Stack spacing={1} direction="row" justifyContent="center" paddingX={1}>
             <Button
-              variant="outlined"
+              variant="contained"
               color="primary"
               onClick={handleDownload}
-              sx={{ width: '80px', height: '40px' }}
+              sx={{ width: '100px', height: '40px' }}
             >
               {'Pobierz'}
             </Button>
+            <TextField
+              label="Szukaj po nazwie"
+              variant="outlined"
+              size="small"
+              fullWidth
+              value={filterText}
+              onChange={(e) => setFilterText(e.target.value)}
+            />
           </Stack>
         </Stack>
 
@@ -171,7 +203,7 @@ export const OrderDetailsPage = () => {
 
           <Stack height={214}>
             <ProductDetailsInOrderTable
-              editableOrderDetails={editableOrderDetails}
+              orderDetails={data}
               selectedProductId={selectedProductId}
               setSelectedProductId={setSelectedProductId}
             />

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 
 import { axiosInstance } from '../../../../services';
 import { OrderDetails } from '../../app/types/index';
@@ -27,17 +27,13 @@ export const useGetOrderDetails = (id: number) => {
   const { data, isLoading, isError, refetch } = useQuery<GetOrderDetailsResponse, Error>({
     queryKey: ['orderDetails', id],
     queryFn: getOrderDetailsRequest,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
     refetchOnMount: false,
     refetchOnReconnect: true,
   });
 
-  const orderDetails = useMemo(
-    () => data || null,
-    [data]
-  );
   return {
-    orderDetails,
+    data,
     isLoading,
     isError,
     refetch,

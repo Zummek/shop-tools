@@ -2,7 +2,7 @@ import { Stack, Button, CircularProgress, Typography } from '@mui/material';
 import { useState } from 'react';
 
 import { useGetOrders } from '../api/useGetOrders';
-import AddOrderModal from '../components/AddOrderModal';
+import AddOrderModal from '../components/AddOrderModal/Modal';
 import OrdersTable from '../tables/OrdersTable';
 
 export const OrdersPage = () => {
@@ -10,11 +10,12 @@ export const OrdersPage = () => {
   const handleOpenModal = () => setIsModalOpen(true);
   const handleCloseModal = () => setIsModalOpen(false);
 
+  const [page, setPage] = useState(0);
+
   const {
-    orders,
+    data,
     isLoading,
     isFetchingNextPage,
-    hasNextPage,
     fetchNextPage,
     isError,
   } = useGetOrders();
@@ -38,38 +39,23 @@ export const OrdersPage = () => {
     );
   }
 
-  const handleLoadMore = (event: React.MouseEvent) => {
-    event.preventDefault();
-    if (hasNextPage && !isFetchingNextPage) fetchNextPage();
-  };
-
   return (
     <Stack width="100%" alignItems="center">
-      <Stack spacing={1} width={910} height={376}>
-        <OrdersTable orders={orders} />
+      <Stack spacing={1} width={910} height={429}>
+        <OrdersTable data={data} isFetchingNextPage={isFetchingNextPage} fetchNextPage={fetchNextPage} page={page} setPage={setPage} />
 
-        <Stack direction="row">
-          {hasNextPage && (
-            <Button
-              variant="outlined"
-              color="primary"
-              onClick={handleLoadMore}
-              sx={{ width: '180px', height: '50px' }}
-            >
-              {'Załaduj więcej'}
-            </Button>
-          )}
+        <Stack direction="row" justifyContent="flex-end" alignItems="center" spacing={1}>
           {isFetchingNextPage && (
-            <Stack paddingLeft={1} width="50px" height="50px">
+            <Stack width="50px" height="50px" justifyContent="center" alignItems="center">
               <CircularProgress />
             </Stack>
           )}
 
           <Button
-            variant="outlined"
+            variant="contained"
             color="primary"
             onClick={handleOpenModal}
-            sx={{ width: '180px', height: '50px', ml: 'auto' }}
+            sx={{ width: '180px', height: '50px' }}
           >
             {'Nowe zamówienie'}
           </Button>

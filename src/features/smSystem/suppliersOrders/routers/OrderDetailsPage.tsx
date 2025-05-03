@@ -99,9 +99,6 @@ export const OrderDetailsPage = () => {
     );
   }
 
-  const productsToOrder = data.products_to_order || [];
-  productsToOrder.sort((a, b) => a.id - b.id);
-
   const supplierName = data.supplier.name;
   const branchesNames = data.selected_branches
     .map((branch) => branch.name)

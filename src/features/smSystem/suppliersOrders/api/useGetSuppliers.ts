@@ -1,9 +1,7 @@
 import { QueryFunctionContext, useInfiniteQuery } from '@tanstack/react-query';
 import { useCallback } from 'react';
 
-import { useIsPage } from '../../../../hooks';
 import { axiosInstance } from '../../../../services';
-import { Pages } from '../../../../utils';
 import { EMPTY_LIST_RESPONSE, ListResponse, Supplier } from '../../app/types/index';
 
 export type GetSuppliersResponse = ListResponse<Supplier>;
@@ -16,8 +14,6 @@ type QueryParams = {
 };
 
 export const useGetSuppliers = (name?: string) => {
-  const isSuppliersPage = useIsPage([Pages.smSystemSuppliers]);
-
   const getSuppliersRequest = useCallback(
     async ({ pageParam = 1, signal, queryKey }: QueryFunctionContext) => {
       const [, params] = queryKey as [string, QueryParams];
@@ -64,7 +60,7 @@ export const useGetSuppliers = (name?: string) => {
     initialPageParam: 1,
     getNextPageParam,
     refetchOnWindowFocus: true,
-    refetchOnMount: isSuppliersPage,
+    refetchOnMount: true,
     refetchOnReconnect: true,
   });
 

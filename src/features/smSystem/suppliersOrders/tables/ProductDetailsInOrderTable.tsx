@@ -12,13 +12,24 @@ const ProductDetailsInOrderTable = ({
 }: ProductDetailsInOrderTableProps) => {
   const [errorRows, setErrorRows] = useState<number[]>([]);
 
+  const getDate = (rowDate: string) => {
+    const dateObj = new Date(rowDate);
+    const date = `${dateObj.toLocaleDateString('pl-PL')} ${dateObj.toLocaleTimeString('pl-PL', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    })}`;
+    return date
+  }
+
   const columns: GridColDef[] = [
     { field: 'id', headerName: 'ID', width: 50 },
     { field: 'branch', headerName: 'Sklep', width: 100 },
-    { field: 'stock', headerName: 'Stan', width: 100 },
+    { field: 'stock', headerName: 'Stan', width: 70 },
+    { field: 'stockUpdatedAt', headerName: 'Ostatnia\naktualizacja\nstanu', width: 150 },
     { field: 'sales', headerName: 'Sprzedaż', width: 100 },
-    { field: 'toOrderProp', headerName: 'Propozycja', width: 100 },
-    { field: 'toOrder', headerName: 'Ilość', width: 100, editable: true },
+    { field: 'toOrderProp', headerName: 'Proponowana\nilość', width: 110 },
+    { field: 'toOrder', headerName: 'Zamawiana\nilość', width: 110, editable: true },
   ];
 
   const { updateOrderDetails, isLoading, isError } = useUpdateOrderDetails();
@@ -77,6 +88,16 @@ const ProductDetailsInOrderTable = ({
         localeText={{
           noRowsLabel: 'Wybierz produkt',
         }}
+        sx={{
+          '& .MuiDataGrid-columnHeaderTitle': {
+            whiteSpace: 'normal',
+            lineHeight: 'normal',
+          },
+          '& .MuiDataGrid-cell': {
+            display: 'flex',
+            alignItems: 'center',
+          },
+        }}
       />
     );
   }
@@ -84,6 +105,8 @@ const ProductDetailsInOrderTable = ({
   const rows = product.orders_per_branch.map((order) => ({
     id: order.branch.id,
     branch: order.branch.name,
+    stock: order.stock,
+    stockUpdatedAt: getDate(order.stock_updated_at),
     toOrderProp: order.to_order_proposal_amount,
     toOrder: order.to_order_amount,
   }));
@@ -114,6 +137,14 @@ const ProductDetailsInOrderTable = ({
             '& .error-row': {
               backgroundColor: '#ffcccc',
               color: '#900',
+            },
+            '& .MuiDataGrid-columnHeaderTitle': {
+              whiteSpace: 'normal',
+              lineHeight: 'normal',
+            },
+            '& .MuiDataGrid-cell': {
+              display: 'flex',
+              alignItems: 'center',
             },
           }}
           localeText={{

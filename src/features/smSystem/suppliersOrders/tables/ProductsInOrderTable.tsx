@@ -1,4 +1,3 @@
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { DataGrid, GridColDef, GridRowParams } from '@mui/x-data-grid';
 
 import { ProductsInOrderTableProps } from '../../app/types';
@@ -23,23 +22,6 @@ const ProductsInOrderTable = ({
       field: 'totalToOrder',
       headerName: 'Suma',
       width: 60,
-    },
-    {
-      field: 'action',
-      headerName: '',
-      width: 50,
-      renderCell: () => (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '100%',
-          }}
-        >
-          <ChevronRightIcon style={{ fontSize: 30 }} />
-        </div>
-      ),
     },
   ];
 

@@ -2,6 +2,7 @@ import { Button, CircularProgress, Stack, TextField, Typography } from '@mui/mat
 import { useState } from 'react';
 
 import { useGetOrderDetails } from '../api/useGetOrderDetails';
+import ProductDetailsInBranchesTable from '../tables/ProductDetailsInBranchesTable';
 import ProductDetailsInOrderTable from '../tables/ProductDetailsInOrderTable';
 import ProductsInOrderTable from '../tables/ProductsInOrderTable';
 
@@ -143,8 +144,8 @@ export const OrderDetailsPage = () => {
         {supplierName} {' - '} {date} {' - '} {branchesNames}
       </Typography>
 
-      <Stack spacing={4} direction="row">
-        <Stack spacing={1} width={379} height={418}>
+      <Stack spacing={2} direction="row">
+        <Stack spacing={1} width={329} height={418}>
           <ProductsInOrderTable
             products={filteredProductsInOrderTableData ?? []}
             selectedProductId={selectedProductId}
@@ -170,8 +171,8 @@ export const OrderDetailsPage = () => {
           </Stack>
         </Stack>
 
-        <Stack spacing={1} width={570}>
-          <Stack direction="row" height={148}>
+        <Stack spacing={1}>
+          <Stack direction="row" width="100%" height={162}>
             <Typography
               variant="h5"
               color="primary"
@@ -180,7 +181,7 @@ export const OrderDetailsPage = () => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 height: '100%',
-                width: '30%',
+                width: '36%',
                 textAlign: 'center',
                 whiteSpace: 'pre-line',
               }}
@@ -196,6 +197,10 @@ export const OrderDetailsPage = () => {
                 </>
               )}
             </Typography>
+            <ProductDetailsInBranchesTable
+              orderDetails={data}
+              selectedProductId={selectedProductId}
+            />
           </Stack>
 
           <Stack height={214}>

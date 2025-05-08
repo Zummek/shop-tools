@@ -52,7 +52,7 @@ export const ImportProductsStep1 = ({ onNextStep }: Props) => {
             multiple
           />
         </Button>
-        {!!selectedFile && (
+        {!!selectedFile?.name && (
           <Typography>
             {'Wybrany plik: '}
             {selectedFile.name}
@@ -62,7 +62,7 @@ export const ImportProductsStep1 = ({ onNextStep }: Props) => {
       <Box>
         <Button
           variant="contained"
-          disabled={!selectedFile}
+          disabled={!selectedFile?.name}
           onClick={onNextStep}
         >
           {'Przejdź dalej'}

@@ -1,43 +1,50 @@
-import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import { axiosInstance } from '../../../../services';
 
 interface Payload {
-  processId: string;
+  processId: number;
 }
 
-interface Response {
-  message: string;
-  data: {
-    status: 'completed' | 'failed' | 'inProgress';
-    progress: number;
+export type ImportStatus = 'FAILED' | 'IN_PROGRESS' | 'COMPLETED';
+
+interface ImportStatusResponse {
+  id: number;
+  status: ImportStatus;
+  errorMessage: string | null;
+  summary: null | {
+    productsCreatedAmount: number;
+    productsDeletedAmount: number;
+    productsUpdatedAmount: number;
+    productsReactivatedAmount: number;
   };
 }
 
 export const useGetImportProductsStatus = () => {
-  const [processId, setProcessId] = useState<string | null>(null);
+  const [importProgress, setImportProgress] =
+    useState<ImportStatusResponse | null>(null);
 
-  const getImportProductsStatusRequest = async () => {
-    const res = await axiosInstance.get<Response>(
-      `/api/v1/products/import/${processId}`
-    );
-    return res.data.data;
-  };
+  const fetchImportStatus = useCallback(
+    async (processId: number): Promise<ImportStatusResponse | null> => {
+      const res = await axiosInstance.get<ImportStatusResponse>(
+        `/api/v1/products/import/${processId}/status/`
+      );
+      return res.data;
+    },
+    []
+  );
 
-  const { data: importProgress, isLoading } = useQuery({
-    queryKey: ['import-products-status', processId],
-    queryFn: getImportProductsStatusRequest,
-    enabled: processId !== null,
-  });
-
-  const getImportProductsStatus = ({ processId }: Payload) => {
-    setProcessId(processId);
-  };
+  const getImportProductsStatus = useCallback(
+    async ({ processId }: Payload): Promise<ImportStatusResponse | null> => {
+      const result = await fetchImportStatus(processId);
+      setImportProgress(result);
+      return result || null;
+    },
+    [fetchImportStatus]
+  );
 
   return {
     getImportProductsStatus,
     importProgress,
-    isLoading,
   };
 };

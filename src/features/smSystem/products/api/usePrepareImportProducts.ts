@@ -1,29 +1,30 @@
 import { useMutation } from '@tanstack/react-query';
 
 import { axiosInstance } from '../../../../services';
-import { ImportCategory, ImportProduct } from '../types';
+import { ImportProductPreparedProduct, ImportProductsStatus } from '../types';
 
 interface Payload {
   productsFile: File;
 }
 
-interface Response {
-  message: string;
-  data: {
-    notListedProducts: ImportProduct[];
-    notListedCategories: ImportCategory[];
-    listedProductsAmount: number;
-    listedCategoriesAmount: number;
+export interface PrepareImportProductsResponse {
+  id: number;
+  status: ImportProductsStatus;
+  summary: {
+    productsToCreateAmount: number;
+    productsToUpdateAmount: number;
+    productsNotListedAmount: number;
+    productsNotListed: ImportProductPreparedProduct[];
   };
 }
 
 export const usePrepareImportProducts = () => {
   const prepareImportProductsRequest = async ({ productsFile }: Payload) => {
     const formData = new FormData();
-    formData.append('TXTData', productsFile);
+    formData.append('file', productsFile);
 
-    return axiosInstance.post<Response>(
-      '/api/v1/products/prepareImport',
+    return axiosInstance.post<PrepareImportProductsResponse>(
+      '/api/v1/products/import/prepare/',
       formData,
       {
         headers: {

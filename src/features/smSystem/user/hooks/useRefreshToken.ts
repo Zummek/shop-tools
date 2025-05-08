@@ -12,16 +12,20 @@ export const useRefreshToken = () => {
   );
 
   const refreshToken = useCallback(async () => {
-    if (!refreshTokenValue) return false;
+    if (!refreshTokenValue) return undefined;
 
-    const { accessToken } = await refreshTokenRequest({
-      refreshToken: refreshTokenValue,
-    });
+    try {
+      const { accessToken } = await refreshTokenRequest({
+        refreshToken: refreshTokenValue,
+      });
 
-    if (accessToken) dispatch(setAccessToken(accessToken));
-    else dispatch(setAccessToken(null));
+      if (accessToken) dispatch(setAccessToken(accessToken));
+      else dispatch(setAccessToken(null));
 
-    return accessToken;
+      return accessToken;
+    } catch (error) {
+      return undefined;
+    }
   }, [dispatch, refreshTokenValue]);
 
   return { refreshToken };

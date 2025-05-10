@@ -11,7 +11,7 @@ interface Payload {
   status: TransferStatusEnum;
 }
 
-const endpoint = `/api/v1/transfers/status/`;
+const endpoint = '/api/v1/transfers/status/';
 
 export const useUpdateTransfersStatus = () => {
   const queryClient = useQueryClient();

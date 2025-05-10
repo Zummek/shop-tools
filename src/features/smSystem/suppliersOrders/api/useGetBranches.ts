@@ -2,7 +2,7 @@ import { QueryFunctionContext, useInfiniteQuery } from '@tanstack/react-query';
 import { useCallback } from 'react';
 
 import { axiosInstance } from '../../../../services';
-import { EMPTY_LIST_RESPONSE, ListResponse, Branch } from '../../app/types/index';
+import { emptyListResponse, ListResponse, Branch } from '../../app/types/index';
 
 export type GetBranchesResponse = ListResponse<Branch>;
 
@@ -17,11 +17,11 @@ export const useGetBranches = () => {
         const response = await axiosInstance.get<GetBranchesResponse>(endpoint, {
           params: {
             page: pageParam,
-            page_size: pageSize,
+            pageSize,
           },
           signal,
         });
-        return response.data || EMPTY_LIST_RESPONSE;
+        return response.data || emptyListResponse;
       } catch (err) {
         console.error('Error fetching branches:', err);
         throw err;
@@ -52,9 +52,9 @@ export const useGetBranches = () => {
     queryFn: getBranchesRequest,
     initialPageParam: 1,
     getNextPageParam,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
     refetchOnMount: false,
-    refetchOnReconnect: true,
+    refetchOnReconnect: false,
   });
 
   return {

@@ -27,9 +27,9 @@ export const useGetOrderDetails = (id: number) => {
   const { data, isLoading, isError, refetch } = useQuery<GetOrderDetailsResponse, Error>({
     queryKey: ['orderDetails', id],
     queryFn: getOrderDetailsRequest,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
     refetchOnMount: false,
-    refetchOnReconnect: true,
+    refetchOnReconnect: false,
   });
 
   return {

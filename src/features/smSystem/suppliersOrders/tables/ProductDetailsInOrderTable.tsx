@@ -1,26 +1,19 @@
 import { Stack, Typography } from '@mui/material';
 import { DataGrid, GridColDef, GridRowModel } from '@mui/x-data-grid';
-import { useState } from 'react';
+import dayjs from 'dayjs';
+import { useState, useCallback, useEffect } from 'react';
 
 import { ProductDetailsInOrderTableProps } from '../../app/types';
 import { useUpdateOrderDetails } from '../api/useUpdateOrderDetails';
 
-const ProductDetailsInOrderTable = ({
+export const ProductDetailsInOrderTable = ({
   orderDetails,
   selectedProductId,
   setSelectedProductId,
 }: ProductDetailsInOrderTableProps) => {
-  const [errorRows, setErrorRows] = useState<number[]>([]);
+  const [errorRows, setErrorRows] = useState<Set<number>>(new Set());
 
-  const getDate = (rowDate: string) => {
-    const dateObj = new Date(rowDate);
-    const date = `${dateObj.toLocaleDateString('pl-PL')} ${dateObj.toLocaleTimeString('pl-PL', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    })}`;
-    return date
-  }
+  const { updateOrderDetails, isLoading, isError } = useUpdateOrderDetails();
 
   const columns: GridColDef[] = [
     { field: 'id', headerName: 'ID', width: 50 },
@@ -32,51 +25,67 @@ const ProductDetailsInOrderTable = ({
     { field: 'toOrder', headerName: 'Zamawiana\nilość', width: 110, editable: true },
   ];
 
-  const { updateOrderDetails, isLoading, isError } = useUpdateOrderDetails();
-
-  const processRowUpdate = (updatedRow: GridRowModel) => {
-    const updatedProduct = orderDetails.products_to_order.find(
-      (prod) => prod.id === selectedProductId
-    );
-
-    if (updatedProduct) {
-      const updatedOrder = updatedProduct.orders_per_branch.find(
-        (order) => order.branch.id === updatedRow.id
+  const processRowUpdate = useCallback(
+    (updatedRow: GridRowModel) => {
+      const updatedProduct = orderDetails.productsToOrder.find(
+        (prod) => prod.id === selectedProductId
       );
 
-      if (updatedOrder) {
-        const newToOrder = Number(updatedRow.toOrder);
-        const isValidInput = Number.isInteger(newToOrder) && newToOrder >= 0;
-        const error = !isValidInput;
+      if (updatedProduct) {
+        const updatedOrder = updatedProduct.ordersPerBranch.find(
+          (order) => order.branch.id === updatedRow.id
+        );
 
-        if (error) {
+        if (updatedOrder) {
+          const newToOrder = Number(updatedRow.toOrder);
+          const isValidInput = Number.isInteger(newToOrder) && newToOrder >= 0;
+          const error = !isValidInput;
+
           setErrorRows((prevErrorRows) => {
-            const newErrorRows = [...prevErrorRows, updatedOrder.branch.id];
-            setTimeout(() => {
-              setErrorRows((prevErrorRows) =>
-                prevErrorRows.filter((id) => id !== updatedOrder.branch.id)
-              );
-            }, 1500);
+            const newErrorRows = new Set(prevErrorRows);
+            if (error) {
+              newErrorRows.add(updatedOrder.branch.id);
+              setTimeout(() => {
+                setErrorRows((prevErrorRows) => {
+                  const updated = new Set(prevErrorRows);
+                  updated.delete(updatedOrder.branch.id);
+                  return updated;
+                });
+              }, 1500);
+            }
+            else {
+              newErrorRows.delete(updatedOrder.branch.id);
+            }
+            
             return newErrorRows;
           });
-        } else {
-          updateOrderDetails({
-            orderId: orderDetails.id,
-            branchId: updatedOrder.branch.id,
-            productId: updatedProduct.id,
-            toOrderAmount: newToOrder,
-          });
+
+          if (!error) {
+            updateOrderDetails({
+              orderId: orderDetails.id,
+              branchId: updatedOrder.branch.id,
+              productId: updatedProduct.id,
+              toOrderAmount: newToOrder,
+            });
+          }
         }
       }
-    }
-  };
 
-  const product = orderDetails.products_to_order.find(
+      return updatedRow;
+    },
+    [orderDetails, selectedProductId, updateOrderDetails]
+  );
+
+  const product = orderDetails.productsToOrder.find(
     (productInOrder) => productInOrder.id === selectedProductId
   );
 
+  useEffect(() => {
+    if (!product) 
+      setSelectedProductId(0);
+  }, [product, setSelectedProductId]);
+
   if (!product) {
-    setSelectedProductId(0);
     return (
       <DataGrid
         rows={[]}
@@ -102,13 +111,13 @@ const ProductDetailsInOrderTable = ({
     );
   }
 
-  const rows = product.orders_per_branch.map((order) => ({
+  const rows = product.ordersPerBranch.map((order) => ({
     id: order.branch.id,
     branch: order.branch.name,
     stock: order.stock,
-    stockUpdatedAt: getDate(order.stock_updated_at),
-    toOrderProp: order.to_order_proposal_amount,
-    toOrder: order.to_order_amount,
+    stockUpdatedAt: dayjs(order.stockUpdatedAt).format('DD.MM.YYYY HH:MM'),
+    toOrderProp: order.toOrderProposalAmount,
+    toOrder: order.toOrderAmount,
   }));
 
   return (
@@ -121,17 +130,14 @@ const ProductDetailsInOrderTable = ({
           disableColumnMenu
           disableRowSelectionOnClick
           hideFooter
-          processRowUpdate={(updatedRow: GridRowModel) => {
-            processRowUpdate(updatedRow);
-            return updatedRow;
-          }}
+          processRowUpdate={processRowUpdate}
           initialState={{
             sorting: {
               sortModel: [{ field: 'id', sort: 'asc' }],
             },
           }}
           getRowClassName={(params) =>
-            errorRows.includes(params.row.id) ? 'error-row' : ''
+            errorRows.has(params.row.id) ? 'error-row' : ''
           }
           sx={{
             '& .error-row': {
@@ -175,5 +181,3 @@ const ProductDetailsInOrderTable = ({
     </Stack>
   );
 };
-
-export default ProductDetailsInOrderTable;

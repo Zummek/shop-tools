@@ -4,7 +4,7 @@ import { FetchNextPageOptions, InfiniteData, InfiniteQueryObserverResult } from 
 
 import { GetBranchesResponse } from '../api/useGetBranches';
 
-const BranchesInSupplierTable = ({
+export const BranchesInSupplierTable = ({
   data,
   isFetchingNextPage,
   fetchNextPage,
@@ -124,5 +124,3 @@ const BranchesInSupplierTable = ({
     />
   );
 };
-
-export default BranchesInSupplierTable;

@@ -2,8 +2,8 @@ import { Stack, Button, CircularProgress, Typography } from '@mui/material';
 import { useState } from 'react';
 
 import { useGetOrders } from '../api/useGetOrders';
-import AddOrderModal from '../components/AddOrderModal/Modal';
-import OrdersTable from '../tables/OrdersTable';
+import { AddOrderModal } from '../components/AddOrderModal/Modal';
+import { OrdersTable } from '../tables/OrdersTable';
 
 export const OrdersPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);

@@ -27,9 +27,9 @@ export const useGetSupplierDetails = (id: number) => {
   const { data, isLoading, isError, refetch } = useQuery<GetSupplierDetailsResponse, Error>({
     queryKey: ['supplierDetails', id],
     queryFn: getSupplierDetailsRequest,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
     refetchOnMount: false,
-    refetchOnReconnect: true,
+    refetchOnReconnect: false,
   });
 
   return {

@@ -5,7 +5,7 @@ import { FetchNextPageOptions, InfiniteData, InfiniteQueryObserverResult } from 
 
 import { GetProductsResponse } from '../api/useGetProducts';
 
-const ProductsInSupplierTable = ({
+export const ProductsInSupplierTable = ({
   data,
   isFetchingNextPage,
   fetchNextPage,
@@ -142,5 +142,3 @@ const ProductsInSupplierTable = ({
     />
   );
 };
-
-export default ProductsInSupplierTable;

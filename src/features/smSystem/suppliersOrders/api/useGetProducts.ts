@@ -2,7 +2,7 @@ import { useInfiniteQuery, QueryFunctionContext } from '@tanstack/react-query';
 import { useCallback } from 'react';
 
 import { axiosInstance } from '../../../../services';
-import { EMPTY_LIST_RESPONSE, ListResponse, Product } from '../../app/types/index';
+import { emptyListResponse, ListResponse, Product } from '../../app/types/index';
 
 export type GetProductsResponse = ListResponse<Product>;
 
@@ -16,12 +16,12 @@ export const useGetProducts = () => {
         const response = await axiosInstance.get<GetProductsResponse>(endpoint, {
           params: {
             page: pageParam,
-            page_size: pageSize,
+            pageSize,
           },
           signal,
         });
 
-        return response.data || EMPTY_LIST_RESPONSE;
+        return response.data || emptyListResponse;
       } catch (err) {
         console.error('Error fetching products:', err);
         throw err;
@@ -52,9 +52,9 @@ export const useGetProducts = () => {
     queryFn: getProductsRequest,
     initialPageParam: 1,
     getNextPageParam,
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
-    refetchOnReconnect: true,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 
   return {

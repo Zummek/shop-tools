@@ -16,15 +16,14 @@ import {BasicModalProps} from '../../../app/types/index';
 import { useCreateOrder } from '../../api/useCreateOrder';
 import { useGetSuppliers } from '../../api/useGetSuppliers';
 
-import BranchesTable from './BranchesTable';
-import SuppliersTable from './SuppliersTable';
+import { BranchesTable } from './BranchesTable';
+import { SuppliersTable } from './SuppliersTable';
 
 
-const AddOrderModal = ({ open, handleClose }: BasicModalProps) => {
+export const AddOrderModal = ({ open, handleClose }: BasicModalProps) => {
   const [page, setPage] = useState(0);
-  const [name, setName] = useState<string>('');
-  const [nameToSearch, setNameToSearch] = useState<string>('');
-  const [isCreating, setIsCreating] = useState<boolean>(false);
+  const [name, setName] = useState('');
+  const [nameToSearch, setNameToSearch] = useState('');
 
   const {
     data,
@@ -37,29 +36,23 @@ const AddOrderModal = ({ open, handleClose }: BasicModalProps) => {
   const [selectedSupplier, setSelectedSupplier] = useState<number | null>(null);
   const [selectedBranches, setSelectedBranches] = useState<number[]>([]);
   
-  const { createOrder } = useCreateOrder();
+  const { createOrder, isCreating } = useCreateOrder();
 
   const navigate = useNavigate();
 
   const handleAddOrder = async () => {
     if (selectedSupplier !== null && selectedBranches.length > 0) {
-      setIsCreating(true)
       const orderData = {
-        supplier_id: selectedSupplier,
-        selected_branches_ids: selectedBranches,
+        supplierId: selectedSupplier,
+        selectedBranchesIds: selectedBranches,
       };
   
       try {
         const id = await createOrder(orderData);
-        if (id) {
-          setIsCreating(false)
+        if (id) 
           navigate(`${Pages.smSystemOrders}/${id}`);
-        }
-        else {
+        else 
           console.error('Brak ID zamówienia');
-          setIsCreating(false)
-        }
-        
         
       } catch (err) {
         console.error('Błąd przy tworzeniu zamówienia', err);
@@ -186,5 +179,3 @@ const AddOrderModal = ({ open, handleClose }: BasicModalProps) => {
     </Modal>
   );
 };
-
-export default AddOrderModal;

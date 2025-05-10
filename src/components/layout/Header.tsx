@@ -110,35 +110,6 @@ export const Header = ({
               </Box>
             </Stack>
           )}
-          {showSuppliersOrdersHeader && (
-            <Stack spacing={2} direction="row" alignItems="center">
-              <Typography variant="h6">{'Zamówienia u dostawców:'}</Typography>
-              <Box>
-                <ButtonGroup variant="outlined">
-                  <Button
-                    href={`#${Pages.smSystemOrders}`}
-                    variant={
-                      isOrdersPage || isOrdersParamPage
-                        ? 'contained'
-                        : 'outlined'
-                    }
-                  >
-                    {'Zamówienia'}
-                  </Button>
-                  <Button
-                    href={`#${Pages.smSystemSuppliers}`}
-                    variant={
-                      isSuppliersPage || isSuppliersParamPage
-                        ? 'contained'
-                        : 'outlined'
-                    }
-                  >
-                    {'Dostawcy'}
-                  </Button>
-                </ButtonGroup>
-              </Box>
-            </Stack>
-          )}
         </Stack>
 
         <Typography variant="h3">{headerTitle}</Typography>

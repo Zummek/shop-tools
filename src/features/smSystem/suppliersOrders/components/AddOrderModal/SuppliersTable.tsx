@@ -4,7 +4,7 @@ import { FetchNextPageOptions, InfiniteData, InfiniteQueryObserverResult } from 
 
 import { GetSuppliersResponse } from '../../api/useGetSuppliers';
 
-const SuppliersTable = ({
+export const SuppliersTable = ({
   data,
   isFetchingNextPage,
   fetchNextPage,
@@ -120,5 +120,3 @@ const SuppliersTable = ({
     />
   );
 };
-
-export default SuppliersTable;

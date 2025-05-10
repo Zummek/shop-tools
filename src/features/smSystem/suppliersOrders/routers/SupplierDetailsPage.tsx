@@ -1,26 +1,17 @@
 import { Button, CircularProgress, Stack, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 
 import { useGetBranches } from '../api/useGetBranches';
 import { useGetProducts } from '../api/useGetProducts';
 import { useGetSupplierDetails } from '../api/useGetSupplierDetails';
 import { useUpdateSupplierDetails } from '../api/useUpdateSupplierDetails';
-import BranchesInSupplierTable from '../tables/BranchesInSupplierTable';
-import ProductsInSupplierTable from '../tables/ProductsInSupplierTable';
+import { BranchesInSupplierTable } from '../tables/BranchesInSupplierTable';
+import { ProductsInSupplierTable } from '../tables/ProductsInSupplierTable';
 
 export const SupplierDetailsPage = () => {
-  const getIdFromUrl = () => {
-    const url = window.location.hash;
-    const match = url.match(/suppliers\/(\d+)/);
-
-    if (match) {
-      const id = parseInt(match[1], 10);
-      return Number.isInteger(id) ? id : 0;
-    }
-    return 0;
-  };
-
-  const id = getIdFromUrl();
+  const { supplierId } = useParams();
+  const id = isNaN(Number(supplierId)) ? 0 : Number(supplierId);
 
   const [selectedBranches, setSelectedBranches] = useState<number[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
@@ -137,8 +128,8 @@ export const SupplierDetailsPage = () => {
       const payload = {
         id: dataSupplierDetails.id,
         name: dataSupplierDetails.name,
-        branches_ids: selectedBranches,
-        products_ids: selectedProducts,
+        branchesIds: selectedBranches,
+        productsIds: selectedProducts,
       };
       updateSupplierDetails(payload);
     }

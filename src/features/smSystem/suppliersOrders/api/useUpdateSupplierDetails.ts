@@ -5,8 +5,8 @@ import { axiosInstance } from '../../../../services';
 interface UpdateSupplierDetailsInput {
   id: number;
   name: string;
-  branches_ids: number[];
-  products_ids: number[];
+  branchesIds: number[];
+  productsIds: number[];
 }
 
 interface UpdateSupplierResponse {
@@ -21,13 +21,13 @@ const getEndpoint = (id: number) => `/api/v1/suppliers-orders/suppliers/${id}/`;
 export const useUpdateSupplierDetails = () => {
   const queryClient = useQueryClient();
 
-  const updateSupplierDetailsRequest = async ({ id, name, branches_ids, products_ids }: UpdateSupplierDetailsInput) => {
+  const updateSupplierDetailsRequest = async ({ id, name, branchesIds, productsIds }: UpdateSupplierDetailsInput) => {
     const endpoint = getEndpoint(id);
 
     const payload = {
       name,
-      branches_ids,
-      products_ids,
+      branchesIds,
+      productsIds,
     };
 
     const response = await axiosInstance.patch<UpdateSupplierResponse>(endpoint, payload);
@@ -38,6 +38,7 @@ export const useUpdateSupplierDetails = () => {
     mutationFn: updateSupplierDetailsRequest,
     onSuccess: (response, variables) => {
       queryClient.setQueryData(getSupplierDetailsQueryKey(variables.id), response);
+      queryClient.refetchQueries({ queryKey: ['suppliers'] });
     },
     onError: (error: Error) => {
       console.error('Błąd podczas aktualizacji szczegółów dostawcy:', error);

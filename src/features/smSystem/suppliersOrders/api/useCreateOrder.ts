@@ -1,10 +1,15 @@
+import { useState } from 'react';
+
 import { axiosInstance } from '../../../../services';
 import { CreateOrderInput } from '../../app/types';
 
 const endpoint = '/api/v1/suppliers-orders/orders/';
 
 export const useCreateOrder = () => {
+  const [isCreating, setIsCreating] = useState(false);
+
   const createOrder = async (orderData: CreateOrderInput) => {
+    setIsCreating(true);
     try {
       const response = await axiosInstance.post(endpoint, orderData);
 
@@ -16,6 +21,9 @@ export const useCreateOrder = () => {
     } catch (err) {
       console.error('Błąd tworzenia zamówienia', err);
     }
+    finally {
+      setIsCreating(false);
+    }
   };
-  return { createOrder };
+  return { createOrder, isCreating };
 };

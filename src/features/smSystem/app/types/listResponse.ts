@@ -5,7 +5,7 @@ export interface ListResponse<T> {
   results: T[];
 }
 
-export const EMPTY_LIST_RESPONSE = {
+export const emptyListResponse = {
   count: 0,
   next: null,
   previous: null,

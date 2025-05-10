@@ -16,9 +16,9 @@ interface SimpleUser {
 export interface Order {
   id: number;
   supplier: SimpleSupplier;
-  selected_branches: SimpleBranch[];
-  created_at: string;
-  updated_at: string;
+  selectedBranches: SimpleBranch[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export type OrdersList = Order[];
@@ -34,49 +34,49 @@ export type SuppliersList = Supplier[];
 export interface Branch {
   id: number;
   name: string;
-  created_at: string;
-  created_by: SimpleUser;
-  updated_at: string;
-  updated_by: SimpleUser;
+  createdAt: string;
+  createdBy: SimpleUser;
+  updatedAt: string;
+  updatedBy: SimpleUser;
 }
 
 interface OrdersPerBranch {
   id: number;
   branch: SimpleBranch;
-  to_order_proposal_amount: number;
-  to_order_amount: number;
-  previous_order_amount: number;
+  toOrderProposalAmount: number;
+  toOrderAmount: number;
+  previousOrderAmount: number;
   stock: number;
-  stock_updated_at: string;
+  stockUpdatedAt: string;
 }
 
 interface NotSelectedBranches {
   branch: SimpleBranch;
-  previous_order_amount: number;
+  previousOrderAmount: number;
   stock: number;
-  stock_updated_at: string;
+  stockUpdatedAt: string;
 }
 
 interface ProductsToOrder {
   id: number;
   name: string;
-  orders_per_branch: OrdersPerBranch[];
-  not_selected_branches: NotSelectedBranches[];
+  ordersPerBranch: OrdersPerBranch[];
+  notSelectedBranches: NotSelectedBranches[];
 }
 
 export interface OrderDetails {
   id: number;
   supplier: Supplier;
-  selected_branches: SimpleBranch[];
-  products_to_order: ProductsToOrder[];
-  created_at: string;
-  updated_at: string;
+  selectedBranches: SimpleBranch[];
+  productsToOrder: ProductsToOrder[];
+  createdAt: string;
+  updatedAt: string;
   detail?: string;
 }
 
 export interface CreateOrderInput {
-  supplier_id: number;
-  selected_branches_ids: number[];
+  supplierId: number;
+  selectedBranchesIds: number[];
 }
 export interface ProductInOrder {
   id: number;
@@ -108,20 +108,20 @@ export interface BasicModalProps {
 
 interface OrderConditions {
   id: number;
-  lower_bound: number;
-  upper_bound: number;
-  to_order_amount: number;
+  lowerBound: number;
+  upperBound: number;
+  toOrderAmount: number;
 }
 
 interface OrderConditionsPerBranch {
   branch: SimpleBranch;
-  order_conditions: OrderConditions[];
+  orderConditions: OrderConditions[];
 }
 
 export interface ProductConditions {
   id: number;
   name: string;
-  order_conditions_per_branch: OrderConditionsPerBranch[];
+  orderConditionsPerBranch: OrderConditionsPerBranch[];
 }
 
 export interface SupplierDetails {
@@ -135,18 +135,18 @@ export interface SupplierDetails {
 export interface ProductBranch {
   branch: SimpleBranch[];
   stock: number;
-  stock_updated_at: string | null;
-  net_price: number;
-  net_price_updated_at: string | null;
+  stockIpdatedAt: string | null;
+  netPrice: number;
+  netPriceUpdatedAt: string | null;
 }
 
 export interface Product {
   id: number;
   name: string;
-  internal_id: string;
+  internalId: string;
   barcodes: string[];
   vat: number | null;
   branches: ProductBranch[];
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
 }

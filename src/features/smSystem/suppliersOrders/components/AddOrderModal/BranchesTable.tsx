@@ -4,7 +4,7 @@ import { useState } from 'react';
 
 import { Supplier } from '../../../app/types';
 
-const BranchesTable = ({
+export const BranchesTable = ({
   data,
   selectedBranches,
   handleCheckboxChange,
@@ -96,5 +96,3 @@ const BranchesTable = ({
     />
   );
 };
-
-export default BranchesTable;

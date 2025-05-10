@@ -16,7 +16,7 @@ interface UpdateOrderResponse {
 
 const getOrderDetailsQueryKey = (orderId: number) => ['orderDetails', orderId];
 
-const getEndpoint = (orderId: number, branchId: number, productId: number) => 
+const getEndpoint = (orderId: number, branchId: number, productId: number) =>
   `/api/v1/suppliers-orders/orders/${orderId}/branches/${branchId}/products/${productId}/`;
 
 export const useUpdateOrderDetails = () => {
@@ -25,7 +25,7 @@ export const useUpdateOrderDetails = () => {
   const updateOrderDetailsRequest = async ({ orderId, branchId, productId, toOrderAmount }: UpdateOrderDetailsInput) => {
     const endpoint = getEndpoint(orderId, branchId, productId);
     const response = await axiosInstance.patch<UpdateOrderResponse>(endpoint, {
-      to_order_amount: toOrderAmount,
+      toOrderAmount,
     });
     return response.data;
   };
@@ -34,6 +34,7 @@ export const useUpdateOrderDetails = () => {
     mutationFn: updateOrderDetailsRequest,
     onSuccess: (response, variables) => {
       queryClient.setQueryData(getOrderDetailsQueryKey(variables.orderId), response);
+      queryClient.refetchQueries({ queryKey: ['products'] });
     },
     onError: (error: Error) => {
       console.error('Błąd podczas aktualizacji zamówienia:', error);

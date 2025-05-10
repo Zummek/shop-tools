@@ -2,7 +2,7 @@ import { DataGrid, GridColDef, GridRowParams } from '@mui/x-data-grid';
 
 import { ProductsInOrderTableProps } from '../../app/types';
 
-const ProductsInOrderTable = ({
+export const ProductsInOrderTable = ({
   products,
   selectedProductId,
   setSelectedProductId,
@@ -52,5 +52,3 @@ const ProductsInOrderTable = ({
     />
   );
 };
-
-export default ProductsInOrderTable;

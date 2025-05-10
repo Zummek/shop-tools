@@ -2,12 +2,12 @@ import { QueryFunctionContext, useInfiniteQuery } from '@tanstack/react-query';
 import { useCallback } from 'react';
 
 import { axiosInstance } from '../../../../services';
-import { EMPTY_LIST_RESPONSE, ListResponse, Supplier } from '../../app/types/index';
+import { emptyListResponse, ListResponse, Supplier } from '../../app/types/index';
 
 export type GetSuppliersResponse = ListResponse<Supplier>;
 
 const endpoint = '/api/v1/suppliers-orders/suppliers/';
-const pageSize = 5;
+const pageSize = 25;
 
 type QueryParams = {
   name?: string;
@@ -22,13 +22,13 @@ export const useGetSuppliers = (name?: string) => {
         const response = await axiosInstance.get<GetSuppliersResponse>(endpoint, {
           params: {
             page: pageParam,
-            page_size: pageSize,
+            pageSize,
             name: params?.name,
           },
           signal,
         });
 
-        return response.data || EMPTY_LIST_RESPONSE;
+        return response.data || emptyListResponse;
       } catch (err) {
         console.error('Error fetching suppliers:', err);
         throw err;
@@ -59,9 +59,9 @@ export const useGetSuppliers = (name?: string) => {
     queryFn: getSuppliersRequest,
     initialPageParam: 1,
     getNextPageParam,
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
-    refetchOnReconnect: true,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 
   return {

@@ -2,7 +2,7 @@ import { CircularProgress, Stack, TextField, Typography } from '@mui/material';
 import { SetStateAction, useEffect, useState } from 'react';
 
 import { useGetSuppliers } from '../api/useGetSuppliers';
-import SuppliersTable from '../tables/SuppliersTable';
+import { SuppliersTable } from '../tables/SuppliersTable';
 
 export const SuppliersPage = () => {
   const [page, setPage] = useState(0);

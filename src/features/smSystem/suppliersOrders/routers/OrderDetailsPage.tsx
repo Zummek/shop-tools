@@ -1,10 +1,11 @@
 import { Button, CircularProgress, Stack, TextField, Typography } from '@mui/material';
-import { useState } from 'react';
+import dayjs from 'dayjs';
+import { useMemo, useState } from 'react';
 
 import { useGetOrderDetails } from '../api/useGetOrderDetails';
-import ProductDetailsInBranchesTable from '../tables/ProductDetailsInBranchesTable';
-import ProductDetailsInOrderTable from '../tables/ProductDetailsInOrderTable';
-import ProductsInOrderTable from '../tables/ProductsInOrderTable';
+import { ProductDetailsInBranchesTable } from '../tables/ProductDetailsInBranchesTable';
+import { ProductDetailsInOrderTable } from '../tables/ProductDetailsInOrderTable';
+import { ProductsInOrderTable } from '../tables/ProductsInOrderTable';
 
 const generateTxtFile = (content: string, fileName: string) => {
   const blob = new Blob([content], { type: 'text/plain' });
@@ -35,26 +36,31 @@ export const OrderDetailsPage = () => {
 
   const [filterText, setFilterText] = useState('');
 
-  const productsInOrderTableData = data?.products_to_order.map(
-    ({ id, name, orders_per_branch }) => {
-      const totalToOrder = orders_per_branch.reduce(
-        (sum, order) => sum + order.to_order_amount,
+  const productsInOrderTableData = useMemo(() => {
+    return data?.productsToOrder.map(({ id, name, ordersPerBranch }) => {
+      const totalToOrder = ordersPerBranch.reduce(
+        (sum, order) => sum + order.toOrderAmount,
         0
       );
-  
+
       return {
         id,
         name,
         totalToOrder,
       };
-    }
-  );
+    }) ?? [];
+  }, [data]);
   
-  const filteredProductsInOrderTableData = productsInOrderTableData?.filter((product) =>
-    product.name.toLowerCase().includes(filterText.toLowerCase())
-  );
-  
+  const filteredProductsInOrderTableData = useMemo(() => {
+    return productsInOrderTableData.filter((product) =>
+      product.name.toLowerCase().includes(filterText.toLowerCase())
+    );
+  }, [productsInOrderTableData, filterText]);
 
+  const selectedProduct = useMemo(
+    () => productsInOrderTableData.find((product) => product.id === selectedProductId),
+    [productsInOrderTableData, selectedProductId]
+  );
 
   if (isLoading) {
     return (
@@ -75,18 +81,6 @@ export const OrderDetailsPage = () => {
       </Typography>
     );
   }
-
-  if (!data) {
-    return (
-      <Typography
-        variant="h6"
-        color="error"
-        sx={{ textAlign: 'center', marginTop: 2 }}
-      >
-        {'Brak danych'}
-      </Typography>
-    );
-  }
   
   if (data.detail === 'No SupplierOrder matches the given query.') {
     return (
@@ -101,38 +95,28 @@ export const OrderDetailsPage = () => {
   }
 
   const supplierName = data.supplier.name;
-  const branchesNames = data.selected_branches
+  const branchesNames = data.selectedBranches
     .map((branch) => branch.name)
     .join(', ');
-    const dateObj = new Date(data.updated_at);
-    const date = `${dateObj.toLocaleDateString('pl-PL')} ${dateObj.toLocaleTimeString('pl-PL', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    })}`;
-    
+  const date = dayjs(data.updatedAt).format('DD.MM.YYYY HH:MM');
 
   const handleDownload = () => {
+    const filteredProducts = productsInOrderTableData.filter((product) => product.totalToOrder > 0);
+
+    if (filteredProducts.length === 0) 
+      return;
+
     const content =
       `${supplierName} ${date} ${branchesNames}\n\n` +
-      data.products_to_order
-        .map((product) => {
-          const totalToOrder = product.orders_per_branch.reduce(
-            (sum, order) => sum + order.to_order_amount,
-            0
-          );
-
-          return `${product.id}. ${product.name}\tx${totalToOrder}`;
-        })
+      filteredProducts
+        .map((product, index) => `${index + 1}. ${product.name}\tx${product.totalToOrder}`)
         .join('\n');
 
     const fileName = `${supplierName} ${date} ${branchesNames}.txt`;
     generateTxtFile(content, fileName);
   };
 
-  const selectedProduct = productsInOrderTableData?.find(
-    (product) => product.id === selectedProductId
-  );
+
 
   return (
     <Stack spacing={2} width="100%" alignItems="center">
@@ -197,13 +181,15 @@ export const OrderDetailsPage = () => {
                 </>
               )}
             </Typography>
-            <ProductDetailsInBranchesTable
-              orderDetails={data}
-              selectedProductId={selectedProductId}
-            />
+            {data.productsToOrder[0]?.notSelectedBranches?.length > 0 && (
+              <ProductDetailsInBranchesTable
+                orderDetails={data}
+                selectedProductId={selectedProductId}
+              />
+            )}
           </Stack>
 
-          <Stack height={214}>
+          <Stack width={710} height={214}>
             <ProductDetailsInOrderTable
               orderDetails={data}
               selectedProductId={selectedProductId}

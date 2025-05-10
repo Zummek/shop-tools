@@ -9,6 +9,7 @@ import { GeneratePriceListPage } from './features/priceList/routes/GeneratePrice
 import { SmSystemPageLayout } from './features/smSystem/layouts/SmSystemPageLayout';
 import { ImportProductsPage } from './features/smSystem/products/routers/ImportProductsPage/ImportProductsPage';
 import { ProductsDocumentsPage } from './features/smSystem/productsDocuments/routers/ProductsDocumentsPage';
+import { SuppliersOrdersPageLayout } from './features/smSystem/suppliersOrders/layout/SuppliersOrdersPageLayout';
 import { OrderDetailsPage } from './features/smSystem/suppliersOrders/routers/OrderDetailsPage';
 import { OrdersPage } from './features/smSystem/suppliersOrders/routers/OrdersPage';
 import { SupplierDetailsPage } from './features/smSystem/suppliersOrders/routers/SupplierDetailsPage';
@@ -64,6 +65,7 @@ const router = createHashRouter(
         },
         {
           path: 'suppliers-orders',
+          element: <SuppliersOrdersPageLayout />,
           children: [
             {
               path: 'suppliers',

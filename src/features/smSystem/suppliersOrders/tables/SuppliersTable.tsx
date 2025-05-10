@@ -6,13 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { Pages } from '../../../../utils';
 import { GetSuppliersResponse } from '../api/useGetSuppliers';
 
-const SuppliersTable = ({
-  data,
-  isFetchingNextPage,
-  fetchNextPage,
-  page,
-  setPage,
-}: {
+interface SupppliersTableProps {
   data: InfiniteData<GetSuppliersResponse> | undefined;
   isFetchingNextPage: boolean;
   fetchNextPage: (
@@ -20,7 +14,15 @@ const SuppliersTable = ({
   ) => Promise<InfiniteQueryObserverResult<InfiniteData<GetSuppliersResponse>, Error>>;
   page: number;
   setPage: (page: number) => void;
-}) => {
+}
+
+export const SuppliersTable = ({
+  data,
+  isFetchingNextPage,
+  fetchNextPage,
+  page,
+  setPage,
+}: SupppliersTableProps) => {
   const columns: GridColDef[] = [
     {
       field: 'id',
@@ -131,5 +133,3 @@ const SuppliersTable = ({
     />
   );
 };
-
-export default SuppliersTable;

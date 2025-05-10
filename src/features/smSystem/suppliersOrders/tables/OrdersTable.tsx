@@ -1,12 +1,13 @@
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { DataGrid, GridColDef, GridPaginationModel, GridRowParams } from '@mui/x-data-grid';
 import { FetchNextPageOptions, InfiniteData, InfiniteQueryObserverResult } from '@tanstack/react-query';
+import dayjs from 'dayjs';
 import { useNavigate } from 'react-router-dom';
 
 import { Pages } from '../../../../utils';
 import { GetOrdersResponse } from '../api/useGetOrders';
 
-const OrdersTable = ({
+export const OrdersTable = ({
   data,
   isFetchingNextPage,
   fetchNextPage,
@@ -82,28 +83,11 @@ const OrdersTable = ({
 
   const orders = data?.pages?.[page]?.results ?? [];
   const rows = orders.map((order) => {
-    const formatDate = (dateString: string): string => {
-      const dateObj = new Date(dateString);
-      
-      const day = String(dateObj.getDate()).padStart(2, '0');
-      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-      const year = dateObj.getFullYear();
-      
-      const time = dateObj.toLocaleTimeString('pl-PL', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      });
-    
-      const date = `${day}-${month}-${year} ${time}`;
-      return date;
-    };
-
     return {
       id: order.id,
       supplierName: order.supplier?.name ?? '–',
-      selectedBranches: order.selected_branches?.map(b => b.name).join(', ') ?? '',
-      createdAt: formatDate(order.created_at),
+      selectedBranches: order.selectedBranches?.map(b => b.name).join(', ') ?? '',
+      createdAt: dayjs(order.createdAt).format('DD.MM.YYYY HH:MM'),
     };
   });
 
@@ -154,5 +138,3 @@ const OrdersTable = ({
     />
   );
 };
-
-export default OrdersTable;

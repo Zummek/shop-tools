@@ -1,10 +1,8 @@
 import { useInfiniteQuery, QueryFunctionContext } from '@tanstack/react-query';
 import { useCallback } from 'react';
 
-import { useIsPage } from '../../../../hooks';
 import { axiosInstance } from '../../../../services';
-import { Pages } from '../../../../utils';
-import { EMPTY_LIST_RESPONSE, ListResponse, Order } from '../../app/types/index';
+import { emptyListResponse, ListResponse, Order } from '../../app/types/index';
 
 export type GetOrdersResponse = ListResponse<Order>;
 
@@ -12,20 +10,18 @@ const endpoint = '/api/v1/suppliers-orders/orders/';
 const pageSize = 5;
 
 export const useGetOrders = () => {
-  const isOrdersPage = useIsPage([Pages.smSystemOrders]);
-
   const getOrdersRequest = useCallback(
     async ({ pageParam = 1, signal }: QueryFunctionContext) => {
       try {
         const response = await axiosInstance.get<GetOrdersResponse>(endpoint, {
           params: {
             page: pageParam,
-            page_size: pageSize,
+            pageSize,
           },
           signal,
         });
 
-        return response.data || EMPTY_LIST_RESPONSE;
+        return response.data || emptyListResponse;
       } catch (err) {
         console.error('Error fetching orders:', err);
         throw err;
@@ -56,9 +52,9 @@ export const useGetOrders = () => {
     queryFn: getOrdersRequest,
     initialPageParam: 1,
     getNextPageParam,
-    refetchOnWindowFocus: true,
-    refetchOnMount: isOrdersPage,
-    refetchOnReconnect: true,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 
   return {

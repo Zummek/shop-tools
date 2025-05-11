@@ -1,3 +1,5 @@
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { SnackbarProvider } from 'notistack';
 import ReactDOM from 'react-dom/client';
 import { Provider } from 'react-redux';
@@ -9,6 +11,8 @@ import { GeneratePriceListPage } from './features/priceList/routes/GeneratePrice
 import { SmSystemPageLayout } from './features/smSystem/layouts/SmSystemPageLayout';
 import { ImportProductsPage } from './features/smSystem/products/routers/ImportProductsPage/ImportProductsPage';
 import { ProductsDocumentsPage } from './features/smSystem/productsDocuments/routers/ProductsDocumentsPage';
+import { ReportsPage } from './features/smSystem/reports/routers/ReportsPage';
+import { UnfulfilledOrdersByTransfersReportPage } from './features/smSystem/reports/routers/UnfulfilledOrdersByTransfersReportPage';
 import { SuppliersOrdersPageLayout } from './features/smSystem/suppliersOrders/layout/SuppliersOrdersPageLayout';
 import { OrderDetailsPage } from './features/smSystem/suppliersOrders/routers/OrderDetailsPage';
 import { OrdersPage } from './features/smSystem/suppliersOrders/routers/OrdersPage';
@@ -64,6 +68,14 @@ const router = createHashRouter(
           element: <ImportProductsPage />,
         },
         {
+          path: 'reports',
+          element: <ReportsPage />,
+        },
+        {
+          path: 'unfulfilled-orders-by-transfers',
+          element: <UnfulfilledOrdersByTransfersReportPage />,
+        },
+        {
           path: 'suppliers-orders',
           element: <SuppliersOrdersPageLayout />,
           children: [
@@ -106,7 +118,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <Provider store={store}>
       <ReactQueryClientProvider>
         <AxiosInterceptorsProvider store={store}>
-          <RouterProvider router={router} />
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <RouterProvider router={router} />
+          </LocalizationProvider>
         </AxiosInterceptorsProvider>
       </ReactQueryClientProvider>
     </Provider>

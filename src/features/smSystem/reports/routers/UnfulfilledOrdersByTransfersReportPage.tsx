@@ -99,6 +99,7 @@ const columns: GridColDef<UnfulfilledOrdersByTransfersReportItem>[] = [
           color={
             params.row.undeliveredProductsPercent > 0 ? 'error' : 'inherit'
           }
+          variant="body2"
         >{`${params.row.undeliveredProductsPercent}%`}</Typography>
       </Box>
     ),

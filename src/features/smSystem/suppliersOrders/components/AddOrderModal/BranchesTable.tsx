@@ -4,15 +4,17 @@ import { useState } from 'react';
 
 import { Supplier } from '../../../app/types';
 
+interface BranchesTableProps {
+  data: Supplier;
+  selectedBranches: number[];
+  handleCheckboxChange: (branchId: number) => void;
+}
+
 export const BranchesTable = ({
   data,
   selectedBranches,
   handleCheckboxChange,
-}: {
-  data: Supplier;
-  selectedBranches: number[];
-  handleCheckboxChange: (branchId: number) => void;
-}) => {
+}: BranchesTableProps) => {
   const [page, setPage] = useState(0);
  
   const rows = data.branches

@@ -19,7 +19,6 @@ import { useGetSuppliers } from '../../api/useGetSuppliers';
 import { BranchesTable } from './BranchesTable';
 import { SuppliersTable } from './SuppliersTable';
 
-
 export const AddOrderModal = ({ open, handleClose }: BasicModalProps) => {
   const [page, setPage] = useState(0);
   const [name, setName] = useState('');

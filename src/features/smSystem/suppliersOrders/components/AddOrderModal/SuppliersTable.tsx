@@ -4,14 +4,7 @@ import { FetchNextPageOptions, InfiniteData, InfiniteQueryObserverResult } from 
 
 import { GetSuppliersResponse } from '../../api/useGetSuppliers';
 
-export const SuppliersTable = ({
-  data,
-  isFetchingNextPage,
-  fetchNextPage,
-  page,
-  setPage,
-  handleRowClick,
-}: {
+interface SuppliersTableProps {
   data: InfiniteData<GetSuppliersResponse> | undefined;
   isFetchingNextPage: boolean;
   fetchNextPage: (
@@ -20,7 +13,16 @@ export const SuppliersTable = ({
   page: number;
   setPage: (page: number) => void;
   handleRowClick: (params: GridRowParams) => void;
-}) => {
+}
+
+export const SuppliersTable = ({
+  data,
+  isFetchingNextPage,
+  fetchNextPage,
+  page,
+  setPage,
+  handleRowClick,
+}: SuppliersTableProps) => {
   const columns: GridColDef[] = [
     {
       field: 'id',
@@ -60,7 +62,7 @@ export const SuppliersTable = ({
         disableColumnMenu
         disableRowSelectionOnClick
         pagination
-        pageSizeOptions={[5]}
+        pageSizeOptions={[25]}
         paginationModel={{ page, pageSize: 5 }}
         localeText={{
           noRowsLabel: 'Brak zamówień',
@@ -109,8 +111,8 @@ export const SuppliersTable = ({
       disableRowSelectionOnClick
       onRowClick={handleRowClick}
       pagination
-      pageSizeOptions={[5]}
-      paginationModel={{ page, pageSize: 5 }}
+      pageSizeOptions={[25]}
+      paginationModel={{ page, pageSize: 25 }}
       onPaginationModelChange={handlePaginationChange}
       paginationMode="server"
       rowCount={data?.pages[0].count}

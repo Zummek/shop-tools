@@ -1,6 +1,7 @@
 import { Button, CircularProgress, Stack, TextField, Typography } from '@mui/material';
+import { useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { useGetOrderDetails } from '../api/useGetOrderDetails';
 import { ProductDetailsInBranchesTable } from '../tables/ProductDetailsInBranchesTable';
@@ -18,6 +19,8 @@ const generateTxtFile = (content: string, fileName: string) => {
 };
 
 export const OrderDetailsPage = () => {
+  const queryClient = useQueryClient();
+
   const getIdFromUrl = () => {
     const url = window.location.hash;
     const match = url.match(/orders\/(\d+)/);
@@ -28,6 +31,10 @@ export const OrderDetailsPage = () => {
     }
     return 0;
   };
+
+  useEffect(() => {
+    queryClient.refetchQueries({ queryKey: ['orders'] });
+  }, [queryClient]);
 
   const id = getIdFromUrl();
   const { data, isLoading, isError } = useGetOrderDetails(id);

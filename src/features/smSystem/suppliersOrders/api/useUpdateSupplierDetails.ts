@@ -4,9 +4,9 @@ import { axiosInstance } from '../../../../services';
 
 interface UpdateSupplierDetailsInput {
   id: number;
-  name: string;
+  name?: string;
   branchesIds: number[];
-  productsIds: number[];
+  productsIds?: number[];
 }
 
 interface UpdateSupplierResponse {
@@ -21,23 +21,35 @@ const getEndpoint = (id: number) => `/api/v1/suppliers-orders/suppliers/${id}/`;
 export const useUpdateSupplierDetails = () => {
   const queryClient = useQueryClient();
 
-  const updateSupplierDetailsRequest = async ({ id, name, branchesIds, productsIds }: UpdateSupplierDetailsInput) => {
-    const endpoint = getEndpoint(id);
+  const updateSupplierDetailsRequest = async ({
+    id,
+    name,
+    branchesIds,
+    productsIds,
+  }: UpdateSupplierDetailsInput) => {
+    const response = await axiosInstance.patch<UpdateSupplierResponse>(
+      getEndpoint(id),
+      {
+        name,
+        branchesIds,
+        productsIds,
+      }
+    );
 
-    const payload = {
-      name,
-      branchesIds,
-      productsIds,
-    };
-
-    const response = await axiosInstance.patch<UpdateSupplierResponse>(endpoint, payload);
     return response.data;
   };
 
-  const { mutateAsync: updateSupplierDetails, isPending, isError } = useMutation({
+  const {
+    mutateAsync: updateSupplierDetails,
+    isPending,
+    isError,
+  } = useMutation({
     mutationFn: updateSupplierDetailsRequest,
     onSuccess: (response, variables) => {
-      queryClient.setQueryData(getSupplierDetailsQueryKey(variables.id), response);
+      queryClient.setQueryData(
+        getSupplierDetailsQueryKey(variables.id),
+        response
+      );
       queryClient.refetchQueries({ queryKey: ['suppliers'] });
     },
     onError: (error: Error) => {

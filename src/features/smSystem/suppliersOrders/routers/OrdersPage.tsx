@@ -1,66 +1,113 @@
-import { Stack, Button, CircularProgress, Typography } from '@mui/material';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import { Stack, Button, Box } from '@mui/material';
+import {
+  DataGrid,
+  GridColDef,
+  GridPaginationModel,
+  GridRowParams,
+} from '@mui/x-data-grid';
+import dayjs from 'dayjs';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
+import { Pages } from '../../../../utils';
+import { Branch, Supplier } from '../../app/types';
 import { useGetOrders } from '../api/useGetOrders';
-import { AddOrderModal } from '../components/AddOrderModal/Modal';
-import { OrdersTable } from '../tables/OrdersTable';
+import { AddOrderModal } from '../components/AddOrderModal/AddOrderModal';
+
+const columns: GridColDef[] = [
+  {
+    field: 'id',
+    headerName: 'ID',
+    width: 70,
+  },
+  {
+    field: 'supplier',
+    headerName: 'Dostawca',
+    width: 200,
+    valueGetter: (value: Supplier) => value.name,
+  },
+  {
+    field: 'selectedBranches',
+    headerName: 'Wybrane sklepy',
+    width: 350,
+    valueGetter: (selectedBranches: Branch[]) =>
+      selectedBranches.map((branch) => branch.name).join(', '),
+  },
+  {
+    field: 'createdAt',
+    headerName: 'Data utworzenia',
+    width: 180,
+    valueGetter: (createdAt: string) =>
+      dayjs(createdAt).format('DD.MM.YYYY HH:mm'),
+  },
+  {
+    field: 'action',
+    headerName: '',
+    headerAlign: 'right',
+    align: 'right',
+    flex: 1,
+    renderCell: () => (
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'flex-end',
+          height: '100%',
+        }}
+      >
+        <ChevronRightIcon style={{ fontSize: 30 }} />
+      </Box>
+    ),
+  },
+];
 
 export const OrdersPage = () => {
+  const navigate = useNavigate();
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const handleOpenModal = () => setIsModalOpen(true);
   const handleCloseModal = () => setIsModalOpen(false);
 
-  const [page, setPage] = useState(0);
+  const { orders, isLoading, setPageSize, setPage, page, pageSize } =
+    useGetOrders();
 
-  const {
-    data,
-    isLoading,
-    isFetchingNextPage,
-    fetchNextPage,
-    isError,
-  } = useGetOrders();
+  const handleRowClick = (params: GridRowParams) => {
+    navigate(`${Pages.smSystemOrders}/${params.id}`);
+  };
 
-  if (isError) {
-    return (
-      <Typography
-        variant="h6"
-        color="error"
-        sx={{ textAlign: 'center', marginTop: 2 }}
-      >
-        {'Błąd pobierania danych'}
-      </Typography>
-    );
-  }
-  if (isLoading) {
-    return (
-      <Stack width="100%" alignItems="center" paddingTop={8}>
-        <CircularProgress />
-      </Stack>
-    );
-  }
+  const handlePaginationChange = (model: GridPaginationModel) => {
+    setPage(model.page + 1);
+    setPageSize(model.pageSize);
+  };
 
   return (
-    <Stack width="100%" alignItems="center">
-      <Stack spacing={1} width={910} height={429}>
-        <OrdersTable data={data} isFetchingNextPage={isFetchingNextPage} fetchNextPage={fetchNextPage} page={page} setPage={setPage} />
-
-        <Stack direction="row" justifyContent="flex-end" alignItems="center" spacing={1}>
-          {isFetchingNextPage && (
-            <Stack width="50px" height="50px" justifyContent="center" alignItems="center">
-              <CircularProgress />
-            </Stack>
-          )}
-
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleOpenModal}
-            sx={{ width: '180px', height: '50px' }}
-          >
-            {'Nowe zamówienie'}
-          </Button>
-        </Stack>
-      </Stack>
+    <Stack spacing={2}>
+      <Box>
+        <Button variant="contained" onClick={handleOpenModal}>
+          {'Nowe zamówienie'}
+        </Button>
+      </Box>
+      <Box height={500}>
+        <DataGrid
+          rows={orders?.results ?? []}
+          loading={isLoading}
+          columns={columns}
+          disableColumnSorting
+          disableColumnMenu
+          disableRowSelectionOnClick
+          onRowClick={handleRowClick}
+          pagination
+          pageSizeOptions={[25, 50]}
+          paginationModel={{ page, pageSize }}
+          onPaginationModelChange={handlePaginationChange}
+          paginationMode="server"
+          rowCount={orders?.count ?? 0}
+          localeText={{
+            noRowsLabel: 'Brak zamówień',
+          }}
+        />
+      </Box>
 
       <AddOrderModal open={isModalOpen} handleClose={handleCloseModal} />
     </Stack>

@@ -1,17 +1,14 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { useNotify } from '../../../../hooks';
 import { axiosInstance } from '../../../../services';
+import { OrderDetails } from '../../app/types';
 
-interface UpdateOrderDetailsInput {
+interface Payload {
   orderId: number;
   branchId: number;
   productId: number;
   toOrderAmount: number;
-}
-
-interface UpdateOrderResponse {
-  success: boolean;
-  message?: string;
 }
 
 const getOrderDetailsQueryKey = (orderId: number) => ['orderDetails', orderId];
@@ -21,23 +18,37 @@ const getEndpoint = (orderId: number, branchId: number, productId: number) =>
 
 export const useUpdateOrderDetails = () => {
   const queryClient = useQueryClient();
+  const { notify } = useNotify();
 
-  const updateOrderDetailsRequest = async ({ orderId, branchId, productId, toOrderAmount }: UpdateOrderDetailsInput) => {
-    const endpoint = getEndpoint(orderId, branchId, productId);
-    const response = await axiosInstance.patch<UpdateOrderResponse>(endpoint, {
-      toOrderAmount,
-    });
+  const updateOrderDetailsRequest = async ({
+    orderId,
+    branchId,
+    productId,
+    toOrderAmount,
+  }: Payload) => {
+    const response = await axiosInstance.patch<OrderDetails>(
+      getEndpoint(orderId, branchId, productId),
+      {
+        toOrderAmount,
+      }
+    );
     return response.data;
   };
 
-  const { mutateAsync: updateOrderDetails, isPending, isError } = useMutation({
+  const {
+    mutateAsync: updateOrderDetails,
+    isPending,
+    isError,
+  } = useMutation({
     mutationFn: updateOrderDetailsRequest,
     onSuccess: (response, variables) => {
-      queryClient.setQueryData(getOrderDetailsQueryKey(variables.orderId), response);
-      queryClient.refetchQueries({ queryKey: ['products'] });
+      queryClient.setQueryData(
+        getOrderDetailsQueryKey(variables.orderId),
+        response
+      );
     },
-    onError: (error: Error) => {
-      console.error('Błąd podczas aktualizacji zamówienia:', error);
+    onError: () => {
+      notify('error', 'Błąd podczas aktualizacji zamówienia');
     },
   });
 

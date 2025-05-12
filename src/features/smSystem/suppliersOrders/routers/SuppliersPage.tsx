@@ -1,76 +1,109 @@
-import { CircularProgress, Stack, TextField, Typography } from '@mui/material';
-import { SetStateAction, useEffect, useState } from 'react';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import { Box, FormControl, InputLabel, Stack, TextField } from '@mui/material';
+import {
+  DataGrid,
+  GridColDef,
+  GridPaginationModel,
+  GridRowParams,
+} from '@mui/x-data-grid';
+import { useNavigate } from 'react-router-dom';
 
+import { Pages } from '../../../../utils';
 import { useGetSuppliers } from '../api/useGetSuppliers';
-import { SuppliersTable } from '../tables/SuppliersTable';
+
+const columns: GridColDef[] = [
+  {
+    field: 'id',
+    headerName: 'ID',
+    width: 70,
+  },
+  {
+    field: 'name',
+    headerName: 'Dostawca',
+    width: 400,
+  },
+  {
+    field: 'branchesCount',
+    headerName: 'Podpięte sklepy',
+    width: 300,
+  },
+  {
+    field: 'action',
+    headerName: '',
+    headerAlign: 'right',
+    align: 'right',
+    flex: 1,
+    renderCell: () => (
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'flex-end',
+          height: '100%',
+        }}
+      >
+        <ChevronRightIcon style={{ fontSize: 30 }} />
+      </Box>
+    ),
+  },
+];
 
 export const SuppliersPage = () => {
-  const [page, setPage] = useState(0);
-  const [name, setName] = useState<string>('');
-  const [nameToSearch, setNameToSearch] = useState<string>('');
+  const navigate = useNavigate();
 
   const {
-    data,
+    suppliers,
     isLoading,
-    isFetchingNextPage,
-    fetchNextPage,
-    isError,
-    name: searchedName,
-  } = useGetSuppliers(nameToSearch);
+    pageSize,
+    setPageSize,
+    page,
+    setPage,
+    name,
+    setName,
+  } = useGetSuppliers();
 
-  const handleKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === 'Enter') {
-      setNameToSearch((event.target as HTMLInputElement).value);
-      setPage(0);
-    }
-  };
-
-  const handleChange = (event: { target: { value: SetStateAction<string> } }) => {
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
-    if (value==='')
-      setNameToSearch('')
     setName(value);
   };
 
-  useEffect(() => {
-    if (searchedName) 
-      setName(searchedName);    
-  }, [searchedName]);
+  const handlePaginationChange = (model: GridPaginationModel) => {
+    setPage(model.page + 1);
+    setPageSize(model.pageSize);
+  };
 
-  if (isError) {
-    return (
-      <Typography
-        variant="h6"
-        color="error"
-        sx={{ textAlign: 'center', marginTop: 2 }}
-      >
-        {'Błąd pobierania danych'}
-      </Typography>
-    );
-  }
-  if (!data && isLoading) {
-    return (
-      <Stack width="100%" alignItems="center" paddingTop={8}>
-        <CircularProgress />
-      </Stack>
-    );
-  }
+  const handleRowClick = (params: GridRowParams) => {
+    navigate(`${Pages.smSystemSuppliers}/${params.id}`);
+  };
 
   return (
-    <Stack width="100%" alignItems="center">
-      <Stack width={670} height={435} spacing={1}>
-        <SuppliersTable data={data} isFetchingNextPage={isFetchingNextPage} fetchNextPage={fetchNextPage} page={page} setPage={setPage} />
+    <Stack spacing={2}>
+      <FormControl sx={{ width: 300 }}>
+        <InputLabel shrink>{'Wyszukaj'}</InputLabel>
         <TextField
-          label="Wyszukaj"
-          variant="outlined"
+          placeholder="Nazwa dostawcy"
           value={name}
-          onKeyDown={handleKeyDown}
           onChange={handleChange}
-          sx={{
-            width: '180px',
-          }}
         />
-      </Stack>
+      </FormControl>
+
+      <DataGrid
+        rows={suppliers?.results ?? []}
+        loading={isLoading}
+        columns={columns}
+        disableColumnSorting
+        disableColumnMenu
+        disableRowSelectionOnClick
+        onRowClick={handleRowClick}
+        pageSizeOptions={[25, 50]}
+        paginationModel={{ page, pageSize }}
+        onPaginationModelChange={handlePaginationChange}
+        paginationMode="server"
+        rowCount={suppliers?.count ?? 0}
+        localeText={{
+          noRowsLabel: 'Brak dostawców',
+        }}
+      />
     </Stack>
   );
 };

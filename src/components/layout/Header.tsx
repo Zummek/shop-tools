@@ -35,26 +35,23 @@ export const Header = ({
   const isTransfersPage = useIsPage([Pages.smSystemTransfers]);
   const isImportProductsPage = useIsPage([Pages.smSystemImportProducts]);
 
-  const isSuppliersPage = useIsPage([Pages.smSystemSuppliers]);
-  const isSuppliersParamPage = useIsPage([Pages.smSystemSupplierDetails]);
-  const isOrdersPage = useIsPage([Pages.smSystemOrders]);
-  const isOrdersParamPage = useIsPage([Pages.smSystemOrderDetails]);
-
-  const showSuppliersOrdersHeader =
-    isOrdersPage ||
-    isOrdersParamPage ||
-    isSuppliersPage ||
-    isSuppliersParamPage;
+  const areSuppliersFeaturePages = useIsPage([
+    Pages.smSystemSuppliers,
+    Pages.smSystemSupplierDetails,
+    Pages.smSystemOrders,
+    Pages.smSystemOrderDetails,
+  ]);
 
   const isReportsPage = useIsPage([
     Pages.smSystemReports,
     Pages.smSystemUnfulfilledOrdersByTransfersReport,
   ]);
+
   const showSmSystemHeader =
     isProductsDocumentsPage ||
     isTransfersPage ||
     isImportProductsPage ||
-    showSuppliersOrdersHeader ||
+    areSuppliersFeaturePages ||
     isReportsPage;
 
   return (
@@ -100,7 +97,7 @@ export const Header = ({
                   <Button
                     href={`#${Pages.smSystemOrders}`}
                     variant={
-                      showSuppliersOrdersHeader ? 'contained' : 'outlined'
+                      areSuppliersFeaturePages ? 'contained' : 'outlined'
                     }
                   >
                     {'Zamówienia u dostawców'}

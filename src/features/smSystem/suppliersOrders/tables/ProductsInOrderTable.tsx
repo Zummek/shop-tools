@@ -1,31 +1,37 @@
 import { DataGrid, GridColDef, GridRowParams } from '@mui/x-data-grid';
 
-import { ProductsInOrderTableProps } from '../../app/types';
+import { ProductsToOrder } from '../../app/types';
+
+interface Props {
+  isLoading: boolean;
+  products: ProductsToOrder[];
+  selectedProductId: number | null;
+  setSelectedProductId: (id: number | null) => void;
+}
+
+const columns: GridColDef<ProductsToOrder>[] = [
+  {
+    field: 'name',
+    headerName: 'Nazwa produktu',
+    flex: 1,
+    minWidth: 250,
+  },
+  {
+    field: 'ordersPerBranch',
+    headerName: 'Suma',
+    width: 60,
+    valueGetter: (value: ProductsToOrder['ordersPerBranch']) =>
+      value.reduce((acc, curr) => acc + curr.toOrderAmount, 0),
+  },
+];
 
 export const ProductsInOrderTable = ({
+  isLoading,
   products,
   selectedProductId,
   setSelectedProductId,
-}: ProductsInOrderTableProps) => {
-  const columns: GridColDef[] = [
-    {
-      field: 'id',
-      headerName: 'ID',
-      width: 50,
-    },
-    {
-      field: 'name',
-      headerName: 'Nazwa produktu',
-      width: 200,
-    },
-    {
-      field: 'totalToOrder',
-      headerName: 'Suma',
-      width: 60,
-    },
-  ];
-
-  const handleRowClick = (params: GridRowParams) => {
+}: Props) => {
+  const handleRowClick = (params: GridRowParams<ProductsToOrder>) => {
     setSelectedProductId(params.row.id);
   };
 
@@ -33,19 +39,13 @@ export const ProductsInOrderTable = ({
     <DataGrid
       rows={products}
       columns={columns}
+      loading={isLoading}
       disableColumnSorting
       disableColumnMenu
       disableRowSelectionOnClick
       onRowClick={handleRowClick}
       hideFooter
-      getRowClassName={(params: GridRowParams) =>
-        params.row.id === selectedProductId ? 'selected-row' : ''
-      }
-      sx={{
-        '& .selected-row': {
-          backgroundColor: '#ebebeb',
-        },
-      }}
+      rowSelectionModel={selectedProductId ? [selectedProductId] : []}
       localeText={{
         noRowsLabel: 'Brak produktów',
       }}

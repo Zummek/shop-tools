@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 
 import { axiosInstance } from '../../../../services';
 import { ListResponse } from '../../app/types';
 import { SimpleUser } from '../../user/types';
 
 interface Payload {
-  page: number;
-  pageSize?: number;
+  defaultPageSize?: number;
 }
 
 export interface BranchListItem {
@@ -20,14 +20,12 @@ export interface BranchListItem {
 
 type Response = ListResponse<BranchListItem>;
 
-const getQueryKey = (page: number) => ['branches', page];
 const endpoint = '/api/v1/organizations/branches/';
-const defaultPayload: Payload = { page: 1, pageSize: 500 };
 
-export const useGetBranches = ({
-  page,
-  pageSize,
-}: Payload = defaultPayload) => {
+export const useGetBranches = ({ defaultPageSize = 25 }: Payload = {}) => {
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(defaultPageSize);
+
   const getBranchesRequest = async () => {
     const response = await axiosInstance.get<Response>(endpoint, {
       params: { page, pageSize },
@@ -35,14 +33,10 @@ export const useGetBranches = ({
     return response.data;
   };
 
-  const {
-    data: branches,
-    isLoading,
-    isError,
-  } = useQuery({
-    queryKey: getQueryKey(page),
+  const { data: branches, isLoading } = useQuery({
+    queryKey: ['branches', { page, pageSize }],
     queryFn: getBranchesRequest,
   });
 
-  return { branches, isLoading, isError };
+  return { branches, isLoading, page, setPage, pageSize, setPageSize };
 };

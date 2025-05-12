@@ -1,41 +1,28 @@
 import { useQuery } from '@tanstack/react-query';
-import { useCallback } from 'react';
 
 import { axiosInstance } from '../../../../services';
 import { OrderDetails } from '../../app/types/index';
 
-export type GetOrderDetailsResponse = OrderDetails;
-
 export const useGetOrderDetails = (id: number) => {
-  const endpoint = `api/v1/suppliers-orders/orders/${id}/`
+  const endpoint = `api/v1/suppliers-orders/orders/${id}/`;
 
-  const getOrderDetailsRequest = useCallback(
-    async ({ signal }: { signal?: AbortSignal }) => {
-      try {
-        const response = await axiosInstance.get<GetOrderDetailsResponse>(endpoint, {
-          signal,
-        });
-        return response.data || null;
-      } catch (err) {
-        console.error('Error fetching order details:', err);
-        throw err;
-      }
-    },
-    [endpoint]
-  );
+  const getOrderDetailsRequest = async () => {
+    const response = await axiosInstance.get<OrderDetails>(endpoint);
+    return response.data || null;
+  };
 
-  const { data, isLoading, isError, refetch } = useQuery<GetOrderDetailsResponse, Error>({
+  const {
+    data: orderDetails,
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ['orderDetails', id],
     queryFn: getOrderDetailsRequest,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
   });
 
   return {
-    data,
+    orderDetails,
     isLoading,
-    isError,
     refetch,
   };
 };

@@ -40,7 +40,7 @@ export interface Branch {
   updatedBy: SimpleUser;
 }
 
-interface OrdersPerBranch {
+export interface OrdersPerBranch {
   id: number;
   branch: SimpleBranch;
   toOrderProposalAmount: number;
@@ -57,7 +57,7 @@ interface NotSelectedBranches {
   stockUpdatedAt: string;
 }
 
-interface ProductsToOrder {
+export interface ProductsToOrder {
   id: number;
   name: string;
   ordersPerBranch: OrdersPerBranch[];
@@ -77,28 +77,6 @@ export interface OrderDetails {
 export interface CreateOrderInput {
   supplierId: number;
   selectedBranchesIds: number[];
-}
-export interface ProductInOrder {
-  id: number;
-  name: string;
-  totalToOrder: number;
-}
-
-export interface ProductsInOrderTableProps {
-  products: ProductInOrder[];
-  selectedProductId: number;
-  setSelectedProductId: React.Dispatch<React.SetStateAction<number>>;
-}
-
-export interface ProductDetailsInOrderTableProps {
-  orderDetails: OrderDetails;
-  selectedProductId: number;
-  setSelectedProductId: React.Dispatch<React.SetStateAction<number>>;
-}
-
-export interface ProductDetailsInBranchesTableProps {
-  orderDetails: OrderDetails;
-  selectedProductId: number;
 }
 
 export interface BasicModalProps {

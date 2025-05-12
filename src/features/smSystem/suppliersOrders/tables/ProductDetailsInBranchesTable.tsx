@@ -1,53 +1,68 @@
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import dayjs from 'dayjs';
+import { useMemo } from 'react';
 
-import { ProductDetailsInBranchesTableProps } from '../../app/types';
+import { OrderDetails, SimpleBranch } from '../../app/types';
+
+const columns: GridColDef[] = [
+  {
+    field: 'branch',
+    headerName: 'Sklep',
+    flex: 1,
+    valueGetter: (value: SimpleBranch) => value.name,
+  },
+  {
+    field: 'stock',
+    headerName: 'Stan',
+    width: 70,
+    type: 'number',
+  },
+  {
+    field: 'stockUpdatedAt',
+    headerName: 'Ostatnia\naktualizacja\nstanu',
+    width: 150,
+    valueGetter: (value: string) => dayjs(value).format('DD.MM.YYYY HH:mm'),
+  },
+];
+
+interface Props {
+  orderDetails: OrderDetails | undefined;
+  selectedProductId: number | null;
+}
 
 export const ProductDetailsInBranchesTable = ({
   orderDetails,
   selectedProductId,
-}: ProductDetailsInBranchesTableProps) => {
-  const selectedProduct = orderDetails.productsToOrder.find(
-    (product) => product.id === selectedProductId
+}: Props) => {
+  const selectedProduct = useMemo(
+    () =>
+      orderDetails?.productsToOrder.find(
+        (product) => product.id === selectedProductId
+      ),
+    [orderDetails, selectedProductId]
   );
-
-  const notSelectedBranches = selectedProduct?.notSelectedBranches || [];
-
-  const rows =
-    notSelectedBranches.map((branch) => ({
-      id: branch.branch.id,
-      name: branch.branch.name,
-      stock: branch.stock,
-      stockUpdatedAt: dayjs(branch.stockUpdatedAt).format('DD.MM.YYYY HH:MM'),
-  })) || [];
-
-
-  const columns: GridColDef[] = [
-    { field: 'id', headerName: 'ID', width: 50 },
-    { field: 'name', headerName: 'Sklep', width: 150 },
-    { field: 'stock', headerName: 'Stan', width: 70 },
-    { field: 'stockUpdatedAt', headerName: 'Ostatnia\naktualizacja\nstanu', width: 150 },
-  ];
 
   return (
     <DataGrid
-      rows={rows}
+      rows={selectedProduct?.notSelectedBranches ?? []}
       columns={columns}
       disableColumnSorting
       disableColumnMenu
       disableRowSelectionOnClick
       hideFooter
+      getRowId={(row) => row.branch.id}
       initialState={{
         sorting: {
           sortModel: [{ field: 'id', sort: 'asc' }],
         },
       }}
       localeText={{
-        noRowsLabel:
-          'Wybierz produkt',
+        noRowsLabel: selectedProductId
+          ? 'Brak nie wybranych sklepów'
+          : 'Wybierz produkt',
       }}
       sx={{
-        height: 162,
+        height: 250,
         '& .MuiDataGrid-columnHeaderTitle': {
           whiteSpace: 'normal',
           lineHeight: 'normal',

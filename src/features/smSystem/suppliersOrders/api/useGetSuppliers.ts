@@ -1,76 +1,69 @@
-import { QueryFunctionContext, useInfiniteQuery } from '@tanstack/react-query';
-import { useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { debounce } from 'lodash';
+import { useState, useCallback } from 'react';
 
 import { axiosInstance } from '../../../../services';
-import { emptyListResponse, ListResponse, Supplier } from '../../app/types/index';
+import {
+  emptyListResponse,
+  ListResponse,
+  Supplier,
+} from '../../app/types/index';
 
 export type GetSuppliersResponse = ListResponse<Supplier>;
 
 const endpoint = '/api/v1/suppliers-orders/suppliers/';
-const pageSize = 25;
 
-type QueryParams = {
-  name?: string;
-};
+export const useGetSuppliers = () => {
+  const [pageSize, setPageSize] = useState(25);
+  const [page, setPage] = useState(1);
+  const [name, setName] = useState<string | undefined>(undefined);
 
-export const useGetSuppliers = (name?: string) => {
-  const getSuppliersRequest = useCallback(
-    async ({ pageParam = 1, signal, queryKey }: QueryFunctionContext) => {
-      const [, params] = queryKey as [string, QueryParams];
+  const getSuppliersRequest = async () => {
+    const response = await axiosInstance.get<GetSuppliersResponse>(endpoint, {
+      params: {
+        page,
+        pageSize,
+        name,
+      },
+    });
 
-      try {
-        const response = await axiosInstance.get<GetSuppliersResponse>(endpoint, {
-          params: {
-            page: pageParam,
-            pageSize,
-            name: params?.name,
-          },
-          signal,
-        });
-
-        return response.data || emptyListResponse;
-      } catch (err) {
-        console.error('Error fetching suppliers:', err);
-        throw err;
-      }
-    },
-    []
-  );
-
-  const getNextPageParam = useCallback(
-    (lastPage: GetSuppliersResponse) => {
-      if (!lastPage?.next) return undefined;
-      const url = new URL(lastPage.next);
-      const nextPage = url.searchParams.get('page');
-      return nextPage ? parseInt(nextPage, 10) : undefined;
-    },
-    []
-  );
+    return response.data || emptyListResponse;
+  };
 
   const {
-    data,
+    data: suppliers,
     isLoading,
-    isError,
-    isFetchingNextPage,
-    fetchNextPage,
-    refetch
-  } = useInfiniteQuery<GetSuppliersResponse, Error>({
-    queryKey: ['suppliers', { name }],
+    refetch,
+  } = useQuery({
+    queryKey: ['suppliers', { page, pageSize, name }],
     queryFn: getSuppliersRequest,
-    initialPageParam: 1,
-    getNextPageParam,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
   });
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const debouncedChangeName = useCallback(
+    debounce((value: string) => {
+      setName(value);
+      setPage(1);
+    }, 300),
+    []
+  );
+
+  const handleDebouncedChangeName = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    debouncedChangeName(event.target.value);
+  };
+
   return {
-    data,
+    suppliers,
     isLoading,
-    isFetchingNextPage,
-    fetchNextPage,
-    isError,
     refetch,
-    name
+    pageSize,
+    setPageSize,
+    page,
+    setPage,
+    name,
+    setName,
+    handleDebouncedChangeName,
   };
 };

@@ -1,149 +1,152 @@
-import { Stack, Typography } from '@mui/material';
-import { DataGrid, GridColDef, GridRowModel } from '@mui/x-data-grid';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import { IconButton, Stack, Typography } from '@mui/material';
+import {
+  DataGrid,
+  GridColDef,
+  GridPreProcessEditCellProps,
+  GridRenderCellParams,
+} from '@mui/x-data-grid';
 import dayjs from 'dayjs';
-import { useState, useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 
-import { ProductDetailsInOrderTableProps } from '../../app/types';
+import { OrderDetails, SimpleBranch, OrdersPerBranch } from '../../app/types';
 import { useUpdateOrderDetails } from '../api/useUpdateOrderDetails';
+
+const columns: GridColDef[] = [
+  {
+    field: 'branch',
+    headerName: 'Sklep',
+    flex: 1,
+    minWidth: 80,
+    valueGetter: (value: SimpleBranch) => value.name,
+  },
+  {
+    field: 'sales',
+    headerName: 'Sprzedaż',
+    type: 'number',
+  },
+  {
+    field: 'previousOrderAmount',
+    headerName: 'Poprzednie\nzamówienie',
+    type: 'number',
+    renderCell: ({ value }: GridRenderCellParams) => {
+      return (
+        <Typography
+          variant="body2"
+          color={value !== null ? 'text' : 'textDisabled'}
+        >
+          {value !== null ? value : 'brak'}
+        </Typography>
+      );
+    },
+  },
+  {
+    field: 'toOrderProposalAmount',
+    headerName: 'Proponowana\nilość',
+    type: 'number',
+  },
+  {
+    field: 'toOrderAmount',
+    headerName: 'Zamawiana\nilość',
+    editable: true,
+    type: 'number',
+    renderCell: ({ value, api, row }: GridRenderCellParams) => (
+      <Stack
+        direction="row"
+        alignItems="center"
+        spacing={1}
+        width="100%"
+        justifyContent="space-between"
+      >
+        <IconButton
+          size="small"
+          onClick={() =>
+            api.startCellEditMode({ id: row.id, field: 'toOrderAmount' })
+          }
+          sx={{
+            opacity: 0,
+            transition: 'opacity 0.2s',
+            '.MuiDataGrid-row:hover &': {
+              opacity: 0.5,
+            },
+          }}
+        >
+          <EditOutlinedIcon />
+        </IconButton>
+        <Typography variant="body2" align="right">
+          {value}
+        </Typography>
+      </Stack>
+    ),
+    preProcessEditCellProps: (params: GridPreProcessEditCellProps) => {
+      const newToOrder = Number(params.props.value);
+      const isValidInput = Number.isInteger(newToOrder) && newToOrder >= 0;
+
+      return {
+        ...params.props,
+        error: !isValidInput,
+      };
+    },
+  },
+  {
+    field: 'stock',
+    headerName: 'Stan',
+    width: 70,
+    type: 'number',
+  },
+  {
+    field: 'stockUpdatedAt',
+    headerName: 'Ostatnia\naktualizacja stanu',
+    width: 150,
+    valueGetter: (value: string) => dayjs(value).format('DD.MM.YYYY HH:mm'),
+  },
+];
+
+interface Props {
+  orderDetails: OrderDetails | undefined;
+  selectedProductId: number | null;
+}
 
 export const ProductDetailsInOrderTable = ({
   orderDetails,
   selectedProductId,
-  setSelectedProductId,
-}: ProductDetailsInOrderTableProps) => {
-  const [errorRows, setErrorRows] = useState<Set<number>>(new Set());
-
-  const { updateOrderDetails, isLoading, isError } = useUpdateOrderDetails();
-
-  const columns: GridColDef[] = [
-    { field: 'id', headerName: 'ID', width: 50 },
-    { field: 'branch', headerName: 'Sklep', width: 100 },
-    { field: 'stock', headerName: 'Stan', width: 70 },
-    { field: 'stockUpdatedAt', headerName: 'Ostatnia\naktualizacja\nstanu', width: 150 },
-    { field: 'sales', headerName: 'Sprzedaż', width: 100 },
-    { field: 'toOrderProp', headerName: 'Proponowana\nilość', width: 110 },
-    { field: 'toOrder', headerName: 'Zamawiana\nilość', width: 110, editable: true },
-  ];
+}: Props) => {
+  const { updateOrderDetails, isLoading } = useUpdateOrderDetails();
 
   const processRowUpdate = useCallback(
-    (updatedRow: GridRowModel) => {
-      const updatedProduct = orderDetails.productsToOrder.find(
-        (prod) => prod.id === selectedProductId
-      );
+    async (updatedOrderPerBranch: OrdersPerBranch) => {
+      if (!orderDetails) throw new Error('Order details not found');
+      if (!selectedProductId) throw new Error('Product ID not found');
 
-      if (updatedProduct) {
-        const updatedOrder = updatedProduct.ordersPerBranch.find(
-          (order) => order.branch.id === updatedRow.id
-        );
+      await updateOrderDetails({
+        orderId: orderDetails.id,
+        branchId: updatedOrderPerBranch.branch.id,
+        productId: selectedProductId,
+        toOrderAmount: Number(updatedOrderPerBranch.toOrderAmount),
+      });
 
-        if (updatedOrder) {
-          const newToOrder = Number(updatedRow.toOrder);
-          const isValidInput = Number.isInteger(newToOrder) && newToOrder >= 0;
-          const error = !isValidInput;
-
-          setErrorRows((prevErrorRows) => {
-            const newErrorRows = new Set(prevErrorRows);
-            if (error) {
-              newErrorRows.add(updatedOrder.branch.id);
-              setTimeout(() => {
-                setErrorRows((prevErrorRows) => {
-                  const updated = new Set(prevErrorRows);
-                  updated.delete(updatedOrder.branch.id);
-                  return updated;
-                });
-              }, 1500);
-            }
-            else {
-              newErrorRows.delete(updatedOrder.branch.id);
-            }
-            
-            return newErrorRows;
-          });
-
-          if (!error) {
-            updateOrderDetails({
-              orderId: orderDetails.id,
-              branchId: updatedOrder.branch.id,
-              productId: updatedProduct.id,
-              toOrderAmount: newToOrder,
-            });
-          }
-        }
-      }
-
-      return updatedRow;
+      return updatedOrderPerBranch;
     },
     [orderDetails, selectedProductId, updateOrderDetails]
   );
 
-  const product = orderDetails.productsToOrder.find(
+  const product = orderDetails?.productsToOrder.find(
     (productInOrder) => productInOrder.id === selectedProductId
   );
 
-  useEffect(() => {
-    if (!product) 
-      setSelectedProductId(0);
-  }, [product, setSelectedProductId]);
-
-  if (!product) {
-    return (
-      <DataGrid
-        rows={[]}
-        columns={columns}
-        disableColumnSorting
-        disableColumnMenu
-        disableRowSelectionOnClick
-        hideFooter
-        localeText={{
-          noRowsLabel: 'Wybierz produkt',
-        }}
-        sx={{
-          '& .MuiDataGrid-columnHeaderTitle': {
-            whiteSpace: 'normal',
-            lineHeight: 'normal',
-          },
-          '& .MuiDataGrid-cell': {
-            display: 'flex',
-            alignItems: 'center',
-          },
-        }}
-      />
-    );
-  }
-
-  const rows = product.ordersPerBranch.map((order) => ({
-    id: order.branch.id,
-    branch: order.branch.name,
-    stock: order.stock,
-    stockUpdatedAt: dayjs(order.stockUpdatedAt).format('DD.MM.YYYY HH:MM'),
-    toOrderProp: order.toOrderProposalAmount,
-    toOrder: order.toOrderAmount,
-  }));
-
   return (
     <Stack>
-      <Stack height={214}>
+      <Stack height={250}>
         <DataGrid
-          rows={rows}
+          rows={product?.ordersPerBranch ?? []}
           columns={columns}
           disableColumnSorting
           disableColumnMenu
           disableRowSelectionOnClick
           hideFooter
           processRowUpdate={processRowUpdate}
-          initialState={{
-            sorting: {
-              sortModel: [{ field: 'id', sort: 'asc' }],
-            },
-          }}
-          getRowClassName={(params) =>
-            errorRows.has(params.row.id) ? 'error-row' : ''
-          }
+          loading={isLoading}
           sx={{
-            '& .error-row': {
-              backgroundColor: '#ffcccc',
-              color: '#900',
-            },
             '& .MuiDataGrid-columnHeaderTitle': {
               whiteSpace: 'normal',
               lineHeight: 'normal',
@@ -152,31 +155,17 @@ export const ProductDetailsInOrderTable = ({
               display: 'flex',
               alignItems: 'center',
             },
+            '& .MuiDataGrid-cell--editing': {
+              backgroundColor: 'rgba(0, 0, 0, 0.04)',
+            },
+            '& .MuiDataGrid-cell--editing.error': {
+              backgroundColor: '#ffcccc',
+            },
           }}
           localeText={{
             noRowsLabel: 'Brak sklepów',
           }}
         />
-      </Stack>
-      <Stack>
-        {isLoading && (
-          <Typography
-            variant="h6"
-            color="primary"
-            sx={{ textAlign: 'center', marginTop: 1 }}
-          >
-            {'Trwa Zapisywanie'}
-          </Typography>
-        )}
-        {isError && (
-          <Typography
-            variant="h6"
-            color="primary"
-            sx={{ textAlign: 'center', marginTop: 1 }}
-          >
-            {'Błąd zapisu'}
-          </Typography>
-        )}
       </Stack>
     </Stack>
   );

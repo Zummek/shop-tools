@@ -1,68 +1,52 @@
-import { useInfiniteQuery, QueryFunctionContext } from '@tanstack/react-query';
-import { useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 
 import { axiosInstance } from '../../../../services';
-import { emptyListResponse, ListResponse, Product } from '../../app/types/index';
+import {
+  emptyListResponse,
+  ListResponse,
+  Product,
+} from '../../app/types/index';
 
 export type GetProductsResponse = ListResponse<Product>;
 
 const endpoint = '/api/v1/products/';
-const pageSize = 5;
 
 export const useGetProducts = () => {
-  const getProductsRequest = useCallback(
-    async ({ pageParam = 1, signal }: QueryFunctionContext) => {
-      try {
-        const response = await axiosInstance.get<GetProductsResponse>(endpoint, {
-          params: {
-            page: pageParam,
-            pageSize,
-          },
-          signal,
-        });
+  const [pageSize, setPageSize] = useState(25);
+  const [page, setPage] = useState(1);
+  const [name, setName] = useState('');
 
-        return response.data || emptyListResponse;
-      } catch (err) {
-        console.error('Error fetching products:', err);
-        throw err;
-      }
-    },
-    []
-  );
+  const getProductsRequest = async () => {
+    const response = await axiosInstance.get<GetProductsResponse>(endpoint, {
+      params: {
+        page,
+        pageSize,
+        query: name,
+      },
+    });
 
-  const getNextPageParam = useCallback(
-    (lastPage: GetProductsResponse) => {
-      if (!lastPage?.next) return undefined;
-      const url = new URL(lastPage.next);
-      const nextPage = url.searchParams.get('page');
-      return nextPage ? parseInt(nextPage, 10) : undefined;
-    },
-    []
-  );
+    return response.data || emptyListResponse;
+  };
 
   const {
-    data,
+    data: products,
     isLoading,
-    isError,
-    isFetchingNextPage,
-    fetchNextPage,
-    refetch
-  } = useInfiniteQuery<GetProductsResponse, Error>({
-    queryKey: ['products'],
+    refetch,
+  } = useQuery({
+    queryKey: ['products', { page, pageSize, name }],
     queryFn: getProductsRequest,
-    initialPageParam: 1,
-    getNextPageParam,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
   });
 
   return {
-    data,
+    products,
     isLoading,
-    isFetchingNextPage,
-    fetchNextPage,
-    isError,
-    refetch
+    refetch,
+    pageSize,
+    setPageSize,
+    page,
+    setPage,
+    name,
+    setName,
   };
 };

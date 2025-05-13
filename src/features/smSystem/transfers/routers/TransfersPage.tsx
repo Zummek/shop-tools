@@ -1,5 +1,5 @@
 import { LoadingButton } from '@mui/lab';
-import { Stack, Typography } from '@mui/material';
+import { Box, Stack, Typography } from '@mui/material';
 import { DataGrid, GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
 import dayjs from 'dayjs';
 import { useState } from 'react';
@@ -155,38 +155,40 @@ export const TransfersPage = () => {
           {'Oznacz jako zaksięgowane'}
         </LoadingButton>
       </Stack>
-      <DataGrid
-        sx={{
-          '& .MuiDataGrid-columnHeaderTitle': {
-            whiteSpace: 'normal',
-            lineHeight: 'normal',
-          },
-          '& .MuiDataGrid-cell': {
-            display: 'flex',
-            alignItems: 'center',
-          },
-        }}
-        rows={transfers}
-        rowCount={totalCount || 0}
-        columns={columns}
-        pageSizeOptions={[pageSize]}
-        loading={isLoading}
-        paginationModel={{
-          page,
-          pageSize,
-        }}
-        paginationMode="server"
-        checkboxSelection
-        disableColumnSorting
-        disableColumnMenu
-        onRowSelectionModelChange={handleSelectionChange}
-        slotProps={{
-          pagination: {
-            showFirstButton: true,
-            onPageChange: handlePageChange,
-          },
-        }}
-      />
+      <Box height={500}>
+        <DataGrid
+          sx={{
+            '& .MuiDataGrid-columnHeaderTitle': {
+              whiteSpace: 'normal',
+              lineHeight: 'normal',
+            },
+            '& .MuiDataGrid-cell': {
+              display: 'flex',
+              alignItems: 'center',
+            },
+          }}
+          rows={transfers}
+          rowCount={totalCount || 0}
+          columns={columns}
+          pageSizeOptions={[pageSize]}
+          loading={isLoading}
+          paginationModel={{
+            page,
+            pageSize,
+          }}
+          paginationMode="server"
+          checkboxSelection
+          disableColumnSorting
+          disableColumnMenu
+          onRowSelectionModelChange={handleSelectionChange}
+          slotProps={{
+            pagination: {
+              showFirstButton: true,
+              onPageChange: handlePageChange,
+            },
+          }}
+        />
+      </Box>
     </Stack>
   );
 };

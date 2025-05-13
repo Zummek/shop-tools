@@ -54,16 +54,12 @@ export const ImportProductsStep2 = ({ onNextStep }: Props) => {
           'Wystąpił błąd podczas importowania produktów: ' +
             JSON.stringify(res.data)
         );
-        // eslint-disable-next-line no-console
-        console.error(res.data);
       }
     } catch (error) {
       notify(
         'error',
         'Wystąpił błąd podczas importowania produktów: ' + JSON.stringify(error)
       );
-      // eslint-disable-next-line no-console
-      console.error(error);
     }
   };
 

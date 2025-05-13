@@ -7,6 +7,10 @@ export enum Pages {
   smSystemTransfers = '/sm-system/transfers',
   smSystemImportProducts = '/sm-system/import-products',
   smSystemProductsDocuments = '/sm-system/products-documents',
+  smSystemSuppliers = '/sm-system/suppliers-orders/suppliers',
+  smSystemSupplierDetails = '/sm-system/suppliers-orders/suppliers/:supplierId',
+  smSystemOrders = '/sm-system/suppliers-orders/orders',
+  smSystemOrderDetails = '/sm-system/suppliers-orders/orders/:orderId',
   smSystemReports = '/sm-system/reports',
   smSystemUnfulfilledOrdersByTransfersReport = '/sm-system/unfulfilled-orders-by-transfers',
 }

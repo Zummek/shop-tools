@@ -13,6 +13,11 @@ import { ImportProductsPage } from './features/smSystem/products/routers/ImportP
 import { ProductsDocumentsPage } from './features/smSystem/productsDocuments/routers/ProductsDocumentsPage';
 import { ReportsPage } from './features/smSystem/reports/routers/ReportsPage';
 import { UnfulfilledOrdersByTransfersReportPage } from './features/smSystem/reports/routers/UnfulfilledOrdersByTransfersReportPage';
+import { SuppliersOrdersPageLayout } from './features/smSystem/suppliersOrders/layout/SuppliersOrdersPageLayout';
+import { OrderDetailsPage } from './features/smSystem/suppliersOrders/routers/OrderDetailsPage';
+import { OrdersPage } from './features/smSystem/suppliersOrders/routers/OrdersPage';
+import { SupplierDetailsPage } from './features/smSystem/suppliersOrders/routers/SupplierDetailsPage';
+import { SuppliersPage } from './features/smSystem/suppliersOrders/routers/SuppliersPage';
 import { TransfersPage } from './features/smSystem/transfers/routers/TransfersPage';
 import { LoginPage } from './features/smSystem/user/routes/LoginPage';
 import { ReactQueryClientProvider, setReduxStoreForAxios } from './services';
@@ -69,6 +74,29 @@ const router = createHashRouter(
         {
           path: 'unfulfilled-orders-by-transfers',
           element: <UnfulfilledOrdersByTransfersReportPage />,
+        },
+        {
+          path: 'suppliers-orders',
+          element: <SuppliersOrdersPageLayout />,
+          children: [
+            {
+              path: 'suppliers',
+              element: <SuppliersPage />,
+            },
+            {
+              path: 'suppliers/:supplierId',
+              element: <SupplierDetailsPage />,
+            },
+            {
+              path: 'orders',
+              index: true,
+              element: <OrdersPage />,
+            },
+            {
+              path: 'orders/:orderId',
+              element: <OrderDetailsPage />,
+            },
+          ],
         },
       ],
     },

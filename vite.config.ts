@@ -1,4 +1,4 @@
-import react from '@vitejs/plugin-react';
+import { default as react } from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import { checker } from 'vite-plugin-checker';
 
@@ -9,7 +9,7 @@ export default defineConfig({
     checker({
       typescript: true,
       eslint: {
-        lintCommand: 'eslint "./src/**/*.{ts,tsx}" --rule "{no-console: off}"',
+        lintCommand: 'eslint "./src/**/*.{ts,tsx}" --rule "no-console: off"',
       },
     }),
   ],

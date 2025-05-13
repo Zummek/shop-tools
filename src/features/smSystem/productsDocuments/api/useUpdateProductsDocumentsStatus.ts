@@ -10,7 +10,7 @@ interface Payload {
   status: ProductsDocumentStatus;
 }
 
-const endpoint = `/api/v1/products-documents/status/`;
+const endpoint = '/api/v1/products-documents/status/';
 
 export const useUpdateProductsDocumentsStatus = () => {
   const queryClient = useQueryClient();

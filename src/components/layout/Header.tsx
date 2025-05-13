@@ -76,49 +76,45 @@ export const Header = ({
         alignItems="center"
         width="100%"
       >
-        <Stack spacing={2}>
-          {showSmSystemHeader && (
-            <Stack spacing={2} direction="row" alignItems="center">
-              <Typography variant="h6">{'SM System:'}</Typography>
-              <Box>
-                <ButtonGroup variant="outlined">
-                  <Button
-                    href={`#${Pages.smSystemTransfers}`}
-                    variant={isTransfersPage ? 'contained' : 'outlined'}
-                  >
-                    {'Transfery'}
-                  </Button>
-                  <Button
-                    href={`#${Pages.smSystemProductsDocuments}`}
-                    variant={isProductsDocumentsPage ? 'contained' : 'outlined'}
-                  >
-                    {'Dokumenty'}
-                  </Button>
-                  <Button
-                    href={`#${Pages.smSystemOrders}`}
-                    variant={
-                      areSuppliersFeaturePages ? 'contained' : 'outlined'
-                    }
-                  >
-                    {'Zamówienia u dostawców'}
-                  </Button>
-                  <Button
-                    href={`#${Pages.smSystemImportProducts}`}
-                    variant={isImportProductsPage ? 'contained' : 'outlined'}
-                  >
-                    {'Import produktów'}
-                  </Button>
-                  <Button
-                    href={`#${Pages.smSystemReports}`}
-                    variant={isReportsPage ? 'contained' : 'outlined'}
-                  >
-                    {'Raporty'}
-                  </Button>
-                </ButtonGroup>
-              </Box>
-            </Stack>
-          )}
-        </Stack>
+        {showSmSystemHeader && (
+          <Stack spacing={2} direction="row" alignItems="center">
+            <Typography variant="h6">{'SM System:'}</Typography>
+            <Box>
+              <ButtonGroup variant="outlined">
+                <Button
+                  href={`#${Pages.smSystemTransfers}`}
+                  variant={isTransfersPage ? 'contained' : 'outlined'}
+                >
+                  {'Transfery'}
+                </Button>
+                <Button
+                  href={`#${Pages.smSystemProductsDocuments}`}
+                  variant={isProductsDocumentsPage ? 'contained' : 'outlined'}
+                >
+                  {'Dokumenty'}
+                </Button>
+                <Button
+                  href={`#${Pages.smSystemOrders}`}
+                  variant={areSuppliersFeaturePages ? 'contained' : 'outlined'}
+                >
+                  {'Zamówienia u dostawców'}
+                </Button>
+                <Button
+                  href={`#${Pages.smSystemImportProducts}`}
+                  variant={isImportProductsPage ? 'contained' : 'outlined'}
+                >
+                  {'Import produktów'}
+                </Button>
+                <Button
+                  href={`#${Pages.smSystemReports}`}
+                  variant={isReportsPage ? 'contained' : 'outlined'}
+                >
+                  {'Raporty'}
+                </Button>
+              </ButtonGroup>
+            </Box>
+          </Stack>
+        )}
 
         <Typography variant="h3">{headerTitle}</Typography>
         {!!onDemoButtonClick && (

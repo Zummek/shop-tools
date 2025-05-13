@@ -1,4 +1,4 @@
-import { DataGrid, GridColDef, GridPaginationModel } from '@mui/x-data-grid';
+import { DataGrid, GridColDef } from '@mui/x-data-grid';
 
 import { useGetBranches } from '../../branches/api';
 
@@ -19,13 +19,7 @@ export const BranchesInSupplierTable = ({
   selectedBranchIds,
   onChangeSelectedBranches,
 }: Props) => {
-  const { branches, page, setPage, pageSize, setPageSize, isLoading } =
-    useGetBranches();
-
-  const handlePaginationChange = ({ page, pageSize }: GridPaginationModel) => {
-    setPage(page + 1);
-    setPageSize(pageSize);
-  };
+  const { branches, pagination, setPagination, isLoading } = useGetBranches();
 
   return (
     <DataGrid
@@ -42,10 +36,10 @@ export const BranchesInSupplierTable = ({
       }
       pagination
       pageSizeOptions={[25, 50]}
-      paginationModel={{ page, pageSize }}
-      onPaginationModelChange={handlePaginationChange}
+      paginationModel={pagination}
+      onPaginationModelChange={setPagination}
       paginationMode="server"
-      rowCount={branches?.count}
+      rowCount={branches?.count ?? 0}
       localeText={{
         noRowsLabel: 'Brak sklepów',
       }}

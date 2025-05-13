@@ -9,5 +9,10 @@ export const emptyListResponse = {
   count: 0,
   next: null,
   previous: null,
-  results: []
+  results: [],
+};
+
+export type PaginationState = {
+  page: number;
+  pageSize: number;
 };

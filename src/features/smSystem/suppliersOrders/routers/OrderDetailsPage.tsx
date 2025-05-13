@@ -139,6 +139,7 @@ export const OrderDetailsPage = () => {
             products={orderDetails?.productsToOrder ?? []}
             selectedProductId={selectedProductId}
             setSelectedProductId={setSelectedProductId}
+            filterText={filterText}
           />
         </Stack>
 

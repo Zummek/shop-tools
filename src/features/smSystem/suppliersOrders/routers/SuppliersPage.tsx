@@ -1,17 +1,13 @@
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { Box, FormControl, InputLabel, Stack, TextField } from '@mui/material';
-import {
-  DataGrid,
-  GridColDef,
-  GridPaginationModel,
-  GridRowParams,
-} from '@mui/x-data-grid';
+import { DataGrid, GridColDef, GridRowParams } from '@mui/x-data-grid';
 import { useNavigate } from 'react-router-dom';
 
 import { Pages } from '../../../../utils';
+import { Supplier } from '../../app/types';
 import { useGetSuppliers } from '../api/useGetSuppliers';
 
-const columns: GridColDef[] = [
+const columns: GridColDef<Supplier>[] = [
   {
     field: 'id',
     headerName: 'ID',
@@ -21,18 +17,20 @@ const columns: GridColDef[] = [
     field: 'name',
     headerName: 'Dostawca',
     width: 400,
+    flex: 1,
   },
   {
-    field: 'branchesCount',
+    field: 'branches',
     headerName: 'Podpięte sklepy',
-    width: 300,
+    minWidth: 130,
+    type: 'number',
+    valueGetter: (value: Supplier['branches']) => value.length,
   },
   {
     field: 'action',
     headerName: '',
     headerAlign: 'right',
     align: 'right',
-    flex: 1,
     renderCell: () => (
       <Box
         sx={{
@@ -51,25 +49,12 @@ const columns: GridColDef[] = [
 export const SuppliersPage = () => {
   const navigate = useNavigate();
 
-  const {
-    suppliers,
-    isLoading,
-    pageSize,
-    setPageSize,
-    page,
-    setPage,
-    name,
-    setName,
-  } = useGetSuppliers();
+  const { suppliers, isLoading, pagination, setPagination, name, setName } =
+    useGetSuppliers();
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
     setName(value);
-  };
-
-  const handlePaginationChange = (model: GridPaginationModel) => {
-    setPage(model.page + 1);
-    setPageSize(model.pageSize);
   };
 
   const handleRowClick = (params: GridRowParams) => {
@@ -87,23 +72,25 @@ export const SuppliersPage = () => {
         />
       </FormControl>
 
-      <DataGrid
-        rows={suppliers?.results ?? []}
-        loading={isLoading}
-        columns={columns}
-        disableColumnSorting
-        disableColumnMenu
-        disableRowSelectionOnClick
-        onRowClick={handleRowClick}
-        pageSizeOptions={[25, 50]}
-        paginationModel={{ page, pageSize }}
-        onPaginationModelChange={handlePaginationChange}
-        paginationMode="server"
-        rowCount={suppliers?.count ?? 0}
-        localeText={{
-          noRowsLabel: 'Brak dostawców',
-        }}
-      />
+      <Box height={500}>
+        <DataGrid
+          rows={suppliers?.results ?? []}
+          loading={isLoading}
+          columns={columns}
+          disableColumnSorting
+          disableColumnMenu
+          disableRowSelectionOnClick
+          onRowClick={handleRowClick}
+          pageSizeOptions={[25, 50]}
+          paginationModel={pagination}
+          onPaginationModelChange={setPagination}
+          paginationMode="server"
+          rowCount={suppliers?.count ?? 0}
+          localeText={{
+            noRowsLabel: 'Brak dostawców',
+          }}
+        />
+      </Box>
     </Stack>
   );
 };

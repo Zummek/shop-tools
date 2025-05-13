@@ -1,44 +1,52 @@
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import { axiosInstance } from '../../../../services';
-import { emptyListResponse, ListResponse, Order } from '../../app/types/index';
+import {
+  emptyListResponse,
+  ListResponse,
+  Order,
+  PaginationState,
+} from '../../app/types';
 
 export type GetOrdersResponse = ListResponse<Order>;
 
+export const getOrdersQueryKeyBase = 'orders';
 const endpoint = '/api/v1/suppliers-orders/orders/';
 
 export const useGetOrders = () => {
-  const [pageSize, setPageSize] = useState(25);
-  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState<PaginationState>({
+    page: 0,
+    pageSize: 25,
+  });
 
-  const getOrdersRequest = async () => {
+  const getOrdersRequest = useCallback(async () => {
     const response = await axiosInstance.get<GetOrdersResponse>(endpoint, {
       params: {
-        page,
-        pageSize,
+        page: pagination.page + 1,
+        pageSize: pagination.pageSize,
       },
     });
 
     return response.data || emptyListResponse;
-  };
+  }, [pagination]);
 
   const {
     data: orders,
     isLoading,
+    isFetching,
     refetch,
   } = useQuery({
-    queryKey: ['orders', { page, pageSize }],
+    queryKey: [getOrdersQueryKeyBase, pagination],
     queryFn: getOrdersRequest,
+    placeholderData: (previousData) => previousData,
   });
 
   return {
     orders,
-    isLoading,
+    isLoading: isLoading || isFetching,
     refetch,
-    pageSize,
-    setPageSize,
-    page,
-    setPage,
+    pagination,
+    setPagination,
   };
 };

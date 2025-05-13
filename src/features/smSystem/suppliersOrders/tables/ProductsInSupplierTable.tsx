@@ -1,4 +1,4 @@
-import { DataGrid, GridColDef, GridPaginationModel } from '@mui/x-data-grid';
+import { DataGrid, GridColDef } from '@mui/x-data-grid';
 
 import { useGetProducts } from '../api/useGetProducts';
 
@@ -15,13 +15,7 @@ const columns: GridColDef[] = [
 ];
 
 export const ProductsInSupplierTable = ({ selectedProductIds }: Props) => {
-  const { products, isLoading, page, setPage, setPageSize, pageSize } =
-    useGetProducts();
-
-  const handlePaginationChange = ({ page, pageSize }: GridPaginationModel) => {
-    setPage(page);
-    setPageSize(pageSize);
-  };
+  const { products, isLoading, pagination, setPagination } = useGetProducts();
 
   return (
     <DataGrid
@@ -34,12 +28,11 @@ export const ProductsInSupplierTable = ({ selectedProductIds }: Props) => {
       isRowSelectable={() => false}
       checkboxSelection
       rowSelectionModel={selectedProductIds}
-      pagination
       pageSizeOptions={[25, 50]}
-      paginationModel={{ page, pageSize }}
-      onPaginationModelChange={handlePaginationChange}
+      paginationModel={pagination}
+      onPaginationModelChange={setPagination}
       paginationMode="server"
-      rowCount={products?.count}
+      rowCount={products?.count ?? 0}
       localeText={{
         noRowsLabel: 'Brak produktów',
       }}

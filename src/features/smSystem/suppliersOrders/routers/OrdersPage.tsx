@@ -1,11 +1,6 @@
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { Stack, Button, Box } from '@mui/material';
-import {
-  DataGrid,
-  GridColDef,
-  GridPaginationModel,
-  GridRowParams,
-} from '@mui/x-data-grid';
+import { DataGrid, GridColDef, GridRowParams } from '@mui/x-data-grid';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -69,16 +64,10 @@ export const OrdersPage = () => {
   const handleOpenModal = () => setIsModalOpen(true);
   const handleCloseModal = () => setIsModalOpen(false);
 
-  const { orders, isLoading, setPageSize, setPage, page, pageSize } =
-    useGetOrders();
+  const { orders, isLoading, pagination, setPagination } = useGetOrders();
 
   const handleRowClick = (params: GridRowParams) => {
     navigate(`${Pages.smSystemOrders}/${params.id}`);
-  };
-
-  const handlePaginationChange = (model: GridPaginationModel) => {
-    setPage(model.page + 1);
-    setPageSize(model.pageSize);
   };
 
   return (
@@ -97,10 +86,9 @@ export const OrdersPage = () => {
           disableColumnMenu
           disableRowSelectionOnClick
           onRowClick={handleRowClick}
-          pagination
           pageSizeOptions={[25, 50]}
-          paginationModel={{ page, pageSize }}
-          onPaginationModelChange={handlePaginationChange}
+          paginationModel={pagination}
+          onPaginationModelChange={setPagination}
           paginationMode="server"
           rowCount={orders?.count ?? 0}
           localeText={{

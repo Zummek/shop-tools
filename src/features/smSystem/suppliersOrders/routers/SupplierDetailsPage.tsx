@@ -77,7 +77,7 @@ export const SupplierDetailsPage = () => {
           >
             {'Powrót'}
           </Button>
-          <Typography variant="h5" color="primary">
+          <Typography variant="h5" color="primary" flex={1}>
             {'Dostawca: '}
             {dataSupplierDetails?.name}
           </Typography>

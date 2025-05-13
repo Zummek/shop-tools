@@ -2,6 +2,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { axiosInstance } from '../../../../services';
 
+import { getSuppliersQueryKeyBase } from './useGetSuppliers';
+
 interface UpdateSupplierDetailsInput {
   id: number;
   name?: string;
@@ -50,7 +52,7 @@ export const useUpdateSupplierDetails = () => {
         getSupplierDetailsQueryKey(variables.id),
         response
       );
-      queryClient.refetchQueries({ queryKey: ['suppliers'] });
+      queryClient.refetchQueries({ queryKey: [getSuppliersQueryKeyBase] });
     },
     onError: (error: Error) => {
       console.error('Błąd podczas aktualizacji szczegółów dostawcy:', error);

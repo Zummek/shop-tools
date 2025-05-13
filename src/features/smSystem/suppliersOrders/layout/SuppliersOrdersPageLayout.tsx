@@ -15,7 +15,7 @@ export const SuppliersOrdersPageLayout = () => {
   ]);
 
   return (
-    <Box>
+    <Box width="100%" flex={1}>
       <Stack spacing={2} direction="row" alignItems="center" mb={2}>
         <Typography variant="h6">{'Zamówienia u dostawców:'}</Typography>
         <ButtonGroup variant="outlined">

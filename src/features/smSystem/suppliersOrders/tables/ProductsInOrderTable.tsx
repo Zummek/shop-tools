@@ -7,6 +7,7 @@ interface Props {
   products: ProductsToOrder[];
   selectedProductId: number | null;
   setSelectedProductId: (id: number | null) => void;
+  filterText: string;
 }
 
 const columns: GridColDef<ProductsToOrder>[] = [
@@ -30,6 +31,7 @@ export const ProductsInOrderTable = ({
   products,
   selectedProductId,
   setSelectedProductId,
+  filterText,
 }: Props) => {
   const handleRowClick = (params: GridRowParams<ProductsToOrder>) => {
     setSelectedProductId(params.row.id);
@@ -44,6 +46,15 @@ export const ProductsInOrderTable = ({
       disableColumnMenu
       disableRowSelectionOnClick
       onRowClick={handleRowClick}
+      filterModel={{
+        items: [
+          {
+            field: 'name',
+            operator: 'contains',
+            value: filterText,
+          },
+        ],
+      }}
       hideFooter
       rowSelectionModel={selectedProductId ? [selectedProductId] : []}
       localeText={{

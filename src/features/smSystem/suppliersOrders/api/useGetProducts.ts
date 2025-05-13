@@ -5,23 +5,26 @@ import { axiosInstance } from '../../../../services';
 import {
   emptyListResponse,
   ListResponse,
+  PaginationState,
   Product,
-} from '../../app/types/index';
+} from '../../app/types';
 
 export type GetProductsResponse = ListResponse<Product>;
 
 const endpoint = '/api/v1/products/';
 
 export const useGetProducts = () => {
-  const [pageSize, setPageSize] = useState(25);
-  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState<PaginationState>({
+    page: 0,
+    pageSize: 25,
+  });
   const [name, setName] = useState('');
 
   const getProductsRequest = async () => {
     const response = await axiosInstance.get<GetProductsResponse>(endpoint, {
       params: {
-        page,
-        pageSize,
+        page: pagination.page + 1,
+        pageSize: pagination.pageSize,
         query: name,
       },
     });
@@ -34,18 +37,17 @@ export const useGetProducts = () => {
     isLoading,
     refetch,
   } = useQuery({
-    queryKey: ['products', { page, pageSize, name }],
+    queryKey: ['products', { pagination, name }],
     queryFn: getProductsRequest,
+    placeholderData: (previousData) => previousData,
   });
 
   return {
     products,
     isLoading,
     refetch,
-    pageSize,
-    setPageSize,
-    page,
-    setPage,
+    pagination,
+    setPagination,
     name,
     setName,
   };

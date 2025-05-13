@@ -1,11 +1,6 @@
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { TextField, Typography, Stack } from '@mui/material';
-import {
-  DataGrid,
-  GridRowParams,
-  GridPaginationModel,
-  GridColDef,
-} from '@mui/x-data-grid';
+import { DataGrid, GridRowParams, GridColDef } from '@mui/x-data-grid';
 
 import { Supplier } from '../../../app/types';
 import { useGetSuppliers } from '../../api/useGetSuppliers';
@@ -43,16 +38,9 @@ export const SelectingSupplier = ({ onSupplierSelected }: Props) => {
     suppliers: data,
     isLoading,
     handleDebouncedChangeName,
-    setPage,
-    page,
-    pageSize,
-    setPageSize,
+    pagination,
+    setPagination,
   } = useGetSuppliers();
-
-  const handlePaginationChange = (model: GridPaginationModel) => {
-    setPage(model.page + 1);
-    setPageSize(model.pageSize);
-  };
 
   const handleRowClick = (params: GridRowParams<Supplier>) => {
     onSupplierSelected(params.row);
@@ -80,10 +68,9 @@ export const SelectingSupplier = ({ onSupplierSelected }: Props) => {
         disableColumnMenu
         disableRowSelectionOnClick
         onRowClick={handleRowClick}
-        pagination
         pageSizeOptions={[25, 50]}
-        paginationModel={{ page, pageSize }}
-        onPaginationModelChange={handlePaginationChange}
+        paginationModel={pagination}
+        onPaginationModelChange={setPagination}
         paginationMode="server"
         rowCount={data?.count ?? 0}
         localeText={{

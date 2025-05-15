@@ -66,12 +66,12 @@ export const OrderDetailsPage = () => {
         </Button>
         <Typography variant="h5" color="primary">
           {'Zamówienie: '}
-          {supplierName} {' - '} {date}
+          {supplierName ? `${supplierName} - ${date}` : ''}
         </Typography>
       </Stack>
 
       <Stack spacing={2} direction="row">
-        <Stack spacing={2} width={320} height={516}>
+        <Stack spacing={2} width={320} height={616}>
           <Stack spacing={2} direction="row" justifyContent="center">
             <Button variant="outlined" onClick={handleOpenModal}>
               {'Pobierz'}
@@ -109,17 +109,19 @@ export const OrderDetailsPage = () => {
         </Stack>
 
         <Stack spacing={2} flex={1}>
-          <Box height={250}>
+          <Box height={300}>
             <ProductDetailsInOrderTable
               orderDetails={orderDetails}
               selectedProductId={selectedProductId}
               onEditStateChange={handleEditStateChange}
+              isLoading={isLoading}
             />
           </Box>
-          <Box height={250}>
+          <Box height={300}>
             <ProductDetailsInBranchesTable
               orderDetails={orderDetails}
               selectedProductId={selectedProductId}
+              isLoading={isLoading}
             />
           </Box>
         </Stack>

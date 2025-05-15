@@ -25,6 +25,8 @@ export const OrderDetailsPage = () => {
   const { orderId: rawOrderId } = useParams<{ orderId: string }>();
   const orderId = Number(rawOrderId);
 
+  const [isEditing, setIsEditing] = useState(false);
+  const [filterText, setFilterText] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const handleOpenModal = () => setIsModalOpen(true);
   const handleCloseModal = () => setIsModalOpen(false);
@@ -41,7 +43,14 @@ export const OrderDetailsPage = () => {
   const [selectedProductId, setSelectedProductId] = useState<number | null>(
     null
   );
-  const [filterText, setFilterText] = useState('');
+
+  const handleEditStateChange = (editing: boolean) => {
+    setIsEditing(editing);
+  };
+
+  const handleProductSelection = (productId: number | null) => {
+    if (!isEditing) setSelectedProductId(productId);
+  };
 
   const supplierName = orderDetails?.supplier.name;
   const date = dayjs(orderDetails?.updatedAt).format('DD.MM.YYYY HH:mm');
@@ -93,8 +102,9 @@ export const OrderDetailsPage = () => {
             isLoading={isLoading}
             products={orderDetails?.productsToOrder ?? []}
             selectedProductId={selectedProductId}
-            setSelectedProductId={setSelectedProductId}
+            setSelectedProductId={handleProductSelection}
             filterText={filterText}
+            disableSelectingProduct={isEditing}
           />
         </Stack>
 
@@ -103,6 +113,7 @@ export const OrderDetailsPage = () => {
             <ProductDetailsInOrderTable
               orderDetails={orderDetails}
               selectedProductId={selectedProductId}
+              onEditStateChange={handleEditStateChange}
             />
           </Box>
           <Box height={250}>

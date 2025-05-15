@@ -8,6 +8,7 @@ interface Props {
   selectedProductId: number | null;
   setSelectedProductId: (id: number | null) => void;
   filterText: string;
+  disableSelectingProduct?: boolean;
 }
 
 const columns: GridColDef<ProductsToOrder>[] = [
@@ -32,9 +33,10 @@ export const ProductsInOrderTable = ({
   selectedProductId,
   setSelectedProductId,
   filterText,
+  disableSelectingProduct: disabled = false,
 }: Props) => {
   const handleRowClick = (params: GridRowParams<ProductsToOrder>) => {
-    setSelectedProductId(params.row.id);
+    if (!disabled) setSelectedProductId(params.row.id);
   };
 
   return (
@@ -57,6 +59,12 @@ export const ProductsInOrderTable = ({
       }}
       hideFooter
       rowSelectionModel={selectedProductId ? [selectedProductId] : []}
+      sx={{
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        '& .MuiDataGrid-row': {
+          opacity: disabled ? 0.7 : 1,
+        },
+      }}
       localeText={{
         noRowsLabel: 'Brak produktów',
       }}

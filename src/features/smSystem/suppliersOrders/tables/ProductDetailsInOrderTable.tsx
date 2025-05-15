@@ -105,11 +105,13 @@ const columns: GridColDef[] = [
 interface Props {
   orderDetails: OrderDetails | undefined;
   selectedProductId: number | null;
+  onEditStateChange: (isEditing: boolean) => void;
 }
 
 export const ProductDetailsInOrderTable = ({
   orderDetails,
   selectedProductId,
+  onEditStateChange,
 }: Props) => {
   const { updateOrderDetails, isLoading } = useUpdateOrderDetails();
 
@@ -118,17 +120,31 @@ export const ProductDetailsInOrderTable = ({
       if (!orderDetails) throw new Error('Order details not found');
       if (!selectedProductId) throw new Error('Product ID not found');
 
-      await updateOrderDetails({
-        orderId: orderDetails.id,
-        branchId: updatedOrderPerBranch.branch.id,
-        productId: selectedProductId,
-        toOrderAmount: Number(updatedOrderPerBranch.toOrderAmount),
-      });
+      try {
+        onEditStateChange(true);
 
-      return updatedOrderPerBranch;
+        await updateOrderDetails({
+          orderId: orderDetails.id,
+          branchId: updatedOrderPerBranch.branch.id,
+          productId: selectedProductId,
+          toOrderAmount: Number(updatedOrderPerBranch.toOrderAmount),
+        });
+
+        return updatedOrderPerBranch;
+      } finally {
+        onEditStateChange(false);
+      }
     },
-    [orderDetails, selectedProductId, updateOrderDetails]
+    [orderDetails, selectedProductId, updateOrderDetails, onEditStateChange]
   );
+
+  const handleEditStart = useCallback(() => {
+    onEditStateChange(true);
+  }, [onEditStateChange]);
+
+  const handleEditStop = useCallback(() => {
+    onEditStateChange(false);
+  }, [onEditStateChange]);
 
   const product = orderDetails?.productsToOrder.find(
     (productInOrder) => productInOrder.id === selectedProductId
@@ -145,6 +161,8 @@ export const ProductDetailsInOrderTable = ({
           disableRowSelectionOnClick
           hideFooter
           processRowUpdate={processRowUpdate}
+          onCellEditStart={handleEditStart}
+          onCellEditStop={handleEditStop}
           loading={isLoading}
           sx={{
             '& .MuiDataGrid-columnHeaderTitle': {

@@ -28,11 +28,13 @@ const columns: GridColDef[] = [
 interface Props {
   orderDetails: OrderDetails | undefined;
   selectedProductId: number | null;
+  isLoading: boolean;
 }
 
 export const ProductDetailsInBranchesTable = ({
   orderDetails,
   selectedProductId,
+  isLoading,
 }: Props) => {
   const selectedProduct = useMemo(
     () =>
@@ -46,6 +48,7 @@ export const ProductDetailsInBranchesTable = ({
     <DataGrid
       rows={selectedProduct?.notSelectedBranches ?? []}
       columns={columns}
+      loading={isLoading}
       disableColumnSorting
       disableColumnMenu
       disableRowSelectionOnClick
@@ -62,7 +65,7 @@ export const ProductDetailsInBranchesTable = ({
           : 'Wybierz produkt',
       }}
       sx={{
-        height: 250,
+        height: 300,
         '& .MuiDataGrid-columnHeaderTitle': {
           whiteSpace: 'normal',
           lineHeight: 'normal',

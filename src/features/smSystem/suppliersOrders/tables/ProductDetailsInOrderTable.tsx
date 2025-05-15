@@ -106,14 +106,16 @@ interface Props {
   orderDetails: OrderDetails | undefined;
   selectedProductId: number | null;
   onEditStateChange: (isEditing: boolean) => void;
+  isLoading: boolean;
 }
 
 export const ProductDetailsInOrderTable = ({
   orderDetails,
   selectedProductId,
   onEditStateChange,
+  isLoading,
 }: Props) => {
-  const { updateOrderDetails, isLoading } = useUpdateOrderDetails();
+  const { updateOrderDetails, isLoading: isSaving } = useUpdateOrderDetails();
 
   const processRowUpdate = useCallback(
     async (updatedOrderPerBranch: OrdersPerBranch) => {
@@ -148,7 +150,7 @@ export const ProductDetailsInOrderTable = ({
 
   return (
     <Stack>
-      <Stack height={250}>
+      <Stack height={300}>
         <DataGrid
           rows={product?.ordersPerBranch ?? []}
           columns={columns}
@@ -158,7 +160,7 @@ export const ProductDetailsInOrderTable = ({
           hideFooter
           processRowUpdate={processRowUpdate}
           onCellEditStart={handleEditStart}
-          loading={isLoading}
+          loading={isLoading || isSaving}
           sx={{
             '& .MuiDataGrid-columnHeaderTitle': {
               whiteSpace: 'normal',

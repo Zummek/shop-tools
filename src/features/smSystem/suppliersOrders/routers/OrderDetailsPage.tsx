@@ -28,6 +28,10 @@ export const OrderDetailsPage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [filterText, setFilterText] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState<number | null>(
+    null
+  );
+
   const handleOpenModal = () => setIsModalOpen(true);
   const handleCloseModal = () => setIsModalOpen(false);
 
@@ -40,9 +44,14 @@ export const OrderDetailsPage = () => {
     }
   }, [orderDetails, isLoading, navigate, notify]);
 
-  const [selectedProductId, setSelectedProductId] = useState<number | null>(
-    null
-  );
+  useEffect(() => {
+    if (
+      orderDetails &&
+      !selectedProductId &&
+      orderDetails.productsToOrder.length > 0
+    )
+      setSelectedProductId(orderDetails.productsToOrder[0].id);
+  }, [orderDetails, selectedProductId]);
 
   const handleEditStateChange = (editing: boolean) => {
     setIsEditing(editing);

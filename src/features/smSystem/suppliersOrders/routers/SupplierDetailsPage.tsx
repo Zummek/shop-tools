@@ -55,11 +55,6 @@ export const SupplierDetailsPage = () => {
     [dataSupplierDetails]
   );
 
-  const selectedProductIds = useMemo(
-    () => dataSupplierDetails?.products.map((product) => product.id) ?? [],
-    [dataSupplierDetails]
-  );
-
   const isBranchesIdsChanged = useMemo(
     () =>
       originalSelectedBranchIds.length !== selectedBranchIds.length ||
@@ -92,7 +87,10 @@ export const SupplierDetailsPage = () => {
           </Button>
         </Stack>
         <Stack spacing={2} direction="row" pb={4}>
-          <ProductsInSupplierTable selectedProductIds={selectedProductIds} />
+          <ProductsInSupplierTable
+            products={dataSupplierDetails?.products}
+            isLoading={isLoadingSupplierDetails}
+          />
           <BranchesInSupplierTable
             selectedBranchIds={selectedBranchIds}
             onChangeSelectedBranches={setSelectedBranches}

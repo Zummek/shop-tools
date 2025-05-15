@@ -1,9 +1,10 @@
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 
-import { useGetProducts } from '../api/useGetProducts';
+import { ProductConditions } from '../../app/types';
 
 interface Props {
-  selectedProductIds: number[];
+  products: ProductConditions[] | undefined;
+  isLoading: boolean;
 }
 
 const columns: GridColDef[] = [
@@ -14,25 +15,17 @@ const columns: GridColDef[] = [
   },
 ];
 
-export const ProductsInSupplierTable = ({ selectedProductIds }: Props) => {
-  const { products, isLoading, pagination, setPagination } = useGetProducts();
-
+export const ProductsInSupplierTable = ({ products, isLoading }: Props) => {
   return (
     <DataGrid
-      rows={products?.results ?? []}
+      rows={products ?? []}
       columns={columns}
       loading={isLoading}
       disableColumnSorting
       disableColumnMenu
       disableRowSelectionOnClick
-      isRowSelectable={() => false}
-      checkboxSelection
-      rowSelectionModel={selectedProductIds}
       pageSizeOptions={[25, 50]}
-      paginationModel={pagination}
-      onPaginationModelChange={setPagination}
-      paginationMode="server"
-      rowCount={products?.count ?? 0}
+      rowCount={products?.length ?? 0}
       localeText={{
         noRowsLabel: 'Brak produktów',
       }}

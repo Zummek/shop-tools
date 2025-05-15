@@ -142,10 +142,6 @@ export const ProductDetailsInOrderTable = ({
     onEditStateChange(true);
   }, [onEditStateChange]);
 
-  const handleEditStop = useCallback(() => {
-    onEditStateChange(false);
-  }, [onEditStateChange]);
-
   const product = orderDetails?.productsToOrder.find(
     (productInOrder) => productInOrder.id === selectedProductId
   );
@@ -162,7 +158,6 @@ export const ProductDetailsInOrderTable = ({
           hideFooter
           processRowUpdate={processRowUpdate}
           onCellEditStart={handleEditStart}
-          onCellEditStop={handleEditStop}
           loading={isLoading}
           sx={{
             '& .MuiDataGrid-columnHeaderTitle': {

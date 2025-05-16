@@ -3,7 +3,10 @@ import SwapHorizOutlinedIcon from '@mui/icons-material/SwapHorizOutlined';
 import {
   Box,
   Button,
+  Checkbox,
   FormControl,
+  FormControlLabel,
+  FormHelperText,
   IconButton,
   InputAdornment,
   InputLabel,
@@ -128,6 +131,8 @@ export const UnfulfilledOrdersByTransfersReportPage = () => {
     setSortOrder,
     sortBy,
     sortOrder,
+    showOnlyPosted,
+    setShowOnlyPosted,
   } = useGetUnfulfilledOrdersByTransfersReport();
 
   const destinationBranchError =
@@ -230,6 +235,26 @@ export const UnfulfilledOrdersByTransfersReportPage = () => {
             />
           </FormControl>
         </Box>
+        <Stack>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={showOnlyPosted}
+                onChange={(e) => setShowOnlyPosted(e.target.checked)}
+              />
+            }
+            label="Pokaż tylko zaksięgowane zamówienia"
+          />
+          <FormHelperText
+            sx={{
+              mt: 0,
+              fontSize: '12px',
+              maxWidth: 400,
+            }}
+          >
+            {'Domyślnie: przygotowane, odebrane oraz zaksięgowane.'}
+          </FormHelperText>
+        </Stack>
       </Stack>
 
       <Box sx={{ height: 600, width: '100%' }}>
@@ -239,7 +264,6 @@ export const UnfulfilledOrdersByTransfersReportPage = () => {
           loading={isLoading}
           pageSizeOptions={[10, 25, 50, 100]}
           getRowId={(row) => row.product.id}
-          autoHeight
           pagination
           paginationModel={{ page: page - 1, pageSize }}
           onPaginationModelChange={handlePaginationModelChange}

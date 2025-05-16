@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 import { axiosInstance } from '../../../../services';
 import { ListResponse } from '../../app/types';
@@ -51,21 +52,93 @@ export interface UnfulfilledOrdersByTransfersReportItem {
 type Response = ListResponse<UnfulfilledOrdersByTransfersReportItem>;
 
 export const useGetUnfulfilledOrdersByTransfersReport = () => {
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(50);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const getInitialNumber = (
+    param: string,
+    defaultValue: number | null = null
+  ): number | null => {
+    const value = searchParams.get(param);
+    return value ? Number(value) : defaultValue;
+  };
+
+  const getInitialDate = (
+    param: string,
+    defaultValue: Date | null = null
+  ): Date | null => {
+    const value = searchParams.get(param);
+    return value ? dayjs(value).toDate() : defaultValue;
+  };
+
+  const getInitialBoolean = (param: string, defaultValue: boolean): boolean => {
+    const value = searchParams.get(param);
+    return value !== null ? value === 'true' : defaultValue;
+  };
+
+  const [page, setPage] = useState(getInitialNumber('page', 1) || 1);
+  const [pageSize, setPageSize] = useState(
+    getInitialNumber('pageSize', 50) || 50
+  );
   const [sortBy, setSortBy] =
-    useState<UnfulfilledOrdersByTransfersReportSortBy>('product_name');
+    useState<UnfulfilledOrdersByTransfersReportSortBy>(
+      (searchParams.get(
+        'sortBy'
+      ) as UnfulfilledOrdersByTransfersReportSortBy) || 'product_name'
+    );
   const [sortOrder, setSortOrder] =
-    useState<UnfulfilledOrdersByTransfersReportSortOrder>('asc');
-  const [branchSourceId, setBranchSourceId] = useState<number | null>(null);
+    useState<UnfulfilledOrdersByTransfersReportSortOrder>(
+      (searchParams.get(
+        'sortOrder'
+      ) as UnfulfilledOrdersByTransfersReportSortOrder) || 'asc'
+    );
+  const [branchSourceId, setBranchSourceId] = useState<number | null>(
+    getInitialNumber('branchSourceId')
+  );
   const [branchDestinationId, setBranchDestinationId] = useState<number | null>(
-    null
+    getInitialNumber('branchDestinationId')
   );
   const [startDate, setStartDate] = useState<Date | null>(
-    dayjs().subtract(1, 'week').toDate()
+    getInitialDate('startDate', dayjs().subtract(1, 'week').toDate())
   );
-  const [endDate, setEndDate] = useState<Date | null>(new Date());
-  const [filterPhrase, setFilterPhrase] = useState<string | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(
+    getInitialDate('endDate', new Date())
+  );
+  const [filterPhrase, setFilterPhrase] = useState<string | null>(
+    searchParams.get('filterPhrase')
+  );
+  const [showOnlyPosted, setShowOnlyPosted] = useState(
+    getInitialBoolean('showOnlyPosted', false)
+  );
+
+  useEffect(() => {
+    const params: Record<string, string> = {};
+
+    if (page !== 1) params.page = page.toString();
+    if (pageSize !== 50) params.pageSize = pageSize.toString();
+    if (sortBy !== 'product_name') params.sortBy = sortBy;
+    if (sortOrder !== 'asc') params.sortOrder = sortOrder;
+    if (branchSourceId) params.branchSourceId = branchSourceId.toString();
+    if (branchDestinationId)
+      params.branchDestinationId = branchDestinationId.toString();
+    if (startDate) params.startDate = dayjs(startDate).format('YYYY-MM-DD');
+    if (endDate) params.endDate = dayjs(endDate).format('YYYY-MM-DD');
+    if (filterPhrase) params.filterPhrase = filterPhrase;
+    if (showOnlyPosted) params.showOnlyPosted = showOnlyPosted.toString();
+
+    setSearchParams(params, { replace: true });
+  }, [
+    page,
+    pageSize,
+    sortBy,
+    sortOrder,
+    branchSourceId,
+    branchDestinationId,
+    startDate,
+    endDate,
+    filterPhrase,
+    showOnlyPosted,
+    setSearchParams,
+  ]);
 
   const getUnfulfilledOrdersByTransfersReportRequest = async (
     params: Params
@@ -96,7 +169,7 @@ export const useGetUnfulfilledOrdersByTransfersReport = () => {
         startDate: startDate ? dayjs(startDate).format('YYYY-MM-DD') : '',
         endDate: endDate ? dayjs(endDate).format('YYYY-MM-DD') : '',
         filterPhrase: filterPhrase ?? '',
-        onlyPosted: false,
+        onlyPosted: showOnlyPosted,
         sortBy,
         sortOrder,
       }),
@@ -126,5 +199,7 @@ export const useGetUnfulfilledOrdersByTransfersReport = () => {
     setSortBy,
     sortOrder,
     setSortOrder,
+    showOnlyPosted,
+    setShowOnlyPosted,
   };
 };

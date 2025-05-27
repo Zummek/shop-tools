@@ -34,10 +34,16 @@ export const smUserSlice = createSlice({
       state.refreshToken = null;
       state.user = null;
     },
-    setAccessToken: (state, action: { payload: string | null }) => {
-      state.accessToken = action.payload;
+    setTokens: (
+      state,
+      action: {
+        payload: { accessToken: string | null; refreshToken: string | null };
+      }
+    ) => {
+      state.accessToken = action.payload.accessToken;
+      state.refreshToken = action.payload.refreshToken;
     },
   },
 });
 
-export const { setSession, clearSession, setAccessToken } = smUserSlice.actions;
+export const { setSession, clearSession, setTokens } = smUserSlice.actions;

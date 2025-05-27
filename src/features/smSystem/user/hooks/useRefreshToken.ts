@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 
 import { useAppDispatch, useAppSelector } from '../../../../hooks';
 import { refreshToken as refreshTokenRequest } from '../api';
-import { setAccessToken } from '../store';
+import { setTokens } from '../store';
 
 export const useRefreshToken = () => {
   const dispatch = useAppDispatch();
@@ -15,12 +15,20 @@ export const useRefreshToken = () => {
     if (!refreshTokenValue) return undefined;
 
     try {
-      const { accessToken } = await refreshTokenRequest({
+      const { accessToken, refreshToken } = await refreshTokenRequest({
         refreshToken: refreshTokenValue,
       });
 
-      if (accessToken) dispatch(setAccessToken(accessToken));
-      else dispatch(setAccessToken(null));
+      if (accessToken && refreshToken) {
+        dispatch(
+          setTokens({
+            accessToken,
+            refreshToken,
+          })
+        );
+      } else {
+        dispatch(setTokens({ accessToken: null, refreshToken: null }));
+      }
 
       return accessToken;
     } catch (error) {

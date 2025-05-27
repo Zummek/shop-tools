@@ -6,10 +6,16 @@ interface RefreshTokenPayload {
 
 interface RefreshTokenResponse {
   access: string | undefined;
+  refresh: string | undefined;
+  accessExpiration: string;
+  refreshExpiration: string;
 }
 
 interface RefreshTokenProcessedResponse {
   accessToken: string | undefined;
+  refreshToken: string | undefined;
+  accessExpiration: string;
+  refreshExpiration: string;
 }
 
 const endpoint = '/api/v1/auth/token/refresh/';
@@ -23,5 +29,8 @@ export const refreshToken = async ({
 
   return {
     accessToken: response.data.access,
+    refreshToken: response.data.refresh,
+    accessExpiration: response.data.accessExpiration,
+    refreshExpiration: response.data.refreshExpiration,
   };
 };

@@ -56,6 +56,7 @@ interface NotSelectedBranches {
   previousOrderAmount: number;
   stock: number;
   stockUpdatedAt: string;
+  soldQuantity: number;
 }
 
 export interface ProductsToOrder {

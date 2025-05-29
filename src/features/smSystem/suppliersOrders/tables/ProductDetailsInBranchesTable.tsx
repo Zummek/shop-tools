@@ -4,12 +4,26 @@ import { useMemo } from 'react';
 
 import { OrderDetails, SimpleBranch } from '../../app/types';
 
-const columns: GridColDef[] = [
+const getDaysBetweenDates = (start: string, end: string): number => {
+  return (new Date(end).getTime() - new Date(start).getTime()) / (1000 * 60 * 60 * 24);
+};
+
+const getColumns = (orderDetails?: OrderDetails): GridColDef[] => {
+  const days = orderDetails
+    ? getDaysBetweenDates(orderDetails.saleStartDate, orderDetails.saleEndDate)
+    : '?';
+
+  return [
   {
     field: 'branch',
     headerName: 'Sklep',
     flex: 1,
     valueGetter: (value: SimpleBranch) => value.name,
+  },
+  {
+    field: 'soldQuantity',
+    headerName: `Sprzedaż\n${days} dni`,
+    type: 'number',
   },
   {
     field: 'stock',
@@ -23,7 +37,7 @@ const columns: GridColDef[] = [
     width: 150,
     valueGetter: (value: string) => dayjs(value).format('DD.MM.YYYY HH:mm'),
   },
-];
+]};
 
 interface Props {
   orderDetails: OrderDetails | undefined;
@@ -47,7 +61,7 @@ export const ProductDetailsInBranchesTable = ({
   return (
     <DataGrid
       rows={selectedProduct?.notSelectedBranches ?? []}
-      columns={columns}
+      columns={getColumns(orderDetails)}
       loading={isLoading}
       disableColumnSorting
       disableColumnMenu

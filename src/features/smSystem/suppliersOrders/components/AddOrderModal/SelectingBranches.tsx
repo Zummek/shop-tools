@@ -1,4 +1,4 @@
-import { Button, Typography, Stack, Box } from '@mui/material';
+import { Button, Typography, Stack, Box, ToggleButtonGroup, ToggleButton } from '@mui/material';
 import { DataGrid, GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -20,20 +20,34 @@ const columns: GridColDef[] = [
   },
 ];
 
+const getDateMinusDays = (days: number): string => {
+  const date = new Date();
+  date.setDate(date.getDate() - days);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export const SelectingBranches = ({ selectedSupplier, onBack }: Props) => {
   const navigate = useNavigate();
 
   const [selectedBranches, setSelectedBranches] = useState<number[]>([]);
+  const [saleDate, setSaleDate] = useState<number>(7);
+
+  const options = [3, 7, 14];
 
   const { createOrder, isCreating } = useCreateOrder();
 
   const handleAddOrder = async () => {
     if (selectedSupplier === null || selectedBranches.length === 0) return;
-
+    
     try {
       const id = await createOrder({
         supplierId: selectedSupplier.id,
         selectedBranchesIds: selectedBranches,
+        saleStartDate: getDateMinusDays(saleDate),
+        saleEndDate: getDateMinusDays(0),
       });
 
       if (id) navigate(`${Pages.smSystemOrders}/${id}`);
@@ -81,6 +95,25 @@ export const SelectingBranches = ({ selectedSupplier, onBack }: Props) => {
           noRowsLabel: 'Brak sklepów',
         }}
       />
+
+      <ToggleButtonGroup
+        value={saleDate}
+        exclusive
+        onChange={(_, newValue) => {
+          if (newValue !== null) 
+            setSaleDate(newValue);
+        }}
+        size="small"
+        color="primary"
+        sx={{ alignSelf: 'center' }}
+      >
+        {options.map((days) => (
+          <ToggleButton key={days} value={days}>
+            {days} {'dni'}
+          </ToggleButton>
+        ))}
+      </ToggleButtonGroup>
+
 
       <Button variant="contained" onClick={handleAddOrder} loading={isCreating}>
         {'Stwórz zamówienie'}

@@ -12,7 +12,17 @@ import { useCallback } from 'react';
 import { OrderDetails, SimpleBranch, OrdersPerBranch } from '../../app/types';
 import { useUpdateOrderDetails } from '../api/useUpdateOrderDetails';
 
-const columns: GridColDef[] = [
+
+const getDaysBetweenDates = (start: string, end: string): number => {
+  return (new Date(end).getTime() - new Date(start).getTime()) / (1000 * 60 * 60 * 24);
+};
+
+const getColumns = (orderDetails?: OrderDetails): GridColDef[] => {
+  const days = orderDetails
+    ? getDaysBetweenDates(orderDetails.saleStartDate, orderDetails.saleEndDate)
+    : '?';
+
+  return [
   {
     field: 'branch',
     headerName: 'Sklep',
@@ -21,8 +31,8 @@ const columns: GridColDef[] = [
     valueGetter: (value: SimpleBranch) => value.name,
   },
   {
-    field: 'sales',
-    headerName: 'Sprzedaż',
+    field: 'soldQuantity',
+    headerName: `Sprzedaż\n${days} dni`,
     type: 'number',
   },
   {
@@ -100,7 +110,7 @@ const columns: GridColDef[] = [
     width: 150,
     valueGetter: (value: string) => dayjs(value).format('DD.MM.YYYY HH:mm'),
   },
-];
+]};
 
 interface Props {
   orderDetails: OrderDetails | undefined;
@@ -153,7 +163,7 @@ export const ProductDetailsInOrderTable = ({
       <Stack height={300}>
         <DataGrid
           rows={product?.ordersPerBranch ?? []}
-          columns={columns}
+          columns={getColumns(orderDetails)}
           disableColumnSorting
           disableColumnMenu
           disableRowSelectionOnClick

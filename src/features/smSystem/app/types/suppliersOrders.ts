@@ -48,6 +48,7 @@ export interface OrdersPerBranch {
   previousOrderAmount: number;
   stock: number;
   stockUpdatedAt: string;
+  soldQuantity: number;
 }
 
 interface NotSelectedBranches {
@@ -71,12 +72,16 @@ export interface OrderDetails {
   productsToOrder: ProductsToOrder[];
   createdAt: string;
   updatedAt: string;
+  saleStartDate: string;
+  saleEndDate: string;
   detail?: string;
 }
 
 export interface CreateOrderInput {
   supplierId: number;
   selectedBranchesIds: number[];
+  saleStartDate: string;
+  saleEndDate: string;
 }
 
 export interface BasicModalProps {

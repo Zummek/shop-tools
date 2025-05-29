@@ -1,5 +1,6 @@
-import { Button, Typography, Stack, Box } from '@mui/material';
+import { Button, Typography, Stack, Box, ToggleButtonGroup, ToggleButton } from '@mui/material';
 import { DataGrid, GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
+import dayjs from 'dayjs';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -24,6 +25,9 @@ export const SelectingBranches = ({ selectedSupplier, onBack }: Props) => {
   const navigate = useNavigate();
 
   const [selectedBranches, setSelectedBranches] = useState<number[]>([]);
+  const [lastDaysOfSale , setLastDaysOfSale ] = useState<number>(7);
+
+  const options = [3, 7, 14];
 
   const { createOrder, isCreating } = useCreateOrder();
 
@@ -34,6 +38,8 @@ export const SelectingBranches = ({ selectedSupplier, onBack }: Props) => {
       const id = await createOrder({
         supplierId: selectedSupplier.id,
         selectedBranchesIds: selectedBranches,
+        saleStartDate: dayjs().subtract(lastDaysOfSale, 'day').format('YYYY-MM-DD'),
+        saleEndDate: dayjs().format('YYYY-MM-DD'),
       });
 
       if (id) navigate(`${Pages.smSystemOrders}/${id}`);
@@ -81,6 +87,25 @@ export const SelectingBranches = ({ selectedSupplier, onBack }: Props) => {
           noRowsLabel: 'Brak sklepów',
         }}
       />
+
+      <ToggleButtonGroup
+        value={lastDaysOfSale }
+        exclusive
+        onChange={(_, newValue) => {
+          if (newValue !== null) 
+            setLastDaysOfSale (newValue);
+        }}
+        size="small"
+        color="primary"
+        sx={{ alignSelf: 'center' }}
+      >
+        {options.map((days) => (
+          <ToggleButton key={days} value={days}>
+            {days} {'dni'}
+          </ToggleButton>
+        ))}
+      </ToggleButtonGroup>
+
 
       <Button variant="contained" onClick={handleAddOrder} loading={isCreating}>
         {'Stwórz zamówienie'}

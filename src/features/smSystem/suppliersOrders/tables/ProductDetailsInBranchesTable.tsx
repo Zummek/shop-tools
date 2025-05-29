@@ -4,14 +4,10 @@ import { useMemo } from 'react';
 
 import { OrderDetails, SimpleBranch } from '../../app/types';
 
-const getDaysBetweenDates = (start: string, end: string): number => {
-  return (new Date(end).getTime() - new Date(start).getTime()) / (1000 * 60 * 60 * 24);
-};
-
-const getColumns = (orderDetails?: OrderDetails): GridColDef[] => {
-  const days = orderDetails
-    ? getDaysBetweenDates(orderDetails.saleStartDate, orderDetails.saleEndDate)
-    : '?';
+const getColumns = (orderDetails?: OrderDetails): GridColDef[] =>  {
+  const days = orderDetails?.saleStartDate && orderDetails?.saleEndDate
+    ? `${dayjs(orderDetails.saleEndDate).diff(orderDetails.saleStartDate, 'days')} dni`
+    : '';
 
   return [
   {
@@ -22,7 +18,7 @@ const getColumns = (orderDetails?: OrderDetails): GridColDef[] => {
   },
   {
     field: 'soldQuantity',
-    headerName: `Sprzedaż\n${days} dni`,
+    headerName: `Sprzedaż\n${days}`,
     type: 'number',
   },
   {

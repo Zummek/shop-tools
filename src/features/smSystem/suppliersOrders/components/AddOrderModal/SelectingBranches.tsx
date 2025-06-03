@@ -1,4 +1,4 @@
-import { Button, Typography, Stack, Box, ToggleButtonGroup, ToggleButton } from '@mui/material';
+import { Button, Typography, Stack, Box, ToggleButtonGroup, ToggleButton, TextField } from '@mui/material';
 import { DataGrid, GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
 import dayjs from 'dayjs';
 import { useState } from 'react';
@@ -88,24 +88,43 @@ export const SelectingBranches = ({ selectedSupplier, onBack }: Props) => {
         }}
       />
 
-      <ToggleButtonGroup
-        value={lastDaysOfSale }
-        exclusive
-        onChange={(_, newValue) => {
-          if (newValue !== null) 
-            setLastDaysOfSale (newValue);
-        }}
-        size="small"
-        color="primary"
-        sx={{ alignSelf: 'center' }}
-      >
-        {options.map((days) => (
-          <ToggleButton key={days} value={days}>
-            {days} {'dni'}
-          </ToggleButton>
-        ))}
-      </ToggleButtonGroup>
+      <Box display="flex" gap={1} justifyContent="center" alignItems="center">
+        <ToggleButtonGroup
+          value={options.includes(lastDaysOfSale) ? lastDaysOfSale : null}
+          exclusive
+          onChange={(_, newValue) => {
+            if (newValue !== null) setLastDaysOfSale(newValue);
+          }}
+          size="small"
+          color="primary"
+        >
+          {options.map((days) => (
+            <ToggleButton key={days} value={days}>
+              {days} {'dni'}
+            </ToggleButton>
+          ))}
+        </ToggleButtonGroup>
 
+        <TextField
+          label="Liczba dni"
+          type="number"
+          size="small"
+          value={lastDaysOfSale}
+          onChange={(e) => {
+            const val = parseInt(e.target.value, 10);
+            if (isNaN(val)) 
+              setLastDaysOfSale(1);
+            else if (val < 1) 
+              setLastDaysOfSale(1);
+            else if (val > 90) 
+              setLastDaysOfSale(90);
+            else 
+              setLastDaysOfSale(val);
+    
+          }}
+          sx={{ width: 120 }}
+        />
+      </Box>
 
       <Button variant="contained" onClick={handleAddOrder} loading={isCreating}>
         {'Stwórz zamówienie'}

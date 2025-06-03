@@ -1,4 +1,4 @@
-import { Button, Typography, Stack, Box, ToggleButtonGroup, ToggleButton } from '@mui/material';
+import { Button, Typography, Stack, Box, ToggleButtonGroup, ToggleButton, TextField } from '@mui/material';
 import { DataGrid, GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
 import dayjs from 'dayjs';
 import { useState } from 'react';
@@ -25,9 +25,9 @@ export const SelectingBranches = ({ selectedSupplier, onBack }: Props) => {
   const navigate = useNavigate();
 
   const [selectedBranches, setSelectedBranches] = useState<number[]>([]);
-  const [lastDaysOfSale , setLastDaysOfSale ] = useState<number>(7);
+  const [lastDaysOfSale , setLastDaysOfSale ] = useState<number>(14);
 
-  const options = [3, 7, 14];
+  const options = [7, 14, 21];
 
   const { createOrder, isCreating } = useCreateOrder();
 
@@ -88,24 +88,38 @@ export const SelectingBranches = ({ selectedSupplier, onBack }: Props) => {
         }}
       />
 
-      <ToggleButtonGroup
-        value={lastDaysOfSale }
-        exclusive
-        onChange={(_, newValue) => {
-          if (newValue !== null) 
-            setLastDaysOfSale (newValue);
-        }}
-        size="small"
-        color="primary"
-        sx={{ alignSelf: 'center' }}
-      >
-        {options.map((days) => (
-          <ToggleButton key={days} value={days}>
-            {days} {'dni'}
-          </ToggleButton>
-        ))}
-      </ToggleButtonGroup>
+      <Box display="flex" gap={2} justifyContent="center" alignItems="center">
+        <ToggleButtonGroup
+          value={lastDaysOfSale }
+          exclusive
+          onChange={(_, newValue) => {
+            if (newValue !== null) 
+              setLastDaysOfSale (newValue);
+          }}
+          size="small"
+          color="primary"
+          sx={{ alignSelf: 'center' }}
+        >
+          {options.map((days) => (
+            <ToggleButton key={days} value={days}>
+              {days} {'dni'}
+            </ToggleButton>
+          ))}
+        </ToggleButtonGroup>
 
+        <TextField
+          label="Liczba dni"
+          type="number"
+          size="small"
+          value={lastDaysOfSale}
+          onChange={(e) => setLastDaysOfSale(parseInt(e.target.value, 10) || 1)}
+          onBlur={() => {
+            if (lastDaysOfSale < 1) setLastDaysOfSale(1);
+            else if (lastDaysOfSale > 90) setLastDaysOfSale(90);
+          }}
+          sx={{ width: 120 }}
+        />
+      </Box>
 
       <Button variant="contained" onClick={handleAddOrder} loading={isCreating}>
         {'Stwórz zamówienie'}

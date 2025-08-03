@@ -66,12 +66,15 @@ export const OrderDetailsPage = () => {
 
   return (
     <Stack spacing={2} width="100%">
-      <Stack direction="row" spacing={3} alignItems="center">
+      <Stack direction="row" spacing={4} alignItems="center">
         <Button
           variant="outlined"
           onClick={() => navigate(Pages.smSystemOrders)}
         >
           {'Powrót'}
+        </Button>
+        <Button variant="outlined" onClick={handleOpenModal}>
+          {'Pobierz'}
         </Button>
         <Typography variant="h5" color="primary">
           {'Zamówienie: '}
@@ -81,32 +84,27 @@ export const OrderDetailsPage = () => {
 
       <Stack spacing={2} direction="row">
         <Stack spacing={2} width={320} height={616}>
-          <Stack spacing={2} direction="row" justifyContent="center">
-            <Button variant="outlined" onClick={handleOpenModal}>
-              {'Pobierz'}
-            </Button>
-            <TextField
-              label="Szukaj po nazwie"
-              variant="outlined"
-              size="small"
-              fullWidth
-              value={filterText}
-              onChange={(e) => setFilterText(e.target.value)}
-              slotProps={{
-                input: {
-                  endAdornment:
-                    filterText.length > 0 ? (
-                      <InputAdornment position="end">
-                        <ClearOutlinedIcon
-                          onClick={() => setFilterText('')}
-                          sx={{ cursor: 'pointer' }}
-                        />
-                      </InputAdornment>
-                    ) : null,
-                },
-              }}
-            />
-          </Stack>
+          <TextField
+            label="Szukaj po nazwie"
+            variant="outlined"
+            size="small"
+            fullWidth
+            value={filterText}
+            onChange={(e) => setFilterText(e.target.value)}
+            slotProps={{
+              input: {
+                endAdornment:
+                  filterText.length > 0 ? (
+                    <InputAdornment position="end">
+                      <ClearOutlinedIcon
+                        onClick={() => setFilterText('')}
+                        sx={{ cursor: 'pointer' }}
+                      />
+                    </InputAdornment>
+                  ) : null,
+              },
+            }}
+          />
           <ProductsInOrderTable
             isLoading={isLoading}
             products={orderDetails?.productsToOrder ?? []}

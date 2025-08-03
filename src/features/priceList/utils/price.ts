@@ -23,19 +23,26 @@ export const convertNumberToPrice = (price: number) => {
   return firstPart + ',' + secondPart;
 };
 
-interface CalcPricePerFullUnitParmas {
+interface CalcPricePerFullUnitParams {
   price: number | null;
   productSizeInUnit: number | null;
   unit: ProductUnit;
-  unitScale: ProductUnitWeightSize | ProductUnitVolumeSize;
+  unitScale: ProductUnitWeightSize | ProductUnitVolumeSize | null;
 }
 export const calcPricePerFullUnit = ({
   price,
   productSizeInUnit,
   unit,
   unitScale,
-}: CalcPricePerFullUnitParmas) => {
-  if (!productSizeInUnit || !price) return null;
+}: CalcPricePerFullUnitParams) => {
+  if (!price) return null;
+
+  if (unit === ProductUnit.pc) {
+    const significantNumbers = (+price * 100).toString().split('.')[0];
+    return +significantNumbers.toString().slice(0, -2);
+  }
+
+  if (!productSizeInUnit) return null;
 
   const result =
     price /

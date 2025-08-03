@@ -1,7 +1,7 @@
 import { Box, Stack, Typography } from '@mui/material';
 
 import { useAppSelector } from '../../../hooks';
-import { Product } from '../types/product';
+import { Product, ProductUnit } from '../types/product';
 import { convertNumberToPrice } from '../utils/price';
 
 interface Props {
@@ -62,7 +62,7 @@ export const SinglePriceList = ({ product }: Props) => {
               fontSize={12}
               sx={{ bgcolor: 'white' }}
             >
-              {`${convertNumberToPrice(product.pricePerFullUnit || 0)}zł/1${product.unit}`}
+              {`${convertNumberToPrice(product.pricePerFullUnit || 0)}zł/${product.unit === ProductUnit.pc ? 'szt' : product.unitScale}`}
             </Typography>
           </Stack>
         </Stack>

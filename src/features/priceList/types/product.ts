@@ -1,6 +1,7 @@
 export enum ProductUnit {
   kg = 'kg',
   l = 'l',
+  pc = 'pc', // piece
 }
 
 export enum ProductUnitWeightSize {
@@ -48,7 +49,7 @@ export interface Product {
     nocna: number | null;
   };
   unit: ProductUnit;
-  unitScale: ProductUnitWeightSize | ProductUnitVolumeSize;
+  unitScale: ProductUnitWeightSize | ProductUnitVolumeSize | null;
   productSizeInUnit: number | null;
   pricePerFullUnit: number | null;
   includedInPriceList: boolean;

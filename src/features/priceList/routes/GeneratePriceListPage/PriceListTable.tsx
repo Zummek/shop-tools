@@ -1,5 +1,6 @@
 import ClearIcon from '@mui/icons-material/Clear';
 import {
+  Box,
   Checkbox,
   InputAdornment,
   Paper,
@@ -45,10 +46,12 @@ export const PriceListTable = () => {
 
   const changeUnit = (index: number, unit: ProductUnit) => {
     const product = products[index];
-    const newUnitScale =
-      unit === ProductUnit.kg
-        ? ProductUnitWeightSize.g
-        : ProductUnitVolumeSize.ml;
+    let newUnitScale = null;
+
+    if (unit === ProductUnit.kg) newUnitScale = ProductUnitWeightSize.g;
+    else if (unit === ProductUnit.l) newUnitScale = ProductUnitVolumeSize.ml;
+    else if (unit === ProductUnit.pc) newUnitScale = null;
+
     const newPricePerFullUnit = calcPricePerFullUnit({
       price: product.prices[priceType],
       productSizeInUnit: product.productSizeInUnit,
@@ -158,216 +161,250 @@ export const PriceListTable = () => {
 
   const debouncedSetNameFilter = debounce(setNameFilter, 300);
 
+  const getUnitScaleFieldValues = (product: Product) => {
+    if (product.unit === ProductUnit.pc) return '1';
+
+    if (product.productSizeInUnit && isFinite(product.productSizeInUnit))
+      return product.productSizeInUnit;
+
+    return '';
+  };
+
   return (
-    <TableContainer component={Paper} sx={{ height: 500 }}>
-      <Table stickyHeader>
-        <TableHead>
-          <TableRow>
-            <TableCell colSpan={8} sx={{ p: 1, pb: 0, borderBottom: 'none' }}>
-              <TextField
-                label="Szukaj"
-                variant="outlined"
-                size="small"
-                onChange={(event) => debouncedSetNameFilter(event.target.value)}
-                sx={{ minWidth: 300 }}
-                value={nameFilter}
-                InputProps={{
-                  endAdornment: nameFilter ? (
-                    <InputAdornment position="end">
-                      <ClearIcon
-                        style={{ cursor: 'pointer' }}
-                        onClick={() => setNameFilter('')}
-                      />
-                    </InputAdornment>
-                  ) : undefined,
-                }}
-              />
-            </TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell>{'Id'}</TableCell>
-            <TableCell>{'Produkt'}</TableCell>
-            <TableCell>{'Cena'}</TableCell>
-            <TableCell>{'Jednostka'}</TableCell>
-            <TableCell>{'Skala'}</TableCell>
-            <TableCell>{'Rozmiar'}</TableCell>
-            <TableCell sx={{ lineHeight: 1 }}>
-              {'Cena za pełną jednostkę'}
-            </TableCell>
-            <TableCell width={60} padding="checkbox">
-              <Stack>
-                {'Do druku'}
-                <Checkbox
-                  color="primary"
-                  indeterminate={indeterminate}
-                  checked={allSelected}
-                  onChange={onSelectAllClick}
-                  disabled={products.length === 0 || nameFilter !== ''}
-                  inputProps={{
-                    'aria-label': 'select all',
-                  }}
+    <Stack spacing={2}>
+      <Box maxWidth={300}>
+        <TextField
+          label="Szukaj"
+          variant="outlined"
+          size="small"
+          onChange={(event) => debouncedSetNameFilter(event.target.value)}
+          sx={{ minWidth: 300 }}
+          value={nameFilter}
+          InputProps={{
+            endAdornment: nameFilter ? (
+              <InputAdornment position="end">
+                <ClearIcon
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => setNameFilter('')}
                 />
-              </Stack>
-            </TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {productsToDisplay.map((product, index) => {
-            const price = product.prices[priceType];
-            const formattedPrice =
-              price !== null ? `${convertNumberToPrice(price)}zł` : 'Brak ceny';
-            return (
-              <TableRow
-                key={product.id}
-                sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-              >
-                <TableCell sx={{ textWrap: 'nowrap' }} width={25}>
-                  {product.id}
-                </TableCell>
-                <TableCell component="th" scope="row">
-                  <TextField
-                    size="small"
-                    value={product.name}
-                    fullWidth
-                    error={product.name.length > 23}
-                    onChange={(event) => changeName(index, event.target.value)}
+              </InputAdornment>
+            ) : undefined,
+          }}
+        />
+      </Box>
+      <TableContainer component={Paper} sx={{ height: 500 }}>
+        <Table stickyHeader>
+          <TableHead>
+            <TableRow>
+              <TableCell>{'Id'}</TableCell>
+              <TableCell>{'Produkt'}</TableCell>
+              <TableCell>{'Cena'}</TableCell>
+              <TableCell>{'Jednostka'}</TableCell>
+              <TableCell>{'Skala'}</TableCell>
+              <TableCell>{'Rozmiar'}</TableCell>
+              <TableCell sx={{ lineHeight: 1 }}>
+                {'Cena za pełną jednostkę'}
+              </TableCell>
+              <TableCell width={60} padding="checkbox">
+                <Stack>
+                  {'Do druku'}
+                  <Checkbox
+                    color="primary"
+                    indeterminate={indeterminate}
+                    checked={allSelected}
+                    onChange={onSelectAllClick}
+                    disabled={products.length === 0 || nameFilter !== ''}
+                    inputProps={{
+                      'aria-label': 'select all',
+                    }}
                   />
-                </TableCell>
-                <TableCell sx={{ textWrap: 'nowrap' }} width={80}>
-                  {formattedPrice}
-                </TableCell>
-                <TableCell width={50}>
-                  <ToggleButtonGroup
-                    value={product.unit}
-                    exclusive
-                    size="small"
-                    onChange={(_event, unit) => changeUnit(index, unit)}
-                  >
-                    <ToggleButton
-                      value={ProductUnit.kg}
-                      sx={{ textTransform: 'none' }}
-                    >
-                      {'kg'}
-                    </ToggleButton>
-                    <ToggleButton
-                      value={ProductUnit.l}
-                      sx={{ textTransform: 'none' }}
-                    >
-                      {'l'}
-                    </ToggleButton>
-                  </ToggleButtonGroup>
-                </TableCell>
-                <TableCell width={80}>
-                  {product.unit === ProductUnit.kg ? (
+                </Stack>
+              </TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {productsToDisplay.map((product, index) => {
+              const price = product.prices[priceType];
+              const formattedPrice =
+                price !== null
+                  ? `${convertNumberToPrice(price)}zł`
+                  : 'Brak ceny';
+              return (
+                <TableRow
+                  key={product.id}
+                  sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                >
+                  <TableCell sx={{ textWrap: 'nowrap' }} width={25}>
+                    {product.id}
+                  </TableCell>
+                  <TableCell component="th" scope="row">
+                    <TextField
+                      size="small"
+                      value={product.name}
+                      fullWidth
+                      error={product.name.length > 23}
+                      onChange={(event) =>
+                        changeName(index, event.target.value)
+                      }
+                      helperText={
+                        product.name.length > 23
+                          ? 'Nazwa produktu jest na dwie linijki'
+                          : ''
+                      }
+                    />
+                  </TableCell>
+                  <TableCell sx={{ textWrap: 'nowrap' }} width={80}>
+                    {formattedPrice}
+                  </TableCell>
+                  <TableCell width={50}>
                     <ToggleButtonGroup
-                      value={product.unitScale}
+                      value={product.unit}
                       exclusive
                       size="small"
-                      onChange={(_event, unit) => changeUnitScale(index, unit)}
+                      onChange={(_event, unit) => changeUnit(index, unit)}
                     >
                       <ToggleButton
-                        value={ProductUnitWeightSize.kg}
+                        value={ProductUnit.kg}
                         sx={{ textTransform: 'none' }}
                       >
                         {'kg'}
                       </ToggleButton>
                       <ToggleButton
-                        value={ProductUnitWeightSize.g}
-                        sx={{ textTransform: 'none' }}
-                      >
-                        {'g'}
-                      </ToggleButton>
-                      <ToggleButton
-                        value={ProductUnitWeightSize.mg}
-                        sx={{ textTransform: 'none' }}
-                      >
-                        {'mg'}
-                      </ToggleButton>
-                    </ToggleButtonGroup>
-                  ) : (
-                    <ToggleButtonGroup
-                      value={product.unitScale}
-                      exclusive
-                      size="small"
-                      onChange={(_event, unit) => changeUnitScale(index, unit)}
-                    >
-                      <ToggleButton
-                        value={ProductUnitVolumeSize.l}
+                        value={ProductUnit.l}
                         sx={{ textTransform: 'none' }}
                       >
                         {'l'}
                       </ToggleButton>
                       <ToggleButton
-                        value={ProductUnitVolumeSize.ml}
+                        value={ProductUnit.pc}
                         sx={{ textTransform: 'none' }}
                       >
-                        {'ml'}
+                        {'szt'}
                       </ToggleButton>
                     </ToggleButtonGroup>
-                  )}
-                </TableCell>
-                <TableCell width={100}>
-                  <TextField
-                    size="small"
-                    error={product.productSizeInUnit === null}
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          {product.unitScale}
-                        </InputAdornment>
-                      ),
-                    }}
-                    value={
-                      product.productSizeInUnit &&
-                      isFinite(product.productSizeInUnit)
-                        ? product.productSizeInUnit
-                        : ''
-                    }
-                    onChange={(event) =>
-                      changeProductSizeInUnit(
-                        index,
-                        event.target.value
-                          ? parseFloat(event.target.value)
-                          : null
-                      )
-                    }
-                  />
-                </TableCell>
-                <TableCell width={150}>
-                  <TextField
-                    size="small"
-                    error={product.pricePerFullUnit === null}
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position="end">{`zł/1${product.unit}`}</InputAdornment>
-                      ),
-                    }}
-                    value={
-                      product.pricePerFullUnit !== null
-                        ? convertNumberToPrice(product.pricePerFullUnit)
-                        : ''
-                    }
-                    onChange={(event) =>
-                      changePricePerFullUnit(
-                        index,
-                        event.target.value ? parseFloat(event.target.value) : 0
-                      )
-                    }
-                  />
-                </TableCell>
-                <TableCell width={42}>
-                  <Checkbox
-                    checked={product.includedInPriceList}
-                    onChange={(_event, checked) =>
-                      setIncludedInPriceList(index, checked)
-                    }
-                  />
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-    </TableContainer>
+                  </TableCell>
+                  <TableCell width={80}>
+                    {product.unit === ProductUnit.kg && (
+                      <ToggleButtonGroup
+                        value={product.unitScale}
+                        exclusive
+                        size="small"
+                        onChange={(_event, unit) =>
+                          changeUnitScale(index, unit)
+                        }
+                      >
+                        <ToggleButton
+                          value={ProductUnitWeightSize.kg}
+                          sx={{ textTransform: 'none' }}
+                        >
+                          {'kg'}
+                        </ToggleButton>
+                        <ToggleButton
+                          value={ProductUnitWeightSize.g}
+                          sx={{ textTransform: 'none' }}
+                        >
+                          {'g'}
+                        </ToggleButton>
+                        <ToggleButton
+                          value={ProductUnitWeightSize.mg}
+                          sx={{ textTransform: 'none' }}
+                        >
+                          {'mg'}
+                        </ToggleButton>
+                      </ToggleButtonGroup>
+                    )}
+                    {product.unit === ProductUnit.l && (
+                      <ToggleButtonGroup
+                        value={product.unitScale}
+                        exclusive
+                        size="small"
+                        onChange={(_event, unit) =>
+                          changeUnitScale(index, unit)
+                        }
+                      >
+                        <ToggleButton
+                          value={ProductUnitVolumeSize.l}
+                          sx={{ textTransform: 'none' }}
+                        >
+                          {'l'}
+                        </ToggleButton>
+                        <ToggleButton
+                          value={ProductUnitVolumeSize.ml}
+                          sx={{ textTransform: 'none' }}
+                        >
+                          {'ml'}
+                        </ToggleButton>
+                      </ToggleButtonGroup>
+                    )}
+                  </TableCell>
+                  <TableCell width={100}>
+                    {product.unit !== ProductUnit.pc && (
+                      <TextField
+                        size="small"
+                        error={product.productSizeInUnit === null}
+                        InputProps={{
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              {product.unitScale}
+                            </InputAdornment>
+                          ),
+                        }}
+                        value={getUnitScaleFieldValues(product)}
+                        onChange={(event) =>
+                          changeProductSizeInUnit(
+                            index,
+                            event.target.value
+                              ? parseFloat(event.target.value)
+                              : null
+                          )
+                        }
+                      />
+                    )}
+                  </TableCell>
+                  <TableCell width={150}>
+                    <TextField
+                      size="small"
+                      disabled
+                      error={product.pricePerFullUnit === null}
+                      InputProps={{
+                        endAdornment: (
+                          <InputAdornment position="end">{`zł/${product.unit === ProductUnit.pc ? 'szt' : product.unitScale}`}</InputAdornment>
+                        ),
+                        inputProps: {
+                          style: {
+                            border: 'none',
+                          },
+                        },
+                      }}
+                      value={
+                        product.pricePerFullUnit !== null
+                          ? convertNumberToPrice(product.pricePerFullUnit)
+                          : ''
+                      }
+                      onChange={(event) =>
+                        changePricePerFullUnit(
+                          index,
+                          event.target.value
+                            ? parseFloat(event.target.value)
+                            : 0
+                        )
+                      }
+                    />
+                  </TableCell>
+                  <TableCell width={42}>
+                    <Checkbox
+                      checked={product.includedInPriceList}
+                      onChange={(_event, checked) =>
+                        setIncludedInPriceList(index, checked)
+                      }
+                    />
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Stack>
   );
 };

@@ -54,101 +54,121 @@ export const readProductsFromCsv = async (
   priceType: PriceType
 ): Promise<Product[]> => {
   return new Promise((resolve, reject) => {
+    const products: Product[] = [];
     const reader = new FileReader();
+
     reader.onload = () => {
-      const products: Product[] = [];
       const content = reader.result as string;
 
-      parse(
-        content,
-        {
-          delimiter: '\t',
-          fromLine: 2,
-          skipEmptyLines: true,
-          skip_records_with_empty_values: true,
-          trim: true,
-          relax_column_count: true,
-          columns: true,
-        },
-        (err, records) => {
-          if (err) reject(err);
+      if (!content) {
+        reject(new Error('Failed to read file content'));
+        return;
+      }
 
-          for (const record of records) {
-            const id = record['Id'];
-            const name = record['Nazwa'];
-            const priceNocRaw = record['Cena noc.'];
-            const priceEwidencyjnaRaw = record['Cena ew.'];
-            const priceDetalicznaRaw = record['Cena det.'];
-            const priceHurtowaRaw = record['Cena hurt.'];
+      const parser = parse({
+        delimiter: '\t',
+        fromLine: 2,
+        skipEmptyLines: true,
+        skip_records_with_empty_values: true,
+        trim: true,
+        relax_column_count: true,
+        columns: true,
+        relaxQuotes: true,
+        quote: '"',
+        escape: '"',
+      });
 
-            if (
-              !name ||
-              (!priceNocRaw &&
-                !priceEwidencyjnaRaw &&
-                !priceDetalicznaRaw &&
-                !priceHurtowaRaw)
-            )
-              continue;
+      parser.on('readable', () => {
+        let record;
 
-            const priceDetaliczna = convertPriceToNumber(priceDetalicznaRaw);
-            const priceNoc = convertPriceToNumber(priceNocRaw);
-            const priceEwidencyjna = convertPriceToNumber(priceEwidencyjnaRaw);
-            const priceHurtowa = convertPriceToNumber(priceHurtowaRaw);
+        while ((record = parser.read())) {
+          const id = record['Id'];
+          const name = record['Nazwa'];
+          const priceNocRaw = record['Cena noc.'];
+          const priceEwidencyjnaRaw = record['Cena ew.'];
+          const priceDetalicznaRaw = record['Cena det.'];
+          const priceHurtowaRaw = record['Cena hurt.'];
 
-            const extractedValueAndUnit = extractValueAndUnit(name);
-            const unit = extractedValueAndUnit?.unit || ProductUnit.kg;
-            const unitScale =
-              extractedValueAndUnit?.unitScale || ProductUnitWeightSize.kg;
-            const productSizeInUnit = extractedValueAndUnit?.value || null;
+          if (
+            !name ||
+            (!priceNocRaw &&
+              !priceEwidencyjnaRaw &&
+              !priceDetalicznaRaw &&
+              !priceHurtowaRaw)
+          )
+            continue;
 
-            let priceInSelectedUnit;
+          const priceDetaliczna = convertPriceToNumber(priceDetalicznaRaw);
+          const priceNoc = convertPriceToNumber(priceNocRaw);
+          const priceEwidencyjna = convertPriceToNumber(priceEwidencyjnaRaw);
+          const priceHurtowa = convertPriceToNumber(priceHurtowaRaw);
 
-            switch (priceType) {
-              default:
-              case PriceType.detaliczna:
-                priceInSelectedUnit = priceDetaliczna;
-                break;
-              case PriceType.nocna:
-                priceInSelectedUnit = priceNoc;
-                break;
-              case PriceType.ewidencyjna:
-                priceInSelectedUnit = priceEwidencyjna;
-                break;
-              case PriceType.hurtowa:
-                priceInSelectedUnit = priceHurtowa;
-                break;
-            }
+          const extractedValueAndUnit = extractValueAndUnit(name);
+          const unit = extractedValueAndUnit?.unit || ProductUnit.kg;
+          const unitScale =
+            extractedValueAndUnit?.unitScale || ProductUnitWeightSize.kg;
+          const productSizeInUnit = extractedValueAndUnit?.value || null;
 
-            const pricePerFullUnit = calcPricePerFullUnit({
-              price: priceInSelectedUnit,
-              productSizeInUnit,
-              unit,
-              unitScale,
-            });
+          let priceInSelectedUnit;
 
-            products.push({
-              id,
-              name,
-              prices: {
-                detaliczna: priceDetaliczna,
-                nocna: priceNoc,
-                ewidencyjna: priceEwidencyjna,
-                hurtowa: priceHurtowa,
-              },
-              unit,
-              productSizeInUnit,
-              pricePerFullUnit,
-              unitScale,
-              includedInPriceList: true,
-            });
+          switch (priceType) {
+            default:
+            case PriceType.detaliczna:
+              priceInSelectedUnit = priceDetaliczna;
+              break;
+            case PriceType.nocna:
+              priceInSelectedUnit = priceNoc;
+              break;
+            case PriceType.ewidencyjna:
+              priceInSelectedUnit = priceEwidencyjna;
+              break;
+            case PriceType.hurtowa:
+              priceInSelectedUnit = priceHurtowa;
+              break;
           }
 
-          resolve(products);
+          const pricePerFullUnit = calcPricePerFullUnit({
+            price: priceInSelectedUnit,
+            productSizeInUnit,
+            unit,
+            unitScale,
+          });
+
+          const product = {
+            id,
+            name,
+            prices: {
+              detaliczna: priceDetaliczna,
+              nocna: priceNoc,
+              ewidencyjna: priceEwidencyjna,
+              hurtowa: priceHurtowa,
+            },
+            unit,
+            productSizeInUnit,
+            pricePerFullUnit,
+            unitScale,
+            includedInPriceList: true,
+          };
+
+          products.push(product);
         }
-      );
+      });
+
+      parser.on('error', (err) => {
+        reject(err);
+      });
+
+      parser.on('end', () => {
+        resolve(products);
+      });
+
+      parser.write(content);
+      parser.end();
     };
 
-    reader.onerror = (error) => reject(error);
+    reader.onerror = (error) => {
+      reject(error);
+    };
 
     reader.readAsText(file, 'windows-1250');
   });

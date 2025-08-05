@@ -8,10 +8,10 @@ import { PriceTagGroupListItem } from '../types';
 type Response = ListResponse<PriceTagGroupListItem>;
 
 export const pageSize = 25;
-export const getPriceTagGroupsListQueryKeyBase = 'priceTagGroupsList';
+export const priceTagGroupsListQueryKeyBase = 'priceTagGroupsList';
 const endpoint = '/api/v1/products/price-tag-groups/';
 const getQueryKey = (page: number, phrase: string) => [
-  getPriceTagGroupsListQueryKeyBase,
+  priceTagGroupsListQueryKeyBase,
   page,
   phrase,
 ];

@@ -11,7 +11,6 @@ import { CreatePriceTagGroup } from '../modals/CreatePriceTagGroup';
 import { PriceTagGroupListItem } from '../types';
 
 const columns: GridColDef<PriceTagGroupListItem>[] = [
-  { field: 'id', headerName: 'ID' },
   {
     field: 'name',
     headerName: 'Nazwa grupy',

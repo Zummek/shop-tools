@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { axiosInstance } from '../../../../services';
 
 import { getPriceTagGroupDetailsQueryKey } from './useGetPriceTagGroupDetails';
-import { getPriceTagGroupsListQueryKeyBase } from './useGetPriceTagGroups';
+import { priceTagGroupsListQueryKeyBase } from './useGetPriceTagGroups';
 
 type Payload = {
   name: string;
@@ -35,7 +35,7 @@ export const useCreatePriceTagGroup = () => {
         () => data.data
       );
       queryClient.refetchQueries({
-        queryKey: [getPriceTagGroupsListQueryKeyBase],
+        queryKey: [priceTagGroupsListQueryKeyBase],
       });
     },
   });

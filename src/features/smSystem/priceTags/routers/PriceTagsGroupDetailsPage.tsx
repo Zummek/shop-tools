@@ -49,7 +49,10 @@ import {
 } from '../api';
 import { PdfFullPriceList, SelectBranch } from '../components';
 import { SinglePriceList } from '../components/SinglePriceList';
-import { AddProductToPriceTagGroupModal } from '../modals';
+import {
+  AddProductToPriceTagGroupModal,
+  ConfirmDeletingPriceGroupModal,
+} from '../modals';
 import { PriceTagGroup } from '../types';
 import { calcPricePerFullUnit } from '../utils/priceTag';
 
@@ -87,6 +90,10 @@ export const PriceTagsGroupDetailsPage = () => {
   const [open, setOpen] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [priceTagGroupName, setPriceTagGroupName] = useState('');
+  const [
+    isDeletingPriceTagGroupModalOpen,
+    setIsDeletingPriceTagGroupModalOpen,
+  ] = useState(false);
 
   const generatePriceListPdf = useReactToPrint({
     content: () => componentToPrintRef.current,
@@ -484,15 +491,25 @@ export const PriceTagsGroupDetailsPage = () => {
             </IconButton>
             {isUpdatingPriceTagGroup && <CircularProgress size={20} />}
           </Stack>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={generatePriceListPdf}
-            disabled={isSthToPrint}
-            sx={{ whiteSpace: 'nowrap' }}
-          >
-            {'Drukuj cenówki'}
-          </Button>
+          <Stack direction="row" spacing={4}>
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={() => setIsDeletingPriceTagGroupModalOpen(true)}
+              sx={{ whiteSpace: 'nowrap' }}
+            >
+              {'Usuń grupę'}
+            </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={generatePriceListPdf}
+              disabled={isSthToPrint}
+              sx={{ whiteSpace: 'nowrap' }}
+            >
+              {'Drukuj cenówki'}
+            </Button>
+          </Stack>
         </Box>
         <Box display="flex" alignItems="center" justifyContent="space-between">
           <Stack spacing={2}>
@@ -571,6 +588,12 @@ export const PriceTagsGroupDetailsPage = () => {
           originallySelectedProductIds={
             priceTagGroupDetails?.products.map((product) => product.id) || []
           }
+        />
+        <ConfirmDeletingPriceGroupModal
+          open={isDeletingPriceTagGroupModalOpen}
+          onClose={() => setIsDeletingPriceTagGroupModalOpen(false)}
+          groupId={groupId}
+          groupName={priceTagGroupDetails?.name || ''}
         />
       </Stack>
 

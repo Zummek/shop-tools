@@ -15,8 +15,10 @@ export const formatPrice = (price: number) => {
 export const calcGrossPrice = (
   netPrice: number | null | undefined,
   vat: number | null | undefined
-) => {
-  if (!netPrice || !vat) return null;
+): number | null => {
+  if (netPrice == null || vat == null) return null;
+  if (netPrice < 0 || vat < 0) return null;
 
-  return Number((netPrice * (1 + vat / 100)).toString().split('.')[0]);
+  const grossPrice = netPrice * (1 + vat / 100);
+  return Math.round(grossPrice);
 };

@@ -1,4 +1,3 @@
-import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
@@ -50,7 +49,7 @@ import {
 import { PdfFullPriceList, SelectBranch } from '../components';
 import { SinglePriceList } from '../components/SinglePriceList';
 import {
-  AddProductToPriceTagGroupModal,
+  ChangeProductsToPriceTagGroupModal,
   ConfirmDeletingPriceGroupModal,
 } from '../modals';
 import { PriceTagGroup } from '../types';
@@ -87,7 +86,8 @@ export const PriceTagsGroupDetailsPage = () => {
   const componentToPrintRef = useRef<HTMLDivElement>(null);
   const [branch, setBranch] = useState<BranchListItem | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [open, setOpen] = useState(false);
+  const [openChangingProductsModal, setOpenChangingProductsModal] =
+    useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [priceTagGroupName, setPriceTagGroupName] = useState('');
   const [
@@ -551,10 +551,9 @@ export const PriceTagsGroupDetailsPage = () => {
           <Button
             variant="contained"
             color="primary"
-            onClick={() => setOpen(true)}
-            endIcon={<AddIcon />}
+            onClick={() => setOpenChangingProductsModal(true)}
           >
-            {'Dodaj produkt'}
+            {'Zmień produkty'}
           </Button>
         </Box>
         <DataGrid
@@ -582,9 +581,9 @@ export const PriceTagsGroupDetailsPage = () => {
               : 'Brak produktów w grupie, dodaj produkty',
           }}
         />
-        <AddProductToPriceTagGroupModal
-          open={open}
-          onClose={() => setOpen(false)}
+        <ChangeProductsToPriceTagGroupModal
+          open={openChangingProductsModal}
+          onClose={() => setOpenChangingProductsModal(false)}
           groupId={groupId}
           originallySelectedProductIds={
             priceTagGroupDetails?.products.map((product) => product.id) || []

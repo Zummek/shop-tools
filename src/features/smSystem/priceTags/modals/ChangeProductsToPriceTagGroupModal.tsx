@@ -21,7 +21,7 @@ const columns: GridColDef<Product>[] = [
   { field: 'name', headerName: 'Nazwa produktu', width: 300, flex: 1 },
 ];
 
-export const AddProductToPriceTagGroupModal = ({
+export const ChangeProductsToPriceTagGroupModal = ({
   open,
   onClose,
   groupId,
@@ -33,8 +33,8 @@ export const AddProductToPriceTagGroupModal = ({
   );
 
   useEffect(() => {
-    setSelectedProductIds(originallySelectedProductIds);
-  }, [originallySelectedProductIds]);
+    if (open) setSelectedProductIds(originallySelectedProductIds);
+  }, [originallySelectedProductIds, open]);
 
   const { products, isLoading, setQuery, query, setPage, page, totalCount } =
     useGetProducts();
@@ -83,6 +83,7 @@ export const AddProductToPriceTagGroupModal = ({
             loading={isLoading}
             checkboxSelection
             disableColumnSorting
+            keepNonExistentRowsSelected
             disableColumnMenu
             onRowSelectionModelChange={handleSelectionChange}
             rowSelectionModel={selectedProductIds}

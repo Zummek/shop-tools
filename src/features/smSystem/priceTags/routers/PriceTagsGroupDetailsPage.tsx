@@ -41,7 +41,7 @@ import {
   ProductUnitVolumeScale,
   ProductUnitWeightScale,
 } from '../../products/types';
-import { formatPrice } from '../../products/utils/formatPrice';
+import { calcGrossPrice, formatPrice } from '../../products/utils';
 import {
   getPriceTagGroupDetailsQueryKey,
   useGetPriceTagGroupDetails,
@@ -271,12 +271,13 @@ export const PriceTagsGroupDetailsPage = () => {
       headerName: 'Cena na wybrany sklep',
       sortable: false,
       renderCell: (params) => {
-        const branchPrice = params.row.branches.find(
+        const branchNetPrice = params.row.branches.find(
           (b) => b.branch.id === branch?.id
         );
+        const price = calcGrossPrice(branchNetPrice?.netPrice, params.row.vat);
         return (
           <Typography>
-            {formatPrice(branchPrice?.netPrice ?? 0)} {'zł'}
+            {formatPrice(price ?? 0)} {'zł'}
           </Typography>
         );
       },
@@ -402,7 +403,7 @@ export const PriceTagsGroupDetailsPage = () => {
         );
         if (!branchPrice) return '';
         const price = calcPricePerFullUnit({
-          price: branchPrice?.netPrice,
+          price: calcGrossPrice(branchPrice?.netPrice, row.vat),
           productSizeInUnit: row.unitScaleValue,
           unit: row.unit,
           unitScale: row.unitScale,

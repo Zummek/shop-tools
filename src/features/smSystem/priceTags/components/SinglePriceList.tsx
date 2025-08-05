@@ -3,8 +3,8 @@ import { useMemo } from 'react';
 
 import { BranchListItem } from '../../branches/api';
 import { Product, ProductUnit } from '../../products/types';
-import { formatPrice } from '../../products/utils/formatPrice';
-import { calcPricePerFullUnit } from '../utils/priceTag';
+import { calcGrossPrice, formatPrice } from '../../products/utils';
+import { calcPricePerFullUnit } from '../utils';
 
 interface Props {
   product: Product | null;
@@ -12,9 +12,10 @@ interface Props {
 }
 
 export const SinglePriceList = ({ product, branch }: Props) => {
-  const branchPrice = product?.branches.find(
+  const branchNetPrice = product?.branches.find(
     (b) => b.branch.id === branch?.id
   )?.netPrice;
+  const branchPrice = calcGrossPrice(branchNetPrice, product?.vat);
   const price = branchPrice ? formatPrice(branchPrice) : 'Brak ceny';
 
   const formattedPricePerFullUnit = useMemo(() => {

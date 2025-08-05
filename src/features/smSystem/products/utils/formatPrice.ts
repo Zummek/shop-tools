@@ -11,3 +11,12 @@ export const formatPrice = (price: number) => {
   if (firstPart === '0') return firstPart + ',' + secondPart;
   return firstPart + ',' + secondPart;
 };
+
+export const calcGrossPrice = (
+  netPrice: number | null | undefined,
+  vat: number | null | undefined
+) => {
+  if (!netPrice || !vat) return null;
+
+  return Number((netPrice * (1 + vat / 100)).toString().split('.')[0]);
+};

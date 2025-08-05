@@ -63,9 +63,6 @@ export const Header = ({
   return (
     <Stack spacing={2} direction="column">
       <Stack spacing={4} direction="row">
-        {/* <Button variant="text" href={`#${Pages.generatePriceList}`}>
-          {'Generuj cenówki'}
-        </Button> */}
         <Button variant="text" href={`#${Pages.barcodesGenerator}`}>
           {'Generuj kody kreskowe'}
         </Button>

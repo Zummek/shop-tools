@@ -7,7 +7,6 @@ import { Navigate, RouterProvider, createHashRouter } from 'react-router-dom';
 
 import { BarcodesGeneratorPage } from './features/BarcodesGenerator/routes/BarcodesGeneratorPage/BarcodesGeneratorPage';
 import { InvoiceConverterPage } from './features/invoiceConverter/routers/InvoiceConverterPage/InvoiceConverterPage';
-import { GeneratePriceListPage } from './features/priceList/routes/GeneratePriceListPage/GeneratePriceListPage';
 import { SmSystemPageLayout } from './features/smSystem/layouts/SmSystemPageLayout';
 import { PriceTagsGroupDetailsPage } from './features/smSystem/priceTags/routers/PriceTagsGroupDetailsPage';
 import { PriceTagsGroupsPage } from './features/smSystem/priceTags/routers/PriceTagsGroupsPage';
@@ -31,11 +30,7 @@ const router = createHashRouter(
     {
       path: '/',
       index: true,
-      element: <Navigate to="/generate-price-list" />,
-    },
-    {
-      path: '/generate-price-list',
-      element: <GeneratePriceListPage />,
+      element: <Navigate to="/barcodes-generator" />,
     },
     {
       path: '/barcodes-generator',

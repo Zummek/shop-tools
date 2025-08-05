@@ -50,7 +50,7 @@ export const SinglePriceList = ({ product, branch }: Props) => {
       ) : (
         <Stack key={product.id} justifyContent="space-between" height="100%">
           <Typography variant="body1" lineHeight={1} pt={0.25} fontSize={14}>
-            {product.name}
+            {product.priceTagName}
           </Typography>
           <Stack
             direction="row"

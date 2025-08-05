@@ -28,7 +28,6 @@ const extractValueAndUnit = (
       | ProductUnitWeightSize
       | ProductUnitVolumeSize;
 
-    // Check if the unit is valid
     if (
       Object.values(ProductUnitWeightSize).includes(
         unitSize as ProductUnitWeightSize

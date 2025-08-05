@@ -1,3 +1,4 @@
+import { Box } from '@mui/material';
 import { useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 
@@ -28,7 +29,9 @@ export const SmSystemPageLayout = () => {
       onButtonClick={() => logoutUser()}
       buttonLabel="Wyloguj"
     >
-      <Outlet />
+      <Box width="100%" flex={1}>
+        <Outlet />
+      </Box>
     </Page>
   );
 };

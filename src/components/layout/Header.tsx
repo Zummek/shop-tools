@@ -47,19 +47,25 @@ export const Header = ({
     Pages.smSystemUnfulfilledOrdersByTransfersReport,
   ]);
 
+  const isPriceTagsGroupsPage = useIsPage([
+    Pages.smSystemPriceTagsGroups,
+    Pages.smSystemPriceTagsGroupDetails,
+  ]);
+
   const showSmSystemHeader =
     isProductsDocumentsPage ||
     isTransfersPage ||
     isImportProductsPage ||
     areSuppliersFeaturePages ||
-    isReportsPage;
+    isReportsPage ||
+    isPriceTagsGroupsPage;
 
   return (
     <Stack spacing={2} direction="column">
       <Stack spacing={4} direction="row">
-        <Button variant="text" href={`#${Pages.generatePriceList}`}>
+        {/* <Button variant="text" href={`#${Pages.generatePriceList}`}>
           {'Generuj cenówki'}
-        </Button>
+        </Button> */}
         <Button variant="text" href={`#${Pages.barcodesGenerator}`}>
           {'Generuj kody kreskowe'}
         </Button>
@@ -78,24 +84,26 @@ export const Header = ({
       >
         {showSmSystemHeader && (
           <Stack spacing={2} direction="row" alignItems="center">
-            <Typography variant="h6">{'SM System:'}</Typography>
             <Box>
               <ButtonGroup variant="outlined">
                 <Button
                   href={`#${Pages.smSystemTransfers}`}
                   variant={isTransfersPage ? 'contained' : 'outlined'}
+                  size="small"
                 >
                   {'Transfery'}
                 </Button>
                 <Button
                   href={`#${Pages.smSystemProductsDocuments}`}
                   variant={isProductsDocumentsPage ? 'contained' : 'outlined'}
+                  size="small"
                 >
                   {'Dokumenty'}
                 </Button>
                 <Button
                   href={`#${Pages.smSystemOrders}`}
                   variant={areSuppliersFeaturePages ? 'contained' : 'outlined'}
+                  size="small"
                 >
                   {'Zamówienia u dostawców'}
                 </Button>
@@ -108,8 +116,16 @@ export const Header = ({
                 <Button
                   href={`#${Pages.smSystemReports}`}
                   variant={isReportsPage ? 'contained' : 'outlined'}
+                  size="small"
                 >
                   {'Raporty'}
+                </Button>
+                <Button
+                  href={`#${Pages.smSystemPriceTagsGroups}`}
+                  variant={isPriceTagsGroupsPage ? 'contained' : 'outlined'}
+                  size="small"
+                >
+                  {'Etykiety cenowe'}
                 </Button>
               </ButtonGroup>
             </Box>

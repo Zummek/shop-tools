@@ -1,25 +1,11 @@
 import { Modal, Stack, Typography } from '@mui/material';
 import { useState } from 'react';
 
+import { modalStyle } from '../../../../../components';
 import { BasicModalProps, Supplier } from '../../../app/types/index';
 
 import { SelectingBranches } from './SelectingBranches';
 import { SelectingSupplier } from './SelectingSupplier';
-
-const modalStyle = {
-  position: 'absolute',
-  top: '50%',
-  left: '50%',
-  transform: 'translate(-50%, -50%)',
-  bgcolor: 'background.paper',
-  border: '2px solid #000',
-  boxShadow: 24,
-  paddingX: 6,
-  paddingY: 4,
-  width: 535,
-  display: 'flex',
-  flexDirection: 'column',
-};
 
 export const AddOrderModal = ({ open, handleClose }: BasicModalProps) => {
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(
@@ -37,7 +23,7 @@ export const AddOrderModal = ({ open, handleClose }: BasicModalProps) => {
 
   return (
     <Modal open={open} onClose={handleCloseModal}>
-      <Stack sx={modalStyle} spacing={3}>
+      <Stack sx={modalStyle({ width: 535 })} spacing={3}>
         <Typography variant="h4" align="center">
           {'Nowe zamówienie'}
         </Typography>

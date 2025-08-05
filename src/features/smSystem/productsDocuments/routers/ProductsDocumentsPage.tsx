@@ -71,7 +71,7 @@ const columns: GridColDef<ProductsDocumentListItem>[] = [
 
 export const ProductsDocumentsPage = () => {
   const [page, setPage] = useState(0);
-  const [selectedTransferIds, setSelectedTransferIds] = useState<string[]>([]);
+  const [selectedDocIds, setSelectedDocIds] = useState<string[]>([]);
 
   const { productsDocuments, totalCount, isLoading } = useGetProductsDocuments({
     page,
@@ -87,16 +87,16 @@ export const ProductsDocumentsPage = () => {
     setPage(page);
 
   const handleExportProductsDocuments = () =>
-    exportProductsDocuments({ ids: selectedTransferIds.map(Number) });
+    exportProductsDocuments({ ids: selectedDocIds.map(Number) });
 
   const handlePostProductsDocuments = () =>
     updateProductsDocumentsStatus({
-      ids: selectedTransferIds,
+      ids: selectedDocIds,
       status: 'POSTED',
     });
 
   const handleSelectionChange = (rowSelectionModel: GridRowSelectionModel) =>
-    setSelectedTransferIds(rowSelectionModel as string[]);
+    setSelectedDocIds(rowSelectionModel as string[]);
 
   return (
     <Stack spacing={4}>
@@ -106,7 +106,7 @@ export const ProductsDocumentsPage = () => {
           color="primary"
           onClick={handleExportProductsDocuments}
           disabled={
-            selectedTransferIds.length === 0 ||
+            selectedDocIds.length === 0 ||
             isLoading ||
             isUpdatingProductsDocumentsStatus
           }
@@ -119,13 +119,16 @@ export const ProductsDocumentsPage = () => {
           color="primary"
           onClick={handlePostProductsDocuments}
           disabled={
-            selectedTransferIds.length === 0 ||
+            selectedDocIds.length === 0 ||
             isLoading ||
             isExportingProductsDocuments
           }
           loading={isUpdatingProductsDocumentsStatus}
         >
           {'Oznacz jako zaksięgowane'}
+        </LoadingButton>
+        <LoadingButton variant="contained" color="primary" disabled={true}>
+          {'Utwórz grupę etykiet'}
         </LoadingButton>
       </Stack>
       <Box height={500}>

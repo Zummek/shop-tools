@@ -9,6 +9,8 @@ import { BarcodesGeneratorPage } from './features/BarcodesGenerator/routes/Barco
 import { InvoiceConverterPage } from './features/invoiceConverter/routers/InvoiceConverterPage/InvoiceConverterPage';
 import { GeneratePriceListPage } from './features/priceList/routes/GeneratePriceListPage/GeneratePriceListPage';
 import { SmSystemPageLayout } from './features/smSystem/layouts/SmSystemPageLayout';
+import { PriceTagsGroupDetailsPage } from './features/smSystem/priceTags/routers/PriceTagsGroupDetailsPage';
+import { PriceTagsGroupsPage } from './features/smSystem/priceTags/routers/PriceTagsGroupsPage';
 import { ImportProductsPage } from './features/smSystem/products/routers/ImportProductsPage/ImportProductsPage';
 import { ProductsDocumentsPage } from './features/smSystem/productsDocuments/routers/ProductsDocumentsPage';
 import { ReportsPage } from './features/smSystem/reports/routers/ReportsPage';
@@ -95,6 +97,19 @@ const router = createHashRouter(
             {
               path: 'orders/:orderId',
               element: <OrderDetailsPage />,
+            },
+          ],
+        },
+        {
+          path: 'price-tags',
+          children: [
+            {
+              path: 'groups',
+              element: <PriceTagsGroupsPage />,
+            },
+            {
+              path: 'groups/:groupId',
+              element: <PriceTagsGroupDetailsPage />,
             },
           ],
         },

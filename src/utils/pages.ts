@@ -13,4 +13,6 @@ export enum Pages {
   smSystemOrderDetails = '/sm-system/suppliers-orders/orders/:orderId',
   smSystemReports = '/sm-system/reports',
   smSystemUnfulfilledOrdersByTransfersReport = '/sm-system/unfulfilled-orders-by-transfers',
+  smSystemPriceTagsGroups = '/sm-system/price-tags/groups',
+  smSystemPriceTagsGroupDetails = '/sm-system/price-tags/groups/:groupId',
 }

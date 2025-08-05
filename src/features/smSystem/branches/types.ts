@@ -1,4 +1,4 @@
 export interface SimpleBranch {
-  id: string;
+  id: number;
   name: string;
 }

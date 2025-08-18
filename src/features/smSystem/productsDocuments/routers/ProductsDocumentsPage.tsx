@@ -3,9 +3,13 @@ import { Box, Stack, Typography } from '@mui/material';
 import { DataGrid, GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
 import dayjs from 'dayjs';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
+import { useNotify } from '../../../../hooks';
+import { Pages } from '../../../../utils';
 import {
   pageSize,
+  useCreatePriceTagBaseOnProductsDocuments,
   useExportProductsDocuments,
   useGetProductsDocuments,
   useUpdateProductsDocumentsStatus,
@@ -70,6 +74,9 @@ const columns: GridColDef<ProductsDocumentListItem>[] = [
 ];
 
 export const ProductsDocumentsPage = () => {
+  const { notify } = useNotify();
+  const navigate = useNavigate();
+
   const [page, setPage] = useState(0);
   const [selectedDocIds, setSelectedDocIds] = useState<string[]>([]);
 
@@ -82,6 +89,10 @@ export const ProductsDocumentsPage = () => {
     updateProductsDocumentsStatus,
     isPending: isUpdatingProductsDocumentsStatus,
   } = useUpdateProductsDocumentsStatus();
+  const {
+    createPriceTagBaseOnProductsDocuments,
+    isPending: isCreatingPriceTagBaseOnProductsDocuments,
+  } = useCreatePriceTagBaseOnProductsDocuments();
 
   const handlePageChange = (_event: unknown, page: number): void =>
     setPage(page);
@@ -94,6 +105,18 @@ export const ProductsDocumentsPage = () => {
       ids: selectedDocIds,
       status: 'POSTED',
     });
+
+  const handleCreatePriceTagBaseOnProductsDocuments = async () => {
+    try {
+      const { data } = await createPriceTagBaseOnProductsDocuments({
+        documentIds: selectedDocIds,
+      });
+      notify('success', 'Grupa etykiet została utworzona');
+      navigate(`${Pages.smSystemPriceTagsGroups}/${data.id}`);
+    } catch (error) {
+      notify('error', 'Wystąpił błąd podczas tworzenia grupy etykiet');
+    }
+  };
 
   const handleSelectionChange = (rowSelectionModel: GridRowSelectionModel) =>
     setSelectedDocIds(rowSelectionModel as string[]);
@@ -127,7 +150,13 @@ export const ProductsDocumentsPage = () => {
         >
           {'Oznacz jako zaksięgowane'}
         </LoadingButton>
-        <LoadingButton variant="contained" color="primary" disabled={true}>
+        <LoadingButton
+          variant="contained"
+          color="primary"
+          disabled={selectedDocIds.length === 0 || isLoading}
+          onClick={handleCreatePriceTagBaseOnProductsDocuments}
+          loading={isCreatingPriceTagBaseOnProductsDocuments}
+        >
           {'Utwórz grupę etykiet'}
         </LoadingButton>
       </Stack>

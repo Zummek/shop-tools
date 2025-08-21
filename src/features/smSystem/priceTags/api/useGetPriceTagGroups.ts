@@ -24,7 +24,7 @@ export const useGetPriceTagGroups = () => {
     const response = await axiosInstance.get<Response>(endpoint, {
       params: {
         phrase,
-        page,
+        page: page + 1,
         pageSize,
       },
     });

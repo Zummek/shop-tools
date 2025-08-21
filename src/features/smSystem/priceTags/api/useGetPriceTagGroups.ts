@@ -20,14 +20,12 @@ export const useGetPriceTagGroups = () => {
   const [page, setPage] = useState(0);
   const [phrase, setPhrase] = useState('');
 
-  const offset = page * pageSize;
-
   const getPriceTagGroupsRequest = async () => {
     const response = await axiosInstance.get<Response>(endpoint, {
       params: {
         phrase,
-        offset,
-        limit: pageSize,
+        page,
+        pageSize,
       },
     });
     return response.data;

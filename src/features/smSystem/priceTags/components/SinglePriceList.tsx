@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 
 import { BranchListItem } from '../../branches/api';
 import { Product, ProductUnit } from '../../products/types';
-import { calcGrossPrice, formatPrice } from '../../products/utils';
+import { formatPrice } from '../../products/utils';
 import { calcPricePerFullUnit } from '../utils';
 
 interface Props {
@@ -12,15 +12,15 @@ interface Props {
 }
 
 export const SinglePriceList = ({ product, branch }: Props) => {
-  const branchNetPrice = product?.branches.find(
-    (b) => b.branch.id === branch?.id
-  )?.netPrice;
-  const branchPrice = calcGrossPrice(branchNetPrice, product?.vat);
-  const price = branchPrice ? formatPrice(branchPrice) : 'Brak ceny';
+  const branchData = product?.branches.find((b) => b.branch.id === branch?.id);
+  const branchGrossPrice = branchData?.grossPrice;
+  const formattedGrossPrice = branchGrossPrice
+    ? formatPrice(branchGrossPrice)
+    : 'Brak ceny';
 
   const formattedPricePerFullUnit = useMemo(() => {
     const fullUnitPrice = calcPricePerFullUnit({
-      price: branchPrice || 0,
+      price: branchGrossPrice || 0,
       productSizeInUnit: product?.unitScaleValue || 0,
       unit: product?.unit || ProductUnit.pc,
       unitScale: product?.unitScale || null,
@@ -30,7 +30,12 @@ export const SinglePriceList = ({ product, branch }: Props) => {
           product?.unit === ProductUnit.pc ? 'szt' : product?.unit
         }`
       : '';
-  }, [branchPrice, product?.unit, product?.unitScale, product?.unitScaleValue]);
+  }, [
+    branchGrossPrice,
+    product?.unit,
+    product?.unitScale,
+    product?.unitScaleValue,
+  ]);
 
   return (
     <Box
@@ -68,7 +73,7 @@ export const SinglePriceList = ({ product, branch }: Props) => {
               fontSize={24}
               lineHeight={1.1}
             >
-              {price}
+              {formattedGrossPrice}
               <span style={{ fontSize: '0.6em', fontWeight: 400 }}>{'zł'}</span>
             </Typography>
             <Typography

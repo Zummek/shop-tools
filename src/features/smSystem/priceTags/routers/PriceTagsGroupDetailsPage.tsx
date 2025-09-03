@@ -40,7 +40,7 @@ import {
   ProductUnitVolumeScale,
   ProductUnitWeightScale,
 } from '../../products/types';
-import { calcGrossPrice, formatPrice } from '../../products/utils';
+import { formatPrice } from '../../products/utils';
 import {
   getPriceTagGroupDetailsQueryKey,
   useGetPriceTagGroupDetails,
@@ -271,13 +271,12 @@ export const PriceTagsGroupDetailsPage = () => {
       headerName: 'Cena na wybrany sklep',
       sortable: false,
       renderCell: (params) => {
-        const branchNetPrice = params.row.branches.find(
+        const branchData = params.row.branches.find(
           (b) => b.branch.id === branch?.id
         );
-        const price = calcGrossPrice(branchNetPrice?.netPrice, params.row.vat);
         return (
           <Typography>
-            {formatPrice(price ?? 0)} {'zł'}
+            {formatPrice(branchData?.grossPrice ?? 0)} {'zł'}
           </Typography>
         );
       },
@@ -398,12 +397,10 @@ export const PriceTagsGroupDetailsPage = () => {
       headerName: 'Cena za pełną jednostkę',
       sortable: false,
       valueFormatter: (_value, row) => {
-        const branchPrice = row.branches.find(
-          (b) => b.branch.id === branch?.id
-        );
-        if (!branchPrice) return '';
+        const branchData = row.branches.find((b) => b.branch.id === branch?.id);
+        if (!branchData) return '';
         const price = calcPricePerFullUnit({
-          price: calcGrossPrice(branchPrice?.netPrice, row.vat),
+          price: branchData?.grossPrice,
           productSizeInUnit: row.unitScaleValue,
           unit: row.unit,
           unitScale: row.unitScale,

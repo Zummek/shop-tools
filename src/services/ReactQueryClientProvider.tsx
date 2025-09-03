@@ -8,6 +8,8 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       refetchOnMount: false,
       refetchOnReconnect: true,
+      staleTime: 1 * 60 * 1000, // 1 minute default stale time
+      gcTime: 5 * 60 * 1000, // 5 minutes default garbage collection time
     },
   },
 });

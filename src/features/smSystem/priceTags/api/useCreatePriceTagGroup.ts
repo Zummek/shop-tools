@@ -34,8 +34,9 @@ export const useCreatePriceTagGroup = () => {
         getPriceTagGroupDetailsQueryKey(data.data.id),
         () => data.data
       );
-      queryClient.refetchQueries({
+      queryClient.invalidateQueries({
         queryKey: [priceTagGroupsListQueryKeyBase],
+        exact: false,
       });
     },
   });

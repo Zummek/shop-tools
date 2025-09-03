@@ -28,7 +28,7 @@ export const useGetProducts = () => {
   };
 
   const { data, isLoading, isFetching } = useQuery({
-    queryKey: [getProductsQueryKeyBase, query],
+    queryKey: [getProductsQueryKeyBase, query, page],
     queryFn: getProductsRequest,
     placeholderData: keepPreviousData,
   });

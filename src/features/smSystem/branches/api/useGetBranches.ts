@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 
 import { axiosInstance } from '../../../../services';
 import { ListResponse, PaginationState } from '../../app/types';
@@ -23,26 +23,36 @@ type Response = ListResponse<BranchListItem>;
 const endpoint = '/api/v1/organizations/branches/';
 
 export const useGetBranches = ({ defaultPageSize = 25 }: Payload = {}) => {
-  const [pagination, setPagination] = useState<PaginationState>({
-    page: 0,
-    pageSize: defaultPageSize,
-  });
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(defaultPageSize);
+
+  const pagination = useMemo(() => ({ page, pageSize }), [page, pageSize]);
 
   const getBranchesRequest = async () => {
     const response = await axiosInstance.get<Response>(endpoint, {
       params: {
-        page: pagination.page + 1,
-        pageSize: pagination.pageSize,
+        page: page + 1,
+        pageSize,
       },
     });
     return response.data;
   };
 
   const { data: branches, isLoading } = useQuery({
-    queryKey: ['branches', { pagination }],
+    queryKey: ['branches', page, pageSize],
     queryFn: getBranchesRequest,
     placeholderData: (previousData) => previousData,
   });
 
-  return { branches, isLoading, pagination, setPagination };
+  const setPagination = (pagination: PaginationState) => {
+    setPage(pagination.page);
+    setPageSize(pagination.pageSize);
+  };
+
+  return {
+    branches,
+    isLoading,
+    pagination,
+    setPagination,
+  };
 };

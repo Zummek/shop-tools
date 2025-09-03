@@ -22,6 +22,7 @@ export const useGetPriceTagGroupDetails = (id: string | undefined) => {
     queryKey: getPriceTagGroupDetailsQueryKey(id || ''),
     queryFn: getPriceTagGroupDetailsRequest,
     placeholderData: keepPreviousData,
+    enabled: !!id,
   });
 
   return {

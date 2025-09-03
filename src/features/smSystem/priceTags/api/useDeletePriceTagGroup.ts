@@ -19,6 +19,7 @@ export const useDeletePriceTagGroup = () => {
     onSuccess: () => {
       queryClient.refetchQueries({
         queryKey: [priceTagGroupsListQueryKeyBase],
+        exact: false,
       });
     },
   });

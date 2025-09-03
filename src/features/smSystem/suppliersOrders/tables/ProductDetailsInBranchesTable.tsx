@@ -2,38 +2,40 @@ import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import dayjs from 'dayjs';
 import { useMemo } from 'react';
 
-import { OrderDetails, SimpleBranch } from '../../app/types';
+import { OrderDetails, SimpleBranch } from '../types';
 
-const getColumns = (orderDetails?: OrderDetails): GridColDef[] =>  {
-  const days = orderDetails?.saleStartDate && orderDetails?.saleEndDate
-    ? `${dayjs(orderDetails.saleEndDate).diff(orderDetails.saleStartDate, 'days')} dni`
-    : '';
+const getColumns = (orderDetails?: OrderDetails): GridColDef[] => {
+  const days =
+    orderDetails?.saleStartDate && orderDetails?.saleEndDate
+      ? `${dayjs(orderDetails.saleEndDate).diff(orderDetails.saleStartDate, 'days')} dni`
+      : '';
 
   return [
-  {
-    field: 'branch',
-    headerName: 'Sklep',
-    flex: 1,
-    valueGetter: (value: SimpleBranch) => value.name,
-  },
-  {
-    field: 'soldQuantity',
-    headerName: `Sprzedaż\n${days}`,
-    type: 'number',
-  },
-  {
-    field: 'stock',
-    headerName: 'Stan',
-    width: 70,
-    type: 'number',
-  },
-  {
-    field: 'stockUpdatedAt',
-    headerName: 'Ostatnia\naktualizacja\nstanu',
-    width: 150,
-    valueGetter: (value: string) => dayjs(value).format('DD.MM.YYYY HH:mm'),
-  },
-]};
+    {
+      field: 'branch',
+      headerName: 'Sklep',
+      flex: 1,
+      valueGetter: (value: SimpleBranch) => value.name,
+    },
+    {
+      field: 'soldQuantity',
+      headerName: `Sprzedaż\n${days}`,
+      type: 'number',
+    },
+    {
+      field: 'stock',
+      headerName: 'Stan',
+      width: 70,
+      type: 'number',
+    },
+    {
+      field: 'stockUpdatedAt',
+      headerName: 'Ostatnia\naktualizacja\nstanu',
+      width: 150,
+      valueGetter: (value: string) => dayjs(value).format('DD.MM.YYYY HH:mm'),
+    },
+  ];
+};
 
 interface Props {
   orderDetails: OrderDetails | undefined;

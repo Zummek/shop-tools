@@ -3,7 +3,7 @@ import { DataGrid, GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 
-import { OrderDetails } from '../../app/types';
+import { OrderDetails } from '../types';
 
 interface Props {
   open: boolean;

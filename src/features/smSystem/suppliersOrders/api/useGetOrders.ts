@@ -5,9 +5,9 @@ import { axiosInstance } from '../../../../services';
 import {
   emptyListResponse,
   ListResponse,
-  Order,
   PaginationState,
 } from '../../app/types';
+import { Order } from '../types';
 
 export type GetOrdersResponse = ListResponse<Order>;
 

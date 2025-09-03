@@ -85,11 +85,6 @@ export interface CreateOrderInput {
   saleEndDate: string;
 }
 
-export interface BasicModalProps {
-  open: boolean;
-  handleClose: () => void;
-}
-
 interface OrderConditions {
   id: number;
   lowerBound: number;
@@ -119,18 +114,8 @@ export interface SupplierDetails {
 export interface ProductBranch {
   branch: SimpleBranch[];
   stock: number;
-  stockIpdatedAt: string | null;
+  stockUpdatedAt: string | null;
   netPrice: number;
   netPriceUpdatedAt: string | null;
-}
-
-export interface Product {
-  id: number;
-  name: string;
-  internalId: string;
-  barcodes: string[];
-  vat: number | null;
-  branches: ProductBranch[];
-  createdAt: string;
-  updatedAt: string;
+  grossPrice: number;
 }

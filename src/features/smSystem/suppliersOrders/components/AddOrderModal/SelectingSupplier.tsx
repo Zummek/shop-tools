@@ -2,8 +2,8 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { TextField, Typography, Stack } from '@mui/material';
 import { DataGrid, GridRowParams, GridColDef } from '@mui/x-data-grid';
 
-import { Supplier } from '../../../app/types';
-import { useGetSuppliers } from '../../api/useGetSuppliers';
+import { useGetSuppliers } from '../../api';
+import { Supplier } from '../../types';
 
 interface Props {
   onSupplierSelected: (supplier: Supplier) => void;

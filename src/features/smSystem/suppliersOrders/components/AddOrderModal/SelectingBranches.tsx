@@ -1,12 +1,20 @@
-import { Button, Typography, Stack, Box, ToggleButtonGroup, ToggleButton, TextField } from '@mui/material';
+import {
+  Button,
+  Typography,
+  Stack,
+  Box,
+  ToggleButtonGroup,
+  ToggleButton,
+  TextField,
+} from '@mui/material';
 import { DataGrid, GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { Pages } from '../../../../../utils';
-import { Supplier } from '../../../app/types';
-import { useCreateOrder } from '../../api/useCreateOrder';
+import { useCreateOrder } from '../../api';
+import { Supplier } from '../../types';
 
 interface Props {
   selectedSupplier: Supplier;
@@ -25,7 +33,7 @@ export const SelectingBranches = ({ selectedSupplier, onBack }: Props) => {
   const navigate = useNavigate();
 
   const [selectedBranches, setSelectedBranches] = useState<number[]>([]);
-  const [lastDaysOfSale , setLastDaysOfSale ] = useState<number>(14);
+  const [lastDaysOfSale, setLastDaysOfSale] = useState<number>(14);
 
   const options = [7, 14, 21];
 
@@ -38,7 +46,9 @@ export const SelectingBranches = ({ selectedSupplier, onBack }: Props) => {
       const id = await createOrder({
         supplierId: selectedSupplier.id,
         selectedBranchesIds: selectedBranches,
-        saleStartDate: dayjs().subtract(lastDaysOfSale, 'day').format('YYYY-MM-DD'),
+        saleStartDate: dayjs()
+          .subtract(lastDaysOfSale, 'day')
+          .format('YYYY-MM-DD'),
         saleEndDate: dayjs().format('YYYY-MM-DD'),
       });
 
@@ -90,11 +100,10 @@ export const SelectingBranches = ({ selectedSupplier, onBack }: Props) => {
 
       <Box display="flex" gap={2} justifyContent="center" alignItems="center">
         <ToggleButtonGroup
-          value={lastDaysOfSale }
+          value={lastDaysOfSale}
           exclusive
           onChange={(_, newValue) => {
-            if (newValue !== null) 
-              setLastDaysOfSale (newValue);
+            if (newValue !== null) setLastDaysOfSale(newValue);
           }}
           size="small"
           color="primary"

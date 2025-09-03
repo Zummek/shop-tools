@@ -6,8 +6,8 @@ import {
   emptyListResponse,
   ListResponse,
   PaginationState,
-  Product,
 } from '../../app/types';
+import { Product } from '../../products/types';
 
 export type GetProductsResponse = ListResponse<Product>;
 

@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { useNotify } from '../../../../hooks';
 import { axiosInstance } from '../../../../services';
-import { CreateOrderInput } from '../../app/types';
+import { CreateOrderInput } from '../types';
 
 import { getOrdersQueryKeyBase } from './useGetOrders';
 

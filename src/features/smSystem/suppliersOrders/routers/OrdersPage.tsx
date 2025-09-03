@@ -6,9 +6,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { Pages } from '../../../../utils';
-import { Branch, Supplier } from '../../app/types';
-import { useGetOrders } from '../api/useGetOrders';
+import { useGetOrders } from '../api';
 import { AddOrderModal } from '../components/AddOrderModal/AddOrderModal';
+import { Branch, Supplier } from '../types';
 
 const columns: GridColDef[] = [
   {

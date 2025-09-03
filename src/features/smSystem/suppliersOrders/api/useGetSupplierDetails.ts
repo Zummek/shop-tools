@@ -2,19 +2,22 @@ import { useQuery } from '@tanstack/react-query';
 import { useCallback } from 'react';
 
 import { axiosInstance } from '../../../../services';
-import { SupplierDetails } from '../../app/types/index';
+import { SupplierDetails } from '../types';
 
 export type GetSupplierDetailsResponse = SupplierDetails;
 
 export const useGetSupplierDetails = (id: number) => {
-  const endpoint = `api/v1/suppliers-orders/suppliers/${id}/`
+  const endpoint = `api/v1/suppliers-orders/suppliers/${id}/`;
 
   const getSupplierDetailsRequest = useCallback(
     async ({ signal }: { signal?: AbortSignal }) => {
       try {
-        const response = await axiosInstance.get<GetSupplierDetailsResponse>(endpoint, {
-          signal,
-        });
+        const response = await axiosInstance.get<GetSupplierDetailsResponse>(
+          endpoint,
+          {
+            signal,
+          }
+        );
         return response.data || null;
       } catch (err) {
         console.error('Error fetching supplier details:', err);
@@ -24,7 +27,10 @@ export const useGetSupplierDetails = (id: number) => {
     [endpoint]
   );
 
-  const { data, isLoading, isError, refetch } = useQuery<GetSupplierDetailsResponse, Error>({
+  const { data, isLoading, isError, refetch } = useQuery<
+    GetSupplierDetailsResponse,
+    Error
+  >({
     queryKey: ['supplierDetails', id],
     queryFn: getSupplierDetailsRequest,
     refetchOnWindowFocus: false,

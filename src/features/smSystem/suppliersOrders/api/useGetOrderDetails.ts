@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { axiosInstance } from '../../../../services';
-import { OrderDetails } from '../../app/types/index';
+import { OrderDetails } from '../types';
 
 export const useGetOrderDetails = (id: number) => {
   const endpoint = `api/v1/suppliers-orders/orders/${id}/`;

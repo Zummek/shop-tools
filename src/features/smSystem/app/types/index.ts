@@ -1,2 +1,1 @@
-export * from './listResponse'
-export * from './suppliersOrders'
+export * from './listResponse';

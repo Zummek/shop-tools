@@ -7,8 +7,8 @@ import {
   emptyListResponse,
   ListResponse,
   PaginationState,
-  Supplier,
 } from '../../app/types';
+import { Supplier } from '../types';
 
 export type GetSuppliersResponse = ListResponse<Supplier>;
 

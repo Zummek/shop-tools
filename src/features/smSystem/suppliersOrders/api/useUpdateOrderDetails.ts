@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { useNotify } from '../../../../hooks';
 import { axiosInstance } from '../../../../services';
-import { OrderDetails } from '../../app/types';
+import { OrderDetails } from '../types';
 
 interface Payload {
   orderId: number;

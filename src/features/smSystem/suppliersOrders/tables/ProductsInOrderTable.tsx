@@ -1,7 +1,7 @@
 import { Typography } from '@mui/material';
 import { DataGrid, GridColDef, GridRowParams } from '@mui/x-data-grid';
 
-import { ProductsToOrder } from '../../app/types';
+import { ProductsToOrder } from '../types';
 
 interface Props {
   isLoading: boolean;

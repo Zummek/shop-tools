@@ -1,6 +1,6 @@
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 
-import { ProductConditions } from '../../app/types';
+import { ProductConditions } from '../types';
 
 interface Props {
   products: ProductConditions[] | undefined;

@@ -9,103 +9,105 @@ import {
 import dayjs from 'dayjs';
 import { useCallback } from 'react';
 
-import { OrderDetails, SimpleBranch, OrdersPerBranch } from '../../app/types';
-import { useUpdateOrderDetails } from '../api/useUpdateOrderDetails';
+import { useUpdateOrderDetails } from '../api';
+import { OrderDetails, SimpleBranch, OrdersPerBranch } from '../types';
 
 const getColumns = (orderDetails?: OrderDetails): GridColDef[] => {
-  const days = orderDetails?.saleStartDate && orderDetails?.saleEndDate
+  const days =
+    orderDetails?.saleStartDate && orderDetails?.saleEndDate
       ? `${dayjs(orderDetails.saleEndDate).diff(orderDetails.saleStartDate, 'days')} dni`
       : '';
 
   return [
-  {
-    field: 'branch',
-    headerName: 'Sklep',
-    flex: 1,
-    minWidth: 80,
-    valueGetter: (value: SimpleBranch) => value.name,
-  },
-  {
-    field: 'soldQuantity',
-    headerName: `Sprzedaż\n${days}`,
-    type: 'number',
-  },
-  {
-    field: 'previousOrderAmount',
-    headerName: 'Poprzednie\nzamówienie',
-    type: 'number',
-    renderCell: ({ value }: GridRenderCellParams) => {
-      return (
-        <Typography
-          variant="body2"
-          color={value !== null ? 'text' : 'textDisabled'}
-        >
-          {value !== null ? value : 'brak'}
-        </Typography>
-      );
+    {
+      field: 'branch',
+      headerName: 'Sklep',
+      flex: 1,
+      minWidth: 80,
+      valueGetter: (value: SimpleBranch) => value.name,
     },
-  },
-  {
-    field: 'toOrderProposalAmount',
-    headerName: 'Proponowana\nilość',
-    type: 'number',
-  },
-  {
-    field: 'toOrderAmount',
-    headerName: 'Zamawiana\nilość',
-    editable: true,
-    type: 'number',
-    renderCell: ({ value, api, row }: GridRenderCellParams) => (
-      <Stack
-        direction="row"
-        alignItems="center"
-        spacing={1}
-        width="100%"
-        justifyContent="space-between"
-      >
-        <IconButton
-          size="small"
-          onClick={() =>
-            api.startCellEditMode({ id: row.id, field: 'toOrderAmount' })
-          }
-          sx={{
-            opacity: 0,
-            transition: 'opacity 0.2s',
-            '.MuiDataGrid-row:hover &': {
-              opacity: 0.5,
-            },
-          }}
+    {
+      field: 'soldQuantity',
+      headerName: `Sprzedaż\n${days}`,
+      type: 'number',
+    },
+    {
+      field: 'previousOrderAmount',
+      headerName: 'Poprzednie\nzamówienie',
+      type: 'number',
+      renderCell: ({ value }: GridRenderCellParams) => {
+        return (
+          <Typography
+            variant="body2"
+            color={value !== null ? 'text' : 'textDisabled'}
+          >
+            {value !== null ? value : 'brak'}
+          </Typography>
+        );
+      },
+    },
+    {
+      field: 'toOrderProposalAmount',
+      headerName: 'Proponowana\nilość',
+      type: 'number',
+    },
+    {
+      field: 'toOrderAmount',
+      headerName: 'Zamawiana\nilość',
+      editable: true,
+      type: 'number',
+      renderCell: ({ value, api, row }: GridRenderCellParams) => (
+        <Stack
+          direction="row"
+          alignItems="center"
+          spacing={1}
+          width="100%"
+          justifyContent="space-between"
         >
-          <EditOutlinedIcon />
-        </IconButton>
-        <Typography variant="body2" align="right">
-          {value}
-        </Typography>
-      </Stack>
-    ),
-    preProcessEditCellProps: (params: GridPreProcessEditCellProps) => {
-      const newToOrder = Number(params.props.value);
-      const isValidInput = Number.isInteger(newToOrder) && newToOrder >= 0;
+          <IconButton
+            size="small"
+            onClick={() =>
+              api.startCellEditMode({ id: row.id, field: 'toOrderAmount' })
+            }
+            sx={{
+              opacity: 0,
+              transition: 'opacity 0.2s',
+              '.MuiDataGrid-row:hover &': {
+                opacity: 0.5,
+              },
+            }}
+          >
+            <EditOutlinedIcon />
+          </IconButton>
+          <Typography variant="body2" align="right">
+            {value}
+          </Typography>
+        </Stack>
+      ),
+      preProcessEditCellProps: (params: GridPreProcessEditCellProps) => {
+        const newToOrder = Number(params.props.value);
+        const isValidInput = Number.isInteger(newToOrder) && newToOrder >= 0;
 
-      return {
-        ...params.props,
-        error: !isValidInput,
-      };
+        return {
+          ...params.props,
+          error: !isValidInput,
+        };
+      },
     },
-  },
-  {
-    field: 'stock',
-    headerName: 'Stan',
-    width: 70,
-    type: 'number',
-  },
-  {
-    field: 'stockUpdatedAt',
-    headerName: 'Ostatnia\naktualizacja stanu',
-    width: 150,
-    valueGetter: (value: string) => dayjs(value).format('DD.MM.YYYY HH:mm'),
-  },
-]};
+    {
+      field: 'stock',
+      headerName: 'Stan',
+      width: 70,
+      type: 'number',
+    },
+    {
+      field: 'stockUpdatedAt',
+      headerName: 'Ostatnia\naktualizacja stanu',
+      width: 150,
+      valueGetter: (value: string) => dayjs(value).format('DD.MM.YYYY HH:mm'),
+    },
+  ];
+};
 
 interface Props {
   orderDetails: OrderDetails | undefined;

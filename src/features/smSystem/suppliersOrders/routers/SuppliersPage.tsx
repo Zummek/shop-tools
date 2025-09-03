@@ -4,8 +4,8 @@ import { DataGrid, GridColDef, GridRowParams } from '@mui/x-data-grid';
 import { useNavigate } from 'react-router-dom';
 
 import { Pages } from '../../../../utils';
-import { Supplier } from '../../app/types';
-import { useGetSuppliers } from '../api/useGetSuppliers';
+import { useGetSuppliers } from '../api';
+import { Supplier } from '../types';
 
 const columns: GridColDef<Supplier>[] = [
   {

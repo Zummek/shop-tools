@@ -2,12 +2,17 @@ import { Modal, Stack, Typography } from '@mui/material';
 import { useState } from 'react';
 
 import { modalStyle } from '../../../../../components';
-import { BasicModalProps, Supplier } from '../../../app/types/index';
+import { Supplier } from '../../types';
 
 import { SelectingBranches } from './SelectingBranches';
 import { SelectingSupplier } from './SelectingSupplier';
 
-export const AddOrderModal = ({ open, handleClose }: BasicModalProps) => {
+interface Props {
+  open: boolean;
+  handleClose: () => void;
+}
+
+export const AddOrderModal = ({ open, handleClose }: Props) => {
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(
     null
   );

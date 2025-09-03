@@ -2,25 +2,28 @@ import { QueryFunctionContext, useInfiniteQuery } from '@tanstack/react-query';
 import { useCallback } from 'react';
 
 import { axiosInstance } from '../../../../services';
-import { emptyListResponse, ListResponse, Branch } from '../../app/types/index';
+import { emptyListResponse, ListResponse } from '../../app/types/index';
+import { Branch } from '../types';
 
 export type GetBranchesResponse = ListResponse<Branch>;
 
-const endpoint = '/api/v1/organizations/branches/'
+const endpoint = '/api/v1/organizations/branches/';
 const pageSize = 5;
 
 export const useGetBranches = () => {
-
   const getBranchesRequest = useCallback(
     async ({ pageParam = 1, signal }: QueryFunctionContext) => {
       try {
-        const response = await axiosInstance.get<GetBranchesResponse>(endpoint, {
-          params: {
-            page: pageParam,
-            pageSize,
-          },
-          signal,
-        });
+        const response = await axiosInstance.get<GetBranchesResponse>(
+          endpoint,
+          {
+            params: {
+              page: pageParam,
+              pageSize,
+            },
+            signal,
+          }
+        );
         return response.data || emptyListResponse;
       } catch (err) {
         console.error('Error fetching branches:', err);
@@ -30,15 +33,12 @@ export const useGetBranches = () => {
     []
   );
 
-  const getNextPageParam = useCallback(
-    (lastPage: GetBranchesResponse) => {
-      if (!lastPage?.next) return undefined;
-      const url = new URL(lastPage.next);
-      const nextPage = url.searchParams.get('page');
-      return nextPage ? parseInt(nextPage, 10) : undefined;
-    },
-    []
-  );
+  const getNextPageParam = useCallback((lastPage: GetBranchesResponse) => {
+    if (!lastPage?.next) return undefined;
+    const url = new URL(lastPage.next);
+    const nextPage = url.searchParams.get('page');
+    return nextPage ? parseInt(nextPage, 10) : undefined;
+  }, []);
 
   const {
     data,
@@ -46,7 +46,7 @@ export const useGetBranches = () => {
     isError,
     isFetchingNextPage,
     fetchNextPage,
-    refetch
+    refetch,
   } = useInfiniteQuery<GetBranchesResponse, Error>({
     queryKey: ['branches'],
     queryFn: getBranchesRequest,
@@ -63,6 +63,6 @@ export const useGetBranches = () => {
     isFetchingNextPage,
     fetchNextPage,
     isError,
-    refetch
+    refetch,
   };
 };

@@ -233,12 +233,14 @@ export const PriceTagsGroupDetailsPage = () => {
       field: 'name',
       headerName: 'Nazwa produktu',
       minWidth: 200,
+      flex: 1,
       sortable: false,
     },
     {
       field: 'priceTagName',
       headerName: 'Nazwa produktu na etykiecie',
       minWidth: 200,
+      flex: 1,
       editable: true,
       sortable: false,
       preProcessEditCellProps: (params) => {

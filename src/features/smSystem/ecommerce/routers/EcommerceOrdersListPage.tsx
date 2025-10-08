@@ -40,6 +40,12 @@ const columns: GridColDef<EcommerceOrderListItem>[] = [
     flex: 1,
   },
   {
+    field: 'buyerLogin',
+    headerName: 'Login kupującego',
+    width: 200,
+    flex: 1,
+  },
+  {
     field: 'itemsAmount',
     headerName: 'Ilość pozycji',
     width: 120,

@@ -28,6 +28,7 @@ export interface EcommerceOrderDetails {
   status: OrderStatus;
   messageFromBuyer: string;
   buyerName: string;
+  buyerLogin: string;
   buyerAddress: string;
   buyerContact: string;
   orderItems: EcommerceOrderItem[];

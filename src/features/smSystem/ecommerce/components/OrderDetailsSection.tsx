@@ -40,6 +40,7 @@ export const OrderDetailsSection = ({
         />
       </Stack>
       <Stack spacing={6} direction="row" flexWrap="wrap">
+        <LabelData label="Login kupującego" value={ecommerceOrder.buyerLogin} />
         <LabelData label="Kupujący" value={ecommerceOrder.buyerName} />
         <LabelData
           label="Adres kupującego"

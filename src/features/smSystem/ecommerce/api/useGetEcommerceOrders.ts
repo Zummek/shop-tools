@@ -15,6 +15,7 @@ export interface EcommerceOrderListItem {
   orderSource: string;
   status: OrderStatus;
   buyerName: string;
+  buyerLogin: string;
   itemsAmount: number;
   productsAmount: number;
 }

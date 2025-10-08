@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { Pages } from '../../../../utils';
 import { EcommerceOrderListItem, useGetEcommerceOrders } from '../api';
 import { ImportEcommerceOrderModal } from '../modals/ImportEcommerceOrderModal';
+import { orderStatusColors, orderStatusMessage } from '../utils';
 
 const columns: GridColDef<EcommerceOrderListItem>[] = [
   {
@@ -21,6 +22,16 @@ const columns: GridColDef<EcommerceOrderListItem>[] = [
     field: 'orderSource',
     headerName: 'Miejsce zamówienia',
     width: 120,
+  },
+  {
+    field: 'status',
+    headerName: 'Status',
+    width: 120,
+    renderCell: ({ row }) => (
+      <Typography variant="body2" color={orderStatusColors[row.status]}>
+        {orderStatusMessage[row.status]}
+      </Typography>
+    ),
   },
   {
     field: 'buyerName',

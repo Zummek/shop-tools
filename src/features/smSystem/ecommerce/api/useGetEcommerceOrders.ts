@@ -3,6 +3,7 @@ import { useState } from 'react';
 
 import { axiosInstance } from '../../../../services';
 import { ListResponse } from '../../app/types';
+import { OrderStatus } from '../types';
 
 const pageSize = 25;
 const endpoint = '/api/v1/ecommerce/orders/';
@@ -12,6 +13,7 @@ export interface EcommerceOrderListItem {
   id: number;
   orderDate: string;
   orderSource: string;
+  status: OrderStatus;
   buyerName: string;
   itemsAmount: number;
   productsAmount: number;

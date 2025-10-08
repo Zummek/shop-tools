@@ -13,6 +13,7 @@ export const Barcode = ({ barcode }: Props) => {
       format: 'EAN13',
       height: 20,
       width: 1.5,
+      margin: 0,
     });
   }, [barcode, barcodeId]);
 

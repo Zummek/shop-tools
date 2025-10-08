@@ -1,4 +1,4 @@
-import { Box } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { GridColDef } from '@mui/x-data-grid';
 
 import { Product } from '../../products/types';
@@ -24,13 +24,32 @@ export const createOrderItemsColumns = ({
   {
     field: 'externalId',
     headerName: 'Zew. ID produktu',
-    width: 120,
+    width: 110,
   },
   {
     field: 'externalName',
     headerName: 'Zew. nazwa produktu',
     width: 200,
     flex: 1,
+    // cut text if it's too long
+    renderCell: (params) => {
+      return (
+        <Typography
+          component="span"
+          variant="body2"
+          fontWeight="medium"
+          flex={1}
+          overflow="visible"
+          textOverflow="unset"
+          lineHeight="normal"
+          whiteSpace="normal"
+          alignItems="center"
+          display="flex"
+        >
+          {params.row.externalName}
+        </Typography>
+      );
+    },
   },
   {
     field: 'internalProduct',
@@ -81,13 +100,13 @@ export const createOrderItemsColumns = ({
     field: 'externalPricePerItem',
     headerName: 'Zew. cena produktu',
     align: 'center',
-    width: 100,
+    width: 80,
   },
   {
     field: 'internalPricePerItem',
     headerName: 'Cena produktu',
     align: 'center',
-    width: 100,
+    width: 80,
     valueGetter: (_value, row) =>
       formatPrice(row.internalProduct.branches[0].grossPrice),
   },
@@ -95,6 +114,6 @@ export const createOrderItemsColumns = ({
     field: 'quantity',
     headerName: 'Ilość produktu',
     align: 'center',
-    width: 100,
+    width: 80,
   },
 ];

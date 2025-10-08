@@ -14,4 +14,6 @@ export enum Pages {
   smSystemUnfulfilledOrdersByTransfersReport = '/sm-system/unfulfilled-orders-by-transfers',
   smSystemPriceTagsGroups = '/sm-system/price-tags/groups',
   smSystemPriceTagsGroupDetails = '/sm-system/price-tags/groups/:groupId',
+  smSystemEcommerceOrders = '/sm-system/ecommerce/orders',
+  smSystemEcommerceOrderDetails = '/sm-system/ecommerce/orders/:orderId',
 }

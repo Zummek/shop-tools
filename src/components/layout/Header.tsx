@@ -52,13 +52,19 @@ export const Header = ({
     Pages.smSystemPriceTagsGroupDetails,
   ]);
 
+  const isEcommerceOrdersPage = useIsPage([
+    Pages.smSystemEcommerceOrders,
+    Pages.smSystemEcommerceOrderDetails,
+  ]);
+
   const showSmSystemHeader =
     isProductsDocumentsPage ||
     isTransfersPage ||
     isImportProductsPage ||
     areSuppliersFeaturePages ||
     isReportsPage ||
-    isPriceTagsGroupsPage;
+    isPriceTagsGroupsPage ||
+    isEcommerceOrdersPage;
 
   return (
     <Stack spacing={2} direction="column">
@@ -111,18 +117,25 @@ export const Header = ({
                   {'Import produktów'}
                 </Button>
                 <Button
-                  href={`#${Pages.smSystemReports}`}
-                  variant={isReportsPage ? 'contained' : 'outlined'}
-                  size="small"
-                >
-                  {'Raporty'}
-                </Button>
-                <Button
                   href={`#${Pages.smSystemPriceTagsGroups}`}
                   variant={isPriceTagsGroupsPage ? 'contained' : 'outlined'}
                   size="small"
                 >
                   {'Etykiety cenowe'}
+                </Button>
+                <Button
+                  href={`#${Pages.smSystemEcommerceOrders}`}
+                  variant={isEcommerceOrdersPage ? 'contained' : 'outlined'}
+                  size="small"
+                >
+                  {'Zamówienia'}
+                </Button>
+                <Button
+                  href={`#${Pages.smSystemReports}`}
+                  variant={isReportsPage ? 'contained' : 'outlined'}
+                  size="small"
+                >
+                  {'Raporty'}
                 </Button>
               </ButtonGroup>
             </Box>

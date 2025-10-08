@@ -7,6 +7,8 @@ import { Navigate, RouterProvider, createHashRouter } from 'react-router-dom';
 
 import { BarcodesGeneratorPage } from './features/BarcodesGenerator/routes/BarcodesGeneratorPage/BarcodesGeneratorPage';
 import { InvoiceConverterPage } from './features/invoiceConverter/routers/InvoiceConverterPage/InvoiceConverterPage';
+import { EcommerceOrderDetailsPage } from './features/smSystem/ecommerce/routers/EcommerceOrderDetailsPage';
+import { EcommerceOrdersListPage } from './features/smSystem/ecommerce/routers/EcommerceOrdersListPage';
 import { SmSystemPageLayout } from './features/smSystem/layouts/SmSystemPageLayout';
 import { PriceTagsGroupDetailsPage } from './features/smSystem/priceTags/routers/PriceTagsGroupDetailsPage';
 import { PriceTagsGroupsPage } from './features/smSystem/priceTags/routers/PriceTagsGroupsPage';
@@ -105,6 +107,19 @@ const router = createHashRouter(
             {
               path: 'groups/:groupId',
               element: <PriceTagsGroupDetailsPage />,
+            },
+          ],
+        },
+        {
+          path: 'ecommerce',
+          children: [
+            {
+              path: 'orders',
+              element: <EcommerceOrdersListPage />,
+            },
+            {
+              path: 'orders/:orderId',
+              element: <EcommerceOrderDetailsPage />,
             },
           ],
         },

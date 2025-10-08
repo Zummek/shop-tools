@@ -2,7 +2,7 @@ import { Product } from '../../products/types';
 
 export type OrderStatus =
   | 'new'
-  | 'receipt_prepared'
+  | 'receiptPrepared'
   | 'packed'
   | 'shipped'
   | 'canceled';

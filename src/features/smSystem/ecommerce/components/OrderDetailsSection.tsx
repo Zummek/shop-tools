@@ -64,7 +64,7 @@ export const OrderDetailsSection = ({
       </Stack>
       <Stack spacing={6} direction="row" flexWrap="wrap">
         <LabelData
-          label="Data utworzenia"
+          label="Data zaimportowania"
           value={dayjs(ecommerceOrder.createdAt).format('DD.MM.YYYY HH:mm')}
         />
         <LabelData

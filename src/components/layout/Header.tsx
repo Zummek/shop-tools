@@ -8,7 +8,7 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 
-import { useIsPage } from '../../hooks';
+import { useAppSelector, useIsPage } from '../../hooks';
 import { Pages } from '../../utils/pages';
 
 interface Props {
@@ -24,6 +24,7 @@ export const Header = ({
   onButtonClick,
   buttonLabel,
 }: Props) => {
+  const { user } = useAppSelector((state) => state.smSystemUser);
   const [openWarningModal, setOpenWarningModal] = useState(false);
 
   const handleDemoButtonClick = () => {
@@ -123,13 +124,15 @@ export const Header = ({
                 >
                   {'Etykiety cenowe'}
                 </Button>
-                <Button
-                  href={`#${Pages.smSystemEcommerceOrders}`}
-                  variant={isEcommerceOrdersPage ? 'contained' : 'outlined'}
-                  size="small"
-                >
-                  {'Zamówienia'}
-                </Button>
+                {user?.permissions?.canAccessEcommerce && (
+                  <Button
+                    href={`#${Pages.smSystemEcommerceOrders}`}
+                    variant={isEcommerceOrdersPage ? 'contained' : 'outlined'}
+                    size="small"
+                  >
+                    {'Zamówienia'}
+                  </Button>
+                )}
                 <Button
                   href={`#${Pages.smSystemReports}`}
                   variant={isReportsPage ? 'contained' : 'outlined'}

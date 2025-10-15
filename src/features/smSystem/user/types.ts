@@ -8,6 +8,17 @@ export interface CurrentUser {
     id: number;
     name: string;
   };
+  permissions?: {
+    canAccessEcommerce: boolean;
+  };
+  organization: {
+    id: number;
+    name: string;
+  };
+  role: {
+    groups: string[];
+    isActive: boolean;
+  };
 }
 
 export interface SimpleUser {

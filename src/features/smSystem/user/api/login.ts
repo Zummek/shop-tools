@@ -18,10 +18,21 @@ interface LoginResponse {
       id: number;
       name: string;
     };
+    permissions?: {
+      canAccessEcommerce: boolean;
+    };
+    organization: {
+      id: number;
+      name: string;
+    };
+    role: {
+      groups: string[];
+      isActive: boolean;
+    };
   };
 }
 
-const endpoint = '/api/v1/auth/login';
+const endpoint = '/api/v1/auth/login/';
 
 export const login = async ({ username, password }: LoginPayload) => {
   const response = await axiosInstance.post<LoginResponse>(endpoint, {
@@ -43,6 +54,9 @@ export const login = async ({ username, password }: LoginPayload) => {
       firstName: user.firstName,
       lastName: user.lastName,
       defaultBranch: user.defaultBranch,
+      permissions: user.permissions,
+      organization: user.organization,
+      role: user.role,
     },
   };
 };

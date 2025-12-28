@@ -2,6 +2,7 @@ import { Chip, Divider, Paper, Stack, Typography } from '@mui/material';
 import dayjs from 'dayjs';
 
 import { LabelData } from '../../../../components';
+import { formatPrice } from '../../products/utils';
 import { EcommerceOrderDetails, OrderStatus } from '../types';
 import { orderStatusMessage } from '../utils/orderStatusMessage';
 
@@ -20,7 +21,7 @@ const statusColorMap: Record<
   canceled: 'error',
 };
 
-const FIELD_MIN_WIDTH = 180;
+const FIELD_MIN_WIDTH = 150;
 
 const SectionHeader = ({ children }: { children: React.ReactNode }) => (
   <Typography
@@ -37,6 +38,15 @@ export const OrderDetailsSection = ({
   ecommerceOrder,
 }: OrderDetailsSectionProps) => {
   const status = ecommerceOrder.status || 'new';
+
+  const orderValue = ecommerceOrder.orderItems
+    .filter((item) => item.internalProduct)
+    .reduce(
+      (total, item) =>
+        total +
+        (item.internalProduct?.branches?.[0]?.grossPrice || 0) * item.quantity,
+      0
+    );
 
   return (
     <Paper
@@ -158,6 +168,11 @@ export const OrderDetailsSection = ({
               <LabelData
                 label="Ilość produktów"
                 value={ecommerceOrder.productsAmount}
+                minWidth={FIELD_MIN_WIDTH}
+              />
+              <LabelData
+                label="Wartość zamówienia"
+                value={`${formatPrice(orderValue)} zł`}
                 minWidth={FIELD_MIN_WIDTH}
               />
             </Stack>

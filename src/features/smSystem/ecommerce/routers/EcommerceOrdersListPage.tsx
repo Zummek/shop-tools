@@ -5,8 +5,13 @@ import dayjs from 'dayjs';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { useNotify } from '../../../../hooks';
 import { Pages } from '../../../../utils';
-import { EcommerceOrderListItem, useGetEcommerceOrders } from '../api';
+import {
+  EcommerceOrderListItem,
+  useGetAllegroConnection,
+  useGetEcommerceOrders,
+} from '../api';
 import { ImportEcommerceOrderModal } from '../modals/ImportEcommerceOrderModal/ImportEcommerceOrderModal';
 import { orderStatusColors, orderStatusMessage } from '../utils';
 
@@ -79,11 +84,14 @@ const columns: GridColDef<EcommerceOrderListItem>[] = [
   },
 ];
 export const EcommerceOrdersListPage = () => {
+  const { notify } = useNotify();
   const navigate = useNavigate();
+
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { ecommerceOrders, totalCount, isLoading, page, pageSize, setPage } =
     useGetEcommerceOrders();
+  const { allegroConnection } = useGetAllegroConnection();
 
   const handlePageChange = (_event: unknown, page: number): void =>
     setPage(page);
@@ -97,6 +105,15 @@ export const EcommerceOrdersListPage = () => {
     );
   };
 
+  const handleImportOrders = () => {
+    if (!allegroConnection?.isActive) {
+      notify('error', 'Twoja organizacja nie jest połączona z Allegro');
+      return;
+    }
+
+    setIsModalOpen(true);
+  };
+
   return (
     <Stack spacing={4}>
       <Box display="flex" alignItems="center" justifyContent="space-between">
@@ -104,7 +121,7 @@ export const EcommerceOrdersListPage = () => {
           {'Zamówienia e-commerce'}
         </Typography>
         <Box>
-          <Button variant="contained" onClick={() => setIsModalOpen(true)}>
+          <Button variant="contained" onClick={handleImportOrders}>
             {'Zaimportuj z Allegro'}
           </Button>
         </Box>

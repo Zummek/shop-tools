@@ -8,7 +8,6 @@ import { getEcommerceOrdersQueryKeyBase } from './useGetEcommerceOrders';
 interface Payload {
   dateFrom: string;
   dateTo: string;
-  limit?: number;
 }
 
 interface Response {
@@ -36,7 +35,7 @@ export const useImportAllegroOrders = () => {
     reset: resetAllegroOrdersData,
   } = useMutation({
     mutationFn: (payload: Payload) =>
-      axiosInstance.post<Response>(endpoint, { params: payload }),
+      axiosInstance.post<Response>(endpoint, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: [getEcommerceOrdersQueryKeyBase],

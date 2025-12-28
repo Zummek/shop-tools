@@ -64,7 +64,7 @@ export const ProductCell = ({
   return (
     <StyledProductCell isEditing={isEditing} onClick={onEdit}>
       <Typography variant="body2" fontWeight="medium">
-        {orderItem.internalProduct.name}
+        {orderItem.internalProduct ? orderItem.internalProduct.name : '-'}
       </Typography>
       {orderItem.internalProductManuallySelected && (
         <Tooltip

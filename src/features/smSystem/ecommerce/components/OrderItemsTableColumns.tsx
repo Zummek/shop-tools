@@ -84,6 +84,7 @@ export const createOrderItemsColumns = ({
     headerName: 'Kod kreskowy',
     width: 190,
     renderCell: (params) => {
+      const barcode = params.row.internalProduct?.barcodes?.[0];
       return (
         <Box
           flex={1}
@@ -91,7 +92,7 @@ export const createOrderItemsColumns = ({
           alignItems="center"
           justifyContent="center"
         >
-          <Barcode barcode={params.row.internalProduct.barcodes[0]} />
+          {barcode ? <Barcode barcode={barcode} /> : '-'}
         </Box>
       );
     },
@@ -108,7 +109,9 @@ export const createOrderItemsColumns = ({
     align: 'center',
     width: 80,
     valueGetter: (_value, row) =>
-      formatPrice(row.internalProduct.branches[0].grossPrice),
+      row.internalProduct?.branches?.[0]?.grossPrice
+        ? formatPrice(row.internalProduct.branches[0].grossPrice)
+        : '-',
   },
   {
     field: 'quantity',

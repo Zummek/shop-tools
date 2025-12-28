@@ -13,7 +13,7 @@ export interface EcommerceOrderItem {
   externalName: string;
   externalPricePerItem: number;
   quantity: number;
-  internalProduct: Product;
+  internalProduct: Product | null;
   internalProductManuallySelected: boolean;
   internalProductPopulatedFromPreviousOrder: boolean;
 }

@@ -58,6 +58,8 @@ export const Header = ({
     Pages.smSystemEcommerceOrderDetails,
   ]);
 
+  const isEcommerceAllegroPage = useIsPage(Pages.smSystemEcommerceAllegro);
+
   const showSmSystemHeader =
     isProductsDocumentsPage ||
     isTransfersPage ||
@@ -65,7 +67,8 @@ export const Header = ({
     areSuppliersFeaturePages ||
     isReportsPage ||
     isPriceTagsGroupsPage ||
-    isEcommerceOrdersPage;
+    isEcommerceOrdersPage ||
+    isEcommerceAllegroPage;
 
   return (
     <Stack spacing={2} direction="column">
@@ -131,6 +134,15 @@ export const Header = ({
                     size="small"
                   >
                     {'Zamówienia'}
+                  </Button>
+                )}
+                {user?.permissions?.canAccessEcommerce && (
+                  <Button
+                    href={`#${Pages.smSystemEcommerceAllegro}`}
+                    variant={isEcommerceAllegroPage ? 'contained' : 'outlined'}
+                    size="small"
+                  >
+                    {'Allegro'}
                   </Button>
                 )}
                 <Button

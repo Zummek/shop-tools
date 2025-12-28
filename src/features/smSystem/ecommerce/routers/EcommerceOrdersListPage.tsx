@@ -1,4 +1,3 @@
-import AddIcon from '@mui/icons-material/Add';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { Box, Button, Stack, Typography } from '@mui/material';
 import { DataGrid, GridColDef, GridRowParams } from '@mui/x-data-grid';
@@ -8,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { Pages } from '../../../../utils';
 import { EcommerceOrderListItem, useGetEcommerceOrders } from '../api';
-import { ImportEcommerceOrderModal } from '../modals/ImportEcommerceOrderModal';
+import { ImportEcommerceOrderModal } from '../modals/ImportEcommerceOrderModal/ImportEcommerceOrderModal';
 import { orderStatusColors, orderStatusMessage } from '../utils';
 
 const columns: GridColDef<EcommerceOrderListItem>[] = [
@@ -37,12 +36,14 @@ const columns: GridColDef<EcommerceOrderListItem>[] = [
     field: 'buyerName',
     headerName: 'Kupujący',
     width: 200,
+    minWidth: 200,
     flex: 1,
   },
   {
     field: 'buyerLogin',
     headerName: 'Login kupującego',
     width: 200,
+    minWidth: 200,
     flex: 1,
   },
   {
@@ -103,12 +104,8 @@ export const EcommerceOrdersListPage = () => {
           {'Zamówienia e-commerce'}
         </Typography>
         <Box>
-          <Button
-            variant="contained"
-            endIcon={<AddIcon />}
-            onClick={() => setIsModalOpen(true)}
-          >
-            {'Zaimportuj zamówienia'}
+          <Button variant="contained" onClick={() => setIsModalOpen(true)}>
+            {'Zaimportuj z Allegro'}
           </Button>
         </Box>
       </Box>

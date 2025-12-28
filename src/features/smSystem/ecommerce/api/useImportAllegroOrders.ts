@@ -6,7 +6,9 @@ import { axiosInstance } from '../../../../services';
 import { getEcommerceOrdersQueryKeyBase } from './useGetEcommerceOrders';
 
 interface Payload {
-  file: File;
+  dateFrom: string;
+  dateTo: string;
+  limit?: number;
 }
 
 interface Response {
@@ -21,44 +23,36 @@ interface Response {
   }[];
 }
 
-const endpoint = '/api/v1/ecommerce/orders/import/';
+const endpoint = '/api/v1/ecommerce/allegro/orders/import/';
 
-export const useImportEcommerceOrders = () => {
+export const useImportAllegroOrders = () => {
   const queryClient = useQueryClient();
   const { notify } = useNotify();
 
-  const request = async ({ file }: Payload) => {
-    const response = await axiosInstance.post<Response>(
-      endpoint,
-      { csvFile: file },
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      }
-    );
-    return response.data;
-  };
-
   const {
-    mutateAsync: importEcommerceOrders,
+    mutateAsync: importAllegroOrders,
     isPending,
-    isError,
+    data,
+    reset: resetAllegroOrdersData,
   } = useMutation({
-    mutationFn: request,
+    mutationFn: (payload: Payload) =>
+      axiosInstance.post<Response>(endpoint, { params: payload }),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: [getEcommerceOrdersQueryKeyBase],
       });
     },
     onError: () => {
-      notify('error', 'Błąd podczas importowania zamówień');
+      notify('error', 'Błąd podczas importowania zamówień z Allegro');
     },
   });
 
+  const importAllegroOrdersData = data?.data;
+
   return {
-    importEcommerceOrders,
+    importAllegroOrders,
     isPending,
-    isError,
+    importAllegroOrdersData,
+    resetAllegroOrdersData,
   };
 };

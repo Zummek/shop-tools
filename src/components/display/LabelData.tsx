@@ -1,17 +1,21 @@
-import { Stack, Typography } from '@mui/material';
+import { Stack, SxProps, Theme, Typography } from '@mui/material';
 
 interface Props {
   label: string;
   value: string | number | undefined | null;
+  minWidth?: number | string;
+  sx?: SxProps<Theme>;
 }
 
-export const LabelData = ({ label, value }: Props) => {
+export const LabelData = ({ label, value, minWidth, sx }: Props) => {
   return (
-    <Stack>
-      <Typography variant="subtitle2" color="text.secondary">
+    <Stack sx={{ minWidth, ...sx }}>
+      <Typography variant="subtitle2" color="text.secondary" fontWeight={500}>
         {label}
       </Typography>
-      <Typography variant="body1">{value ?? 'brak'}</Typography>
+      <Typography variant="body1" fontWeight={400}>
+        {value ?? 'brak'}
+      </Typography>
     </Stack>
   );
 };

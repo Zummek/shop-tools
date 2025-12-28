@@ -7,6 +7,7 @@ import { Navigate, RouterProvider, createHashRouter } from 'react-router-dom';
 
 import { BarcodesGeneratorPage } from './features/BarcodesGenerator/routes/BarcodesGeneratorPage/BarcodesGeneratorPage';
 import { InvoiceConverterPage } from './features/invoiceConverter/routers/InvoiceConverterPage/InvoiceConverterPage';
+import { EcommerceAllegroIntegrationPage } from './features/smSystem/ecommerce/routers/EcommerceAllegroIntegrationPage';
 import { EcommerceOrderDetailsPage } from './features/smSystem/ecommerce/routers/EcommerceOrderDetailsPage';
 import { EcommerceOrdersListPage } from './features/smSystem/ecommerce/routers/EcommerceOrdersListPage';
 import { SmSystemPageLayout } from './features/smSystem/layouts/SmSystemPageLayout';
@@ -120,6 +121,10 @@ const router = createHashRouter(
             {
               path: 'orders/:orderId',
               element: <EcommerceOrderDetailsPage />,
+            },
+            {
+              path: 'allegro',
+              element: <EcommerceAllegroIntegrationPage />,
             },
           ],
         },

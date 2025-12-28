@@ -12,7 +12,7 @@ import {
 } from '../api';
 import { createOrderItemsColumns, OrderDetailsSection } from '../components';
 import { useOrderItemEditing } from '../hooks/useOrderItemEditing';
-import { ImportEcommerceOrderModal } from '../modals/ImportEcommerceOrderModal';
+import { ImportEcommerceOrderModal } from '../modals/ImportEcommerceOrderModal/ImportEcommerceOrderModal';
 
 export const EcommerceOrderDetailsPage = () => {
   const navigate = useNavigate();

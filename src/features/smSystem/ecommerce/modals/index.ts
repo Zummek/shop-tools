@@ -1,1 +1,1 @@
-export * from './ImportEcommerceOrderModal';
+export * from './ImportEcommerceOrderModal/ImportEcommerceOrderModal';

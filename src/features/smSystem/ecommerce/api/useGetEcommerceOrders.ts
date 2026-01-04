@@ -5,7 +5,7 @@ import { axiosInstance } from '../../../../services';
 import { ListResponse } from '../../app/types';
 import { OrderStatus } from '../types';
 
-const pageSize = 1;
+const pageSize = 25;
 const endpoint = '/api/v1/ecommerce/orders/';
 export const getEcommerceOrdersQueryKeyBase = 'ecommerceOrders';
 

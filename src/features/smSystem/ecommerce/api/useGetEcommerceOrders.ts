@@ -5,7 +5,7 @@ import { axiosInstance } from '../../../../services';
 import { ListResponse } from '../../app/types';
 import { OrderStatus } from '../types';
 
-const pageSize = 25;
+const pageSize = 1;
 const endpoint = '/api/v1/ecommerce/orders/';
 export const getEcommerceOrdersQueryKeyBase = 'ecommerceOrders';
 
@@ -26,12 +26,11 @@ export const useGetEcommerceOrders = () => {
   const [query, setQuery] = useState<string>('');
 
   const getEcommerceOrdersRequest = async () => {
-    const offset = page * pageSize;
     const response = await axiosInstance.get<Response>(endpoint, {
       params: {
         query,
-        offset,
-        limit: pageSize,
+        page: page + 1,
+        pageSize,
       },
     });
     return response.data;

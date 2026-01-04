@@ -102,15 +102,16 @@ export const createOrderItemsColumns = ({
     headerName: 'Zew. cena produktu',
     align: 'center',
     width: 80,
+    valueGetter: (_value, row) => `${formatPrice(row.externalPricePerItem)} zł`,
   },
   {
     field: 'internalPricePerItem',
-    headerName: 'Cena produktu',
+    headerName: 'Wew. cena produktu',
     align: 'center',
     width: 80,
     valueGetter: (_value, row) =>
       row.internalProduct?.branches?.[0]?.grossPrice
-        ? formatPrice(row.internalProduct.branches[0].grossPrice)
+        ? `${formatPrice(row.internalProduct.branches[0].grossPrice)} zł`
         : '-',
   },
   {

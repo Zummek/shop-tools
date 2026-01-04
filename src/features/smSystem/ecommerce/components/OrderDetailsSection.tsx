@@ -39,14 +39,17 @@ export const OrderDetailsSection = ({
 }: OrderDetailsSectionProps) => {
   const status = ecommerceOrder.status || 'new';
 
-  const orderValue = ecommerceOrder.orderItems
-    .filter((item) => item.internalProduct)
-    .reduce(
-      (total, item) =>
-        total +
-        (item.internalProduct?.branches?.[0]?.grossPrice || 0) * item.quantity,
-      0
-    );
+  const internalOrderValue = ecommerceOrder.orderItems.reduce(
+    (total, item) =>
+      total +
+      (item.internalProduct?.branches?.[0]?.grossPrice || 0) * item.quantity,
+    0
+  );
+
+  const externalOrderValue = ecommerceOrder.orderItems.reduce(
+    (total, item) => total + item.externalPricePerItem * item.quantity,
+    0
+  );
 
   return (
     <Paper
@@ -171,8 +174,13 @@ export const OrderDetailsSection = ({
                 minWidth={FIELD_MIN_WIDTH}
               />
               <LabelData
-                label="Wartość zamówienia"
-                value={`${formatPrice(orderValue)} zł`}
+                label="Wartość zamówienia (zew. cena)"
+                value={`${formatPrice(externalOrderValue)} zł`}
+                minWidth={FIELD_MIN_WIDTH}
+              />
+              <LabelData
+                label="Wartość zamówienia (wew. cena)"
+                value={`${formatPrice(internalOrderValue)} zł`}
                 minWidth={FIELD_MIN_WIDTH}
               />
             </Stack>

@@ -19,11 +19,9 @@ const getQueryKey = (page: number) => [
 ];
 
 export const useGetProductsDocuments = ({ page }: Payload) => {
-  const offset = page * pageSize;
-
   const getProductsDocumentsRequest = async () => {
     const response = await axiosInstance.get<Response>(
-      `${endpoint}?offset=${offset}&limit=${pageSize}`
+      `${endpoint}?page=${page + 1}&pageSize=${pageSize}`
     );
     return response.data;
   };

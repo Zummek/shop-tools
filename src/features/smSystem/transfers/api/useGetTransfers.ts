@@ -16,11 +16,9 @@ const getQueryKey = (page: number) => [getTransfersQueryKeyBase, page];
 const endpoint = '/api/v1/transfers/';
 
 export const useGetTransfers = ({ page }: Payload) => {
-  const offset = page * pageSize;
-
   const getTransfersRequest = async () => {
     const response = await axiosInstance.get<Response>(
-      `${endpoint}?offset=${offset}&limit=${pageSize}`
+      `${endpoint}?page=${page + 1}&pageSize=${pageSize}`
     );
     return response.data;
   };

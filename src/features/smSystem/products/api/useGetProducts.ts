@@ -16,12 +16,11 @@ export const useGetProducts = () => {
   const [query, setQuery] = useState<string>('');
 
   const getProductsRequest = async () => {
-    const offset = page * pageSize;
     const response = await axiosInstance.get<Response>(endpoint, {
       params: {
         query,
-        offset,
-        limit: pageSize,
+        page: page + 1,
+        pageSize,
       },
     });
     return response.data;

@@ -21,7 +21,7 @@ const statusColorMap: Record<
   canceled: 'error',
 };
 
-const FIELD_MIN_WIDTH = 150;
+const FIELD_MIN_WIDTH = 100;
 
 const SectionHeader = ({ children }: { children: React.ReactNode }) => (
   <Typography
@@ -185,7 +185,6 @@ export const OrderDetailsSection = ({
               />
             </Stack>
           </Stack>
-
           <Divider orientation="vertical" flexItem />
 
           <Stack>

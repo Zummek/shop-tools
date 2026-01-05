@@ -174,12 +174,12 @@ export const OrderDetailsSection = ({
                 minWidth={FIELD_MIN_WIDTH}
               />
               <LabelData
-                label="Wartość zamówienia (zew. cena)"
+                label="Zew. wartość zamówienia"
                 value={`${formatPrice(externalOrderValue)} zł`}
                 minWidth={FIELD_MIN_WIDTH}
               />
               <LabelData
-                label="Wartość zamówienia (wew. cena)"
+                label="Wew. wartość zamówienia"
                 value={`${formatPrice(internalOrderValue)} zł`}
                 minWidth={FIELD_MIN_WIDTH}
               />

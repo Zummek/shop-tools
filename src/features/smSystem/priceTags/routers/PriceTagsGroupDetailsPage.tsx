@@ -408,9 +408,7 @@ export const PriceTagsGroupDetailsPage = () => {
           unitScale: row.unitScale,
         });
         return price
-          ? `${formatPrice(price)} zł/${
-              row.unit === ProductUnit.pc ? 'szt' : row.unit
-            }`
+          ? `${formatPrice(price)} zł/${row.unit === ProductUnit.pc ? 'szt' : row.unit}`
           : '';
       },
     },
@@ -471,9 +469,8 @@ export const PriceTagsGroupDetailsPage = () => {
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Stack direction="row" spacing={2} alignItems="center">
             <Typography variant="h4" component="h1">
-              {`Grupa etykiet: ${
-                isEditingName ? '' : priceTagGroupDetails?.name
-              }`}
+              {`Grupa etykiet: ${isEditingName ? '' : priceTagGroupDetails?.name
+                }`}
             </Typography>
             {isEditingName && (
               <TextField

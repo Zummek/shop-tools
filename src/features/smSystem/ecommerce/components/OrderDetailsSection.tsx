@@ -164,23 +164,23 @@ export const OrderDetailsSection = ({
             <SectionHeader>{'📊 Podsumowanie'}</SectionHeader>
             <Stack direction="row" flexWrap="wrap" gap={4}>
               <LabelData
-                label="Ilość pozycji"
-                value={ecommerceOrder.itemsAmount}
+                label="Ilość pozycji / produktów"
+                value={`${ecommerceOrder.itemsAmount} / ${ecommerceOrder.productsAmount}`}
                 minWidth={FIELD_MIN_WIDTH}
               />
               <LabelData
-                label="Ilość produktów"
-                value={ecommerceOrder.productsAmount}
+                label="Koszt dostawy"
+                value={ecommerceOrder.deliveryCost !== null ? `${formatPrice(ecommerceOrder.deliveryCost)} ${ecommerceOrder.deliveryCostCurrency}` : '-'}
                 minWidth={FIELD_MIN_WIDTH}
               />
               <LabelData
                 label="Zew. wartość zamówienia"
-                value={`${formatPrice(externalOrderValue)} zł`}
+                value={`${formatPrice(externalOrderValue)} ${ecommerceOrder.orderItems[0].externalCurrency}`}
                 minWidth={FIELD_MIN_WIDTH}
               />
               <LabelData
                 label="Wew. wartość zamówienia"
-                value={`${formatPrice(internalOrderValue)} zł`}
+                value={`${formatPrice(internalOrderValue)} PLN`}
                 minWidth={FIELD_MIN_WIDTH}
               />
             </Stack>

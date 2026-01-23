@@ -12,6 +12,7 @@ export interface EcommerceOrderItem {
   externalId: string;
   externalName: string;
   externalPricePerItem: number;
+  externalCurrency: string;
   quantity: number;
   internalProduct: Product | null;
   internalProductManuallySelected: boolean;
@@ -25,6 +26,8 @@ export interface EcommerceOrderDetails {
   externalId: string;
   paymentMethod: string;
   deliveryMethod: string;
+  deliveryCost: number | null;
+  deliveryCostCurrency: string | null;
   status: OrderStatus;
   messageFromBuyer: string;
   buyerName: string;

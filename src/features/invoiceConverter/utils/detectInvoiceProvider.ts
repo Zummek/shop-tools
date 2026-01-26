@@ -7,7 +7,7 @@ export const detectInvoiceProvider = async (
   const fileType = file.type;
 
   if (fileType === 'text/csv') return InvoiceProvider.bezGluten;
-  if (fileText.includes('544-112-43-37')) return InvoiceProvider.dary;
+  if (fileText.includes('544-112-43-37') || fileText.includes('5441124337')) return InvoiceProvider.dary;
   if (fileText.includes('9482624487')) return InvoiceProvider.wiesiolek;
   if (fileText.includes('5322116337') || fileText.includes('5321690962'))
     return InvoiceProvider.medicaline;

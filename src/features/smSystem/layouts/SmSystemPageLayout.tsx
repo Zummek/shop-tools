@@ -5,12 +5,9 @@ import { Outlet, useNavigate } from 'react-router-dom';
 import { Page } from '../../../components/layout';
 import { useAppSelector, useIsPage } from '../../../hooks';
 import { Pages } from '../../../utils';
-import { useLogoutUser } from '../user/hooks';
 
 export const SmSystemPageLayout = () => {
   const navigate = useNavigate();
-
-  const { logoutUser } = useLogoutUser();
 
   const isSessionExist = !!useAppSelector(
     (state) => state.smSystemUser.accessToken
@@ -26,8 +23,6 @@ export const SmSystemPageLayout = () => {
   return (
     <Page
       alignItems={isOnLoginPage ? 'center' : 'flex-start'}
-      onButtonClick={() => logoutUser()}
-      buttonLabel="Wyloguj"
     >
       <Box width="100%" flex={1}>
         <Outlet />

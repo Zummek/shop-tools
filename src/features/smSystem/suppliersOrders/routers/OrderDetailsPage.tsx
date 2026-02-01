@@ -76,7 +76,7 @@ export const OrderDetailsPage = () => {
         <Button variant="outlined" onClick={handleOpenModal}>
           {'Pobierz'}
         </Button>
-        <Typography variant="h5" color="primary">
+        <Typography variant="h5">
           {'Zamówienie: '}
           {supplierName ? `${supplierName} - ${date}` : ''}
         </Typography>

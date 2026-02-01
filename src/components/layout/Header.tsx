@@ -10,22 +10,21 @@ import { useState } from 'react';
 
 import { useAppSelector, useIsPage } from '../../hooks';
 import { Pages } from '../../utils/pages';
+import { useLogoutUser } from '../../features/smSystem/user/hooks';
 
 interface Props {
   headerTitle: string;
   onDemoButtonClick?: () => void;
-  onButtonClick?: () => void;
-  buttonLabel: string;
 }
 
 export const Header = ({
   headerTitle,
   onDemoButtonClick,
-  onButtonClick,
-  buttonLabel,
 }: Props) => {
   const { user } = useAppSelector((state) => state.smSystemUser);
   const [openWarningModal, setOpenWarningModal] = useState(false);
+
+  const { logoutUser } = useLogoutUser();
 
   const handleDemoButtonClick = () => {
     setOpenWarningModal(false);
@@ -72,17 +71,29 @@ export const Header = ({
 
   return (
     <Stack spacing={2} direction="column">
-      <Stack spacing={4} direction="row">
-        <Button variant="text" href={`#${Pages.barcodesGenerator}`}>
-          {'Generuj kody kreskowe'}
-        </Button>
-        <Button variant="text" href={`#${Pages.invoiceConverter}`}>
-          {'Konwenter faktur'}
-        </Button>
-        <Button variant="text" href={`#${Pages.smSystem}`}>
-          {'SM System'}
-        </Button>
-      </Stack>
+      <Box display="flex" flexDirection="row" justifyContent="space-between" alignItems="center">
+        <Stack spacing={4} direction="row">
+          <Button variant="text" href={`#${Pages.barcodesGenerator}`}>
+            {'Generuj kody kreskowe'}
+          </Button>
+          <Button variant="text" href={`#${Pages.invoiceConverter}`}>
+            {'Konwenter faktur'}
+          </Button>
+          <Button variant="text" href={`#${Pages.smSystem}`}>
+            {'SM System'}
+          </Button>
+        </Stack>
+
+        <Box>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => logoutUser()}
+          >
+            {'Wyloguj'}
+          </Button>
+        </Box>
+      </Box>
       <Box
         display="flex"
         justifyContent="space-between"
@@ -133,7 +144,7 @@ export const Header = ({
                     variant={isEcommerceOrdersPage ? 'contained' : 'outlined'}
                     size="small"
                   >
-                    {'Zamówienia'}
+                    {'Zamówienia ecommerce'}
                   </Button>
                 )}
                 {user?.permissions?.canAccessEcommerce && (
@@ -166,16 +177,6 @@ export const Header = ({
             size="small"
           >
             {'Demo'}
-          </Button>
-        )}
-        {!!onButtonClick && (
-          <Button
-            variant="outlined"
-            color="primary"
-            onClick={onButtonClick}
-            size="small"
-          >
-            {buttonLabel}
           </Button>
         )}
       </Box>
@@ -223,6 +224,6 @@ export const Header = ({
           </Stack>
         </Stack>
       </Modal>
-    </Stack>
+    </Stack >
   );
 };

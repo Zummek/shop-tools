@@ -10,7 +10,7 @@ import { useState } from 'react';
 
 import { useAppSelector, useIsPage } from '../../hooks';
 import { Pages } from '../../utils/pages';
-import { useLogoutUser } from '../../features/smSystem/user/hooks';
+import { useLogoutUser, useUserSession } from '../../features/smSystem/user/hooks';
 
 interface Props {
   headerTitle: string;
@@ -25,6 +25,7 @@ export const Header = ({
   const [openWarningModal, setOpenWarningModal] = useState(false);
 
   const { logoutUser } = useLogoutUser();
+  const { isSessionActive } = useUserSession();
 
   const handleDemoButtonClick = () => {
     setOpenWarningModal(false);
@@ -85,13 +86,15 @@ export const Header = ({
         </Stack>
 
         <Box>
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={() => logoutUser()}
-          >
-            {'Wyloguj'}
-          </Button>
+          {isSessionActive && (
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => logoutUser()}
+            >
+              {'Wyloguj'}
+            </Button>
+          )}
         </Box>
       </Box>
       <Box

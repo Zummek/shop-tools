@@ -113,7 +113,7 @@ export const OrderDetailsSection = ({
               />
               <LabelData
                 label="Metoda dostawy"
-                value={ecommerceOrder.deliveryMethod}
+                value={ecommerceOrder.deliveryName}
                 minWidth={FIELD_MIN_WIDTH}
               />
               <LabelData

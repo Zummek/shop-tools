@@ -8,19 +8,19 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 
+import {
+  useLogoutUser,
+  useUserSession,
+} from '../../features/smSystem/user/hooks';
 import { useAppSelector, useIsPage } from '../../hooks';
 import { Pages } from '../../utils/pages';
-import { useLogoutUser, useUserSession } from '../../features/smSystem/user/hooks';
 
 interface Props {
   headerTitle: string;
   onDemoButtonClick?: () => void;
 }
 
-export const Header = ({
-  headerTitle,
-  onDemoButtonClick,
-}: Props) => {
+export const Header = ({ headerTitle, onDemoButtonClick }: Props) => {
   const { user } = useAppSelector((state) => state.smSystemUser);
   const [openWarningModal, setOpenWarningModal] = useState(false);
 
@@ -72,7 +72,12 @@ export const Header = ({
 
   return (
     <Stack spacing={2} direction="column">
-      <Box display="flex" flexDirection="row" justifyContent="space-between" alignItems="center">
+      <Box
+        display="flex"
+        flexDirection="row"
+        justifyContent="space-between"
+        alignItems="center"
+      >
         <Stack spacing={4} direction="row">
           <Button variant="text" href={`#${Pages.barcodesGenerator}`}>
             {'Generuj kody kreskowe'}
@@ -227,6 +232,6 @@ export const Header = ({
           </Stack>
         </Stack>
       </Modal>
-    </Stack >
+    </Stack>
   );
 };

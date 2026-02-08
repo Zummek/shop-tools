@@ -2,7 +2,7 @@ import { OrderStatus } from '../types';
 
 export const orderStatusMessage: Record<OrderStatus, string> = {
   new: 'Nowe',
-  receiptPrepared: 'Paragon przygotowany',
+  receipt_prepared: 'Paragon przygotowany',
   packed: 'Spakowane',
   shipped: 'Wysłane',
   canceled: 'Anulowane',
@@ -10,7 +10,7 @@ export const orderStatusMessage: Record<OrderStatus, string> = {
 
 export const orderStatusColors: Record<OrderStatus, string> = {
   new: 'black',
-  receiptPrepared: 'orange',
+  receipt_prepared: 'orange',
   packed: 'blue',
   shipped: 'green',
   canceled: 'red',

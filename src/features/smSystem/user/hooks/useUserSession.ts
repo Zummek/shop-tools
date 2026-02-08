@@ -1,9 +1,11 @@
-import { useAppSelector } from "../../../../hooks";
+import { useAppSelector } from '../../../../hooks';
 
 export const useUserSession = () => {
-    const isSessionActive = useAppSelector((state) => !!state.smSystemUser.accessToken);
+  const isSessionActive = useAppSelector(
+    (state) => !!state.smSystemUser.accessToken
+  );
 
-    return {
-        isSessionActive,
-    }
-}
+  return {
+    isSessionActive,
+  };
+};

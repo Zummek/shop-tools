@@ -30,7 +30,7 @@ const columns: GridColDef<EcommerceOrderListItem>[] = [
   {
     field: 'status',
     headerName: 'Status',
-    width: 120,
+    minWidth: 160,
     renderCell: ({ row }) => (
       <Typography variant="body2" color={orderStatusColors[row.status]}>
         {orderStatusMessage[row.status]}

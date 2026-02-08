@@ -15,7 +15,7 @@ const statusColorMap: Record<
   'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning'
 > = {
   new: 'info',
-  receiptPrepared: 'warning',
+  receipt_prepared: 'warning',
   packed: 'secondary',
   shipped: 'success',
   canceled: 'error',
@@ -116,6 +116,17 @@ export const OrderDetailsSection = ({
                 value={ecommerceOrder.deliveryMethod}
                 minWidth={FIELD_MIN_WIDTH}
               />
+              <LabelData
+                label="Faktura"
+                value={
+                  ecommerceOrder.invoiceRequired ? 'Wymagana Faktura' : 'brak'
+                }
+                minWidth={FIELD_MIN_WIDTH}
+                weight={ecommerceOrder.invoiceRequired ? 'medium' : undefined}
+                valueColor={
+                  ecommerceOrder.invoiceRequired ? 'primary' : 'text.secondary'
+                }
+              />
             </Stack>
           </Stack>
         </Stack>
@@ -170,8 +181,20 @@ export const OrderDetailsSection = ({
               />
               <LabelData
                 label="Koszt dostawy"
-                value={ecommerceOrder.deliveryCost !== null ? `${formatPrice(ecommerceOrder.deliveryCost)} ${ecommerceOrder.deliveryCostCurrency}` : '-'}
+                value={
+                  ecommerceOrder.deliveryCost !== null
+                    ? `${formatPrice(ecommerceOrder.deliveryCost)} ${ecommerceOrder.deliveryCostCurrency}`
+                    : '-'
+                }
                 minWidth={FIELD_MIN_WIDTH}
+                valueColor={
+                  ecommerceOrder.deliveryCost !== null
+                    ? 'primary'
+                    : 'text.secondary'
+                }
+                weight={
+                  ecommerceOrder.deliveryCost !== null ? 'medium' : undefined
+                }
               />
               <LabelData
                 label="Zew. wartość zamówienia"

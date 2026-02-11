@@ -45,6 +45,13 @@ const columns: GridColDef<EcommerceOrderListItem>[] = [
     flex: 1,
   },
   {
+    field: 'deliveryName',
+    headerName: 'Metoda dostawy',
+    width: 350,
+    minWidth: 250,
+    flex: 1,
+  },
+  {
     field: 'buyerLogin',
     headerName: 'Login kupującego',
     width: 200,

@@ -23,11 +23,6 @@ const columns: GridColDef<EcommerceOrderListItem>[] = [
     valueFormatter: (value: string) => dayjs(value).format('DD.MM.YYYY HH:mm'),
   },
   {
-    field: 'orderSource',
-    headerName: 'Miejsce zamówienia',
-    width: 120,
-  },
-  {
     field: 'status',
     headerName: 'Status',
     minWidth: 160,
@@ -54,8 +49,8 @@ const columns: GridColDef<EcommerceOrderListItem>[] = [
   {
     field: 'buyerLogin',
     headerName: 'Login kupującego',
-    width: 200,
-    minWidth: 200,
+    width: 150,
+    minWidth: 150,
     flex: 1,
   },
   {

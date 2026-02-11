@@ -8,14 +8,15 @@ interface Props {
 export const Barcode = ({ barcode }: Props) => {
   const barcodeId = `ean-${barcode}`;
 
+  const format = barcode.length <= 8 ? 'CODE128' : 'EAN13';
   useEffect(() => {
     JsBarcode(`#${barcodeId}`, barcode, {
-      format: 'EAN13',
+      format,
       height: 20,
       width: 1.5,
       margin: 0,
     });
-  }, [barcode, barcodeId]);
+  }, [barcode, barcodeId, format]);
 
   return <svg id={barcodeId}></svg>;
 };

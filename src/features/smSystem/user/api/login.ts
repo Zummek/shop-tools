@@ -20,6 +20,7 @@ interface LoginResponse {
     };
     permissions?: {
       canAccessEcommerce: boolean;
+      canViewPurchasePrices: boolean;
     };
     organization: {
       id: number;

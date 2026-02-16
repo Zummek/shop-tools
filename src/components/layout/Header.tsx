@@ -152,13 +152,15 @@ export const Header = ({ headerTitle, onDemoButtonClick }: Props) => {
                 >
                   {'Etykiety cenowe'}
                 </Button>
-                <Button
-                  href={`#${Pages.smSystemInvoices}`}
-                  variant={isInvoicesPage ? 'contained' : 'outlined'}
-                  size="small"
-                >
-                  {'Faktury'}
-                </Button>
+                {user?.permissions?.canViewPurchasePrices && (
+                  <Button
+                    href={`#${Pages.smSystemInvoices}`}
+                    variant={isInvoicesPage ? 'contained' : 'outlined'}
+                    size="small"
+                  >
+                    {'Faktury'}
+                  </Button>
+                )}
                 {user?.permissions?.canAccessEcommerce && (
                   <Button
                     href={`#${Pages.smSystemEcommerceOrders}`}

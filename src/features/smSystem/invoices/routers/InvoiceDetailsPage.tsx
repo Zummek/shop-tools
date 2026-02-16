@@ -438,9 +438,8 @@ export const InvoiceDetailsPage = () => {
           pageSizeOptions={[invoice.items.length]}
           loading={isLoading}
           columnVisibilityModel={{
-            unitNetPriceAfterDiscount: isThereAnyDiscount ?? false,
-            unitGrossPriceAfterDiscount: isThereAnyDiscount ?? false,
             discountAmount: isThereAnyDiscount ?? false,
+            unitNetDiscount: isThereAnyDiscount ?? false,
           }}
           paginationModel={{
             page: 0,

@@ -10,6 +10,8 @@ import { InvoiceConverterPage } from './features/invoiceConverter/routers/Invoic
 import { EcommerceAllegroIntegrationPage } from './features/smSystem/ecommerce/routers/EcommerceAllegroIntegrationPage';
 import { EcommerceOrderDetailsPage } from './features/smSystem/ecommerce/routers/EcommerceOrderDetailsPage';
 import { EcommerceOrdersListPage } from './features/smSystem/ecommerce/routers/EcommerceOrdersListPage';
+import { InvoiceDetailsPage } from './features/smSystem/invoices/routers/InvoiceDetailsPage';
+import { InvoicesListPage } from './features/smSystem/invoices/routers/InvoicesListPage';
 import { SmSystemPageLayout } from './features/smSystem/layouts/SmSystemPageLayout';
 import { PriceTagsGroupDetailsPage } from './features/smSystem/priceTags/routers/PriceTagsGroupDetailsPage';
 import { PriceTagsGroupsPage } from './features/smSystem/priceTags/routers/PriceTagsGroupsPage';
@@ -127,6 +129,14 @@ const router = createHashRouter(
               element: <EcommerceAllegroIntegrationPage />,
             },
           ],
+        },
+        {
+          path: 'invoices',
+          element: <InvoicesListPage />,
+        },
+        {
+          path: 'invoices/:invoiceId',
+          element: <InvoiceDetailsPage />,
         },
       ],
     },

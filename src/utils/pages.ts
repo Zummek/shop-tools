@@ -17,4 +17,6 @@ export enum Pages {
   smSystemEcommerceOrders = '/sm-system/ecommerce/orders',
   smSystemEcommerceOrderDetails = '/sm-system/ecommerce/orders/:orderId',
   smSystemEcommerceAllegro = '/sm-system/ecommerce/allegro',
+  smSystemInvoices = '/sm-system/invoices',
+  smSystemInvoiceDetails = '/sm-system/invoices/:invoiceId',
 }

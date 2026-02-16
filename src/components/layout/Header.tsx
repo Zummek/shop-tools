@@ -60,6 +60,11 @@ export const Header = ({ headerTitle, onDemoButtonClick }: Props) => {
 
   const isEcommerceAllegroPage = useIsPage(Pages.smSystemEcommerceAllegro);
 
+  const isInvoicesPage = useIsPage([
+    Pages.smSystemInvoices,
+    Pages.smSystemInvoiceDetails,
+  ]);
+
   const showSmSystemHeader =
     isProductsDocumentsPage ||
     isTransfersPage ||
@@ -68,7 +73,8 @@ export const Header = ({ headerTitle, onDemoButtonClick }: Props) => {
     isReportsPage ||
     isPriceTagsGroupsPage ||
     isEcommerceOrdersPage ||
-    isEcommerceAllegroPage;
+    isEcommerceAllegroPage ||
+    isInvoicesPage;
 
   return (
     <Stack spacing={2} direction="column">
@@ -145,6 +151,13 @@ export const Header = ({ headerTitle, onDemoButtonClick }: Props) => {
                   size="small"
                 >
                   {'Etykiety cenowe'}
+                </Button>
+                <Button
+                  href={`#${Pages.smSystemInvoices}`}
+                  variant={isInvoicesPage ? 'contained' : 'outlined'}
+                  size="small"
+                >
+                  {'Faktury'}
                 </Button>
                 {user?.permissions?.canAccessEcommerce && (
                   <Button

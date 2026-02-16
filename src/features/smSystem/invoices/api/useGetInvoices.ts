@@ -4,52 +4,44 @@ import { useSearchParams } from 'react-router-dom';
 
 import { axiosInstance } from '../../../../services';
 import { ListResponse } from '../../app/types';
-import { OrderStatus } from '../types';
+import { InvoiceListItem } from '../types';
 
 const pageSize = 25;
-const endpoint = '/api/v1/ecommerce/orders/';
-export const getEcommerceOrdersQueryKeyBase = 'ecommerceOrders';
+const endpoint = '/api/v1/invoices/';
+export const getInvoicesQueryKeyBase = 'invoices';
 
-export interface EcommerceOrderListItem {
-  id: number;
-  orderDate: string;
-  orderSource: string;
-  status: OrderStatus;
-  buyerName: string;
-  buyerLogin: string;
-  itemsAmount: number;
-  productsAmount: number;
-}
-type Response = ListResponse<EcommerceOrderListItem>;
+type Response = ListResponse<InvoiceListItem>;
 
-export const useGetEcommerceOrders = () => {
+export const useGetInvoices = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const pageParam = searchParams.get('page');
   const initialPage = pageParam ? Number(pageParam) - 1 : 0;
 
   const [page, setPage] = useState(initialPage);
-  const [query, setQuery] = useState<string>('');
+  const [invoiceNumber, setInvoiceNumber] = useState<string>('');
+  const [sellerName, setSellerName] = useState<string>('');
+  const [invoiceDateFrom, setInvoiceDateFrom] = useState<string>('');
+  const [invoiceDateTo, setInvoiceDateTo] = useState<string>('');
 
   useEffect(() => {
     const pageParam = searchParams.get('page');
     const newPage = pageParam ? Number(pageParam) - 1 : 0;
-    if (newPage !== page && newPage >= 0) 
-      setPage(newPage);
-    
+    if (newPage !== page && newPage >= 0) setPage(newPage);
   }, [searchParams, page]);
 
   useEffect(() => {
     const params: Record<string, string> = {};
-    if (page > 0) 
-      params.page = (page + 1).toString();
-    
+    if (page > 0) params.page = (page + 1).toString();
     setSearchParams(params, { replace: true });
   }, [page, setSearchParams]);
 
-  const getEcommerceOrdersRequest = async () => {
+  const getInvoicesRequest = async () => {
     const response = await axiosInstance.get<Response>(endpoint, {
       params: {
-        query,
+        invoiceNumber: invoiceNumber || undefined,
+        sellerName: sellerName || undefined,
+        invoiceDateFrom: invoiceDateFrom || undefined,
+        invoiceDateTo: invoiceDateTo || undefined,
         page: page + 1,
         pageSize,
       },
@@ -58,24 +50,37 @@ export const useGetEcommerceOrders = () => {
   };
 
   const { data, isLoading, isFetching } = useQuery({
-    queryKey: [getEcommerceOrdersQueryKeyBase, query, page],
-    queryFn: getEcommerceOrdersRequest,
+    queryKey: [
+      getInvoicesQueryKeyBase,
+      invoiceNumber,
+      sellerName,
+      invoiceDateFrom,
+      invoiceDateTo,
+      page,
+    ],
+    queryFn: getInvoicesRequest,
     placeholderData: keepPreviousData,
   });
 
   const hasNextPage = !!data?.next;
   const totalCount = data?.count || null;
-  const ecommerceOrders = data?.results || [];
+  const invoices = data?.results || [];
 
   return {
-    ecommerceOrders,
+    invoices,
     totalCount,
     isLoading: isLoading || isFetching,
     hasNextPage,
-    setQuery,
-    query,
     setPage,
     page,
     pageSize,
+    invoiceNumber,
+    setInvoiceNumber,
+    sellerName,
+    setSellerName,
+    invoiceDateFrom,
+    setInvoiceDateFrom,
+    invoiceDateTo,
+    setInvoiceDateTo,
   };
 };

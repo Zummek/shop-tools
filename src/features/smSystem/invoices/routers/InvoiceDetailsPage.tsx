@@ -47,6 +47,10 @@ export const InvoiceDetailsPage = () => {
   const { notify } = useNotify();
   const [searchParams] = useSearchParams();
 
+  const [statusMenuAnchor, setStatusMenuAnchor] = useState<null | HTMLElement>(
+    null
+  );
+  const [page, setPage] = useState(0);
   const { invoiceId: rawInvoiceId } = useParams<{ invoiceId: string }>();
   const id = Number(rawInvoiceId);
 
@@ -55,9 +59,6 @@ export const InvoiceDetailsPage = () => {
   const { exportInvoiceToPcMarket } = useExportInvoiceToPcMarket();
   const { updateInvoiceStatus, isPending: isUpdatingStatus } =
     useUpdateInvoiceStatus();
-  const [statusMenuAnchor, setStatusMenuAnchor] = useState<null | HTMLElement>(
-    null
-  );
 
   const isThereAnyDiscount = invoice?.items?.some(
     (item) => (item.discountAmount ?? 0) > 0
@@ -442,16 +443,17 @@ export const InvoiceDetailsPage = () => {
             unitNetDiscount: isThereAnyDiscount ?? false,
           }}
           paginationModel={{
-            page: 0,
-            pageSize: invoice.items.length,
+            page,
+            pageSize: 50,
           }}
-          paginationMode="server"
-          disableColumnSorting
+          // disableColumnSorting
           disableRowSelectionOnClick
-          hideFooter
+          // hideFooter
           onRowClick={() => {}}
           disableColumnMenu
-          onPaginationModelChange={() => {}}
+          onPaginationModelChange={(newPaginationModel) => {
+            setPage(newPaginationModel.page);
+          }}
           style={{
             width: '100%',
           }}

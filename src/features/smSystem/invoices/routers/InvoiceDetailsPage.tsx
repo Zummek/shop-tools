@@ -2,6 +2,7 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import DeleteIcon from '@mui/icons-material/Delete';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import {
+  Alert,
   Box,
   Button,
   Chip,
@@ -48,7 +49,7 @@ export const InvoiceDetailsPage = () => {
   const [searchParams] = useSearchParams();
 
   const [statusMenuAnchor, setStatusMenuAnchor] = useState<null | HTMLElement>(
-    null
+    null,
   );
   const [page, setPage] = useState(0);
   const { invoiceId: rawInvoiceId } = useParams<{ invoiceId: string }>();
@@ -61,7 +62,11 @@ export const InvoiceDetailsPage = () => {
     useUpdateInvoiceStatus();
 
   const isThereAnyDiscount = invoice?.items?.some(
-    (item) => (item.discountAmount ?? 0) > 0
+    (item) => (item.discountAmount ?? 0) > 0,
+  );
+
+  const hasUnmatchedProducts = (invoice?.items ?? []).some(
+    (item) => item.productMatchType === 'NONE',
   );
 
   const itemsColumns: GridColDef<InvoiceItem>[] = [
@@ -211,7 +216,7 @@ export const InvoiceDetailsPage = () => {
 
     if (
       !window.confirm(
-        `Czy na pewno chcesz usunąć fakturę ${invoice.invoiceNumber}?`
+        `Czy na pewno chcesz usunąć fakturę ${invoice.invoiceNumber}?`,
       )
     )
       return;
@@ -422,6 +427,14 @@ export const InvoiceDetailsPage = () => {
           </TableContainer>
         </Stack>
       </Paper>
+
+      {hasUnmatchedProducts && (
+        <Alert severity="warning">
+          {
+            'Niektóre pozycje faktury nie są dopasowane do produktów wewnętrznych.'
+          }
+        </Alert>
+      )}
 
       <Typography variant="h5">{'Pozycje faktury'}</Typography>
 

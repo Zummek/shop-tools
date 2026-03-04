@@ -24,11 +24,11 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { useNotify } from '../../../../hooks';
 import { Pages } from '../../../../utils';
+import { ProductMatchType } from '../../products/types';
 import { formatPrice } from '../../products/utils';
 import {
   InvoiceItem,
   InvoiceStatus,
-  ProductMatchType,
   useDeleteInvoice,
   useExportInvoiceToPcMarket,
   useGetInvoiceDetails,
@@ -165,15 +165,17 @@ export const InvoiceDetailsPage = () => {
           GTIN: 'Auto (EAN)',
           MANUAL: 'Ręcznie',
           PREVIOUS_MANUAL: 'Auto (poprzednie)',
+          SIMILARITY: 'Auto (podobna nazwa)',
         };
         const matchColors: Record<
           ProductMatchType,
-          'error' | 'success' | 'info' | 'secondary'
+          'error' | 'success' | 'info' | 'secondary' | 'warning'
         > = {
           NONE: 'error',
           GTIN: 'success',
           MANUAL: 'info',
           PREVIOUS_MANUAL: 'secondary',
+          SIMILARITY: 'warning',
         };
 
         return (

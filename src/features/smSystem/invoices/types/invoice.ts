@@ -1,10 +1,10 @@
+import { ProductMatchType } from '../../products/types';
+
 export type InvoiceStatus =
   | 'IMPORTED'
   | 'PENDING_RECEIPT'
   | 'PARTIALLY_RECEIVED'
   | 'RECEIVED';
-
-export type ProductMatchType = 'NONE' | 'GTIN' | 'MANUAL' | 'PREVIOUS_MANUAL';
 
 export interface InvoiceProduct {
   id: number;

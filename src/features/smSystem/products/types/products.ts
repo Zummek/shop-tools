@@ -1,5 +1,12 @@
 import { SimpleBranch } from '../../branches/types';
 
+export type ProductMatchType =
+  | 'NONE'
+  | 'GTIN'
+  | 'MANUAL'
+  | 'PREVIOUS_MANUAL'
+  | 'SIMILARITY';
+
 export enum ProductUnit {
   kg = 'kg',
   l = 'l',

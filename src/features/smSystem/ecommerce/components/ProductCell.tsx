@@ -1,6 +1,4 @@
-import UndoIcon from '@mui/icons-material/Undo';
-import VerifiedIcon from '@mui/icons-material/Verified';
-import { Box, Stack, Tooltip, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 
 import { Product } from '../../products/types';
@@ -31,19 +29,6 @@ const StyledProductCell = styled(Box, {
   },
 }));
 
-const IconStack = styled(Stack)(() => ({
-  alignItems: 'center',
-  justifyContent: 'center',
-  height: '20px',
-}));
-
-const UndoIconStyled = styled(UndoIcon)(({ theme }) => ({
-  color: theme.palette.success.main,
-  transform: 'scaleY(-1)',
-  marginTop: -0.5,
-  fontSize: '18px',
-}));
-
 interface ProductCellProps {
   orderItem: EcommerceOrderItem;
   isEditing: boolean;
@@ -66,22 +51,6 @@ export const ProductCell = ({
       <Typography variant="body2" fontWeight="medium">
         {orderItem.internalProduct ? orderItem.internalProduct.name : '-'}
       </Typography>
-      {orderItem.internalProductManuallySelected && (
-        <Tooltip
-          title={`Produkt został wybrany manualnie ${
-            orderItem.internalProductPopulatedFromPreviousOrder
-              ? ' w poprzednim zamówieniu'
-              : ''
-          }.`}
-        >
-          <IconStack>
-            <VerifiedIcon color="success" fontSize="small" />
-            {orderItem.internalProductPopulatedFromPreviousOrder && (
-              <UndoIconStyled />
-            )}
-          </IconStack>
-        </Tooltip>
-      )}
       {isEditing && (
         <ProductSelector
           initialValue={orderItem.externalName}

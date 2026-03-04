@@ -1,4 +1,4 @@
-import { Box, Button, Stack, Typography } from '@mui/material';
+import { Alert, Box, Button, Stack, Typography } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import dayjs from 'dayjs';
 import { useState } from 'react';
@@ -25,6 +25,12 @@ export const EcommerceOrderDetailsPage = () => {
 
   const { ecommerceOrder, isLoading } = useGetEcommerceOrderDetails({ id });
   const { updateEcommerceOrderItem } = useUpdateEcommerceOrderItem();
+
+  const weakMatchCount = (ecommerceOrder?.orderItems ?? []).filter(
+    (item) =>
+      item.productMatchType === 'SIMILARITY' ||
+      item.productMatchType === 'NONE',
+  ).length;
 
   const handleUpdateEcommerceOrderItemInternalProduct = async (payload: {
     orderItemId: number;
@@ -55,6 +61,13 @@ export const EcommerceOrderDetailsPage = () => {
       </Typography>
       {ecommerceOrder && (
         <OrderDetailsSection ecommerceOrder={ecommerceOrder} />
+      )}
+      {weakMatchCount > 0 && (
+        <Alert severity="warning">
+          {`${weakMatchCount} ${
+            weakMatchCount === 1 ? 'pozycja ma' : 'pozycji ma'
+          } dopasowanie przez podobną nazwę lub brak dopasowania do produktu wewnętrznego.`}
+        </Alert>
       )}
       <Box height={500} width="100%">
         <DataGrid

@@ -1,4 +1,4 @@
-import { Product } from '../../products/types';
+import { Product, ProductMatchType } from '../../products/types';
 
 export type OrderStatus =
   | 'new'
@@ -15,8 +15,7 @@ export interface EcommerceOrderItem {
   externalCurrency: string;
   quantity: number;
   internalProduct: Product | null;
-  internalProductManuallySelected: boolean;
-  internalProductPopulatedFromPreviousOrder: boolean;
+  productMatchType: ProductMatchType;
 }
 
 export interface EcommerceOrderDetails {

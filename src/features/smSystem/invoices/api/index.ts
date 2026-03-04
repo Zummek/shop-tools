@@ -10,5 +10,4 @@ export type {
   Invoice,
   InvoiceItem,
   InvoiceStatus,
-  ProductMatchType,
 } from '../types';

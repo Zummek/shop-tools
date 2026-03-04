@@ -32,8 +32,10 @@ import {
   useDeleteInvoice,
   useExportInvoiceToPcMarket,
   useGetInvoiceDetails,
+  useUpdateInvoiceItem,
   useUpdateInvoiceStatus,
 } from '../api';
+import { InvoiceProductCell } from '../components/InvoiceProductCell';
 import { invoiceStatusColors, invoiceStatusLabels } from '../utils';
 
 const INVOICE_STATUSES: InvoiceStatus[] = [
@@ -55,11 +57,14 @@ export const InvoiceDetailsPage = () => {
   const { invoiceId: rawInvoiceId } = useParams<{ invoiceId: string }>();
   const id = Number(rawInvoiceId);
 
+  const [editingItemId, setEditingItemId] = useState<number | null>(null);
+
   const { invoice, isLoading } = useGetInvoiceDetails({ id });
   const { deleteInvoice, isPending: isDeleting } = useDeleteInvoice();
   const { exportInvoiceToPcMarket } = useExportInvoiceToPcMarket();
   const { updateInvoiceStatus, isPending: isUpdatingStatus } =
     useUpdateInvoiceStatus();
+  const { updateInvoiceItem } = useUpdateInvoiceItem();
 
   const isThereAnyDiscount = invoice?.items?.some(
     (item) => (item.discountAmount ?? 0) > 0,
@@ -68,6 +73,19 @@ export const InvoiceDetailsPage = () => {
   const hasUnmatchedProducts = (invoice?.items ?? []).some(
     (item) => item.productMatchType === 'NONE',
   );
+
+  const handleUpdateInvoiceItemProduct = async (payload: {
+    itemId: number;
+    productId: number;
+  }) => {
+    await updateInvoiceItem({
+      invoiceId: id,
+      itemId: payload.itemId,
+      productId: payload.productId,
+    });
+    notify('success', 'Produkt został zaktualizowany');
+    setEditingItemId(null);
+  };
 
   const itemsColumns: GridColDef<InvoiceItem>[] = [
     {
@@ -81,11 +99,91 @@ export const InvoiceDetailsPage = () => {
       headerName: 'Nazwa produktu',
       width: 300,
       minWidth: 200,
+      renderCell: ({ row }) => (
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            height: '100%',
+            minHeight: '100%',
+          }}
+        >
+          <Typography
+            variant="body2"
+            sx={{
+              whiteSpace: 'normal',
+              wordBreak: 'break-word',
+              lineHeight: 1.4,
+            }}
+          >
+            {row.productName}
+          </Typography>
+        </Box>
+      ),
     },
     {
       field: 'gtin',
       headerName: 'GTIN/EAN',
       width: 140,
+    },
+    {
+      field: 'product',
+      headerName: 'Produkt',
+      width: 200,
+      minWidth: 180,
+      flex: 1,
+      renderCell: ({ row, id, api }) => {
+        const isEditing = editingItemId === row.id;
+        return (
+          <InvoiceProductCell
+            invoiceItem={row}
+            isEditing={isEditing}
+            onEdit={() => setEditingItemId(row.id)}
+            onUpdateProduct={async (product) => {
+              if (product) {
+                await handleUpdateInvoiceItemProduct({
+                  itemId: row.id,
+                  productId: product.id,
+                });
+              } else {
+                setEditingItemId(null);
+              }
+            }}
+            onClose={() => setEditingItemId(null)}
+            anchorEl={api.getCellElement(id, 'product')}
+          />
+        );
+      },
+    },
+    {
+      field: 'productMatchType',
+      headerName: 'Status dopasowania',
+      minWidth: 120,
+      renderCell: ({ row }) => {
+        const matchLabels: Record<ProductMatchType, string> = {
+          NONE: 'Niedopasowany',
+          GTIN: 'Auto (EAN)',
+          MANUAL: 'Ręcznie',
+          PREVIOUS_MANUAL: 'Auto (poprzednie)',
+        };
+        const matchColors: Record<
+          ProductMatchType,
+          'error' | 'success' | 'info' | 'secondary'
+        > = {
+          NONE: 'error',
+          GTIN: 'success',
+          MANUAL: 'info',
+          PREVIOUS_MANUAL: 'secondary',
+        };
+
+        return (
+          <Chip
+            label={matchLabels[row.productMatchType as ProductMatchType]}
+            color={matchColors[row.productMatchType as ProductMatchType]}
+            size="small"
+          />
+        );
+      },
     },
     {
       field: 'unit',
@@ -163,36 +261,6 @@ export const InvoiceDetailsPage = () => {
       width: 120,
       align: 'right',
       valueFormatter: (value: string) => formatPrice(value, invoice?.currency),
-    },
-    {
-      field: 'productMatchType',
-      headerName: 'Status dopasowania',
-      width: 180,
-      renderCell: ({ row }) => {
-        const matchLabels: Record<ProductMatchType, string> = {
-          NONE: 'Niedopasowany',
-          GTIN: 'Auto (EAN)',
-          MANUAL: 'Ręcznie',
-          PREVIOUS_MANUAL: 'Auto (poprzednie)',
-        };
-        const matchColors: Record<
-          ProductMatchType,
-          'error' | 'success' | 'info' | 'secondary'
-        > = {
-          NONE: 'error',
-          GTIN: 'success',
-          MANUAL: 'info',
-          PREVIOUS_MANUAL: 'secondary',
-        };
-
-        return (
-          <Chip
-            label={matchLabels[row.productMatchType as ProductMatchType]}
-            color={matchColors[row.productMatchType as ProductMatchType]}
-            size="small"
-          />
-        );
-      },
     },
   ];
 
@@ -444,6 +512,16 @@ export const InvoiceDetailsPage = () => {
             '& .MuiDataGrid-columnHeaderTitle': {
               whiteSpace: 'normal',
               lineHeight: 'normal',
+            },
+            '& .MuiDataGrid-cell': {
+              display: 'flex',
+              alignItems: 'center',
+            },
+            '& .MuiDataGrid-cellContent': {
+              display: 'flex',
+              alignItems: 'center',
+              width: '100%',
+              minHeight: '100%',
             },
           }}
           rows={invoice.items}

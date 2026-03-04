@@ -1,6 +1,7 @@
-import { Box, Typography } from '@mui/material';
+import { Box, Chip, Typography } from '@mui/material';
 import { GridColDef } from '@mui/x-data-grid';
 
+import { ProductMatchType } from '../../invoices/api';
 import { Product } from '../../products/types';
 import { formatPrice } from '../../products/utils';
 import { EcommerceOrderItem } from '../types';
@@ -75,6 +76,42 @@ export const createOrderItemsColumns = ({
             }}
             onClose={() => setEditingItemId(null)}
             anchorEl={params.api.getCellElement(params.id, 'internalProduct')}
+          />
+        );
+      },
+    },
+    {
+      field: 'productMatchType',
+      headerName: 'Status dopasowania',
+      minWidth: 120,
+      renderCell: ({ row }) => {
+        const matchType: ProductMatchType = !row.internalProduct
+          ? 'NONE'
+          : row.internalProductPopulatedFromPreviousOrder
+            ? 'PREVIOUS_MANUAL'
+            : row.internalProductManuallySelected
+              ? 'MANUAL'
+              : 'GTIN';
+        const matchLabels: Record<ProductMatchType, string> = {
+          NONE: 'Niedopasowany',
+          GTIN: 'Auto (EAN)',
+          MANUAL: 'Ręcznie',
+          PREVIOUS_MANUAL: 'Auto (poprzednie)',
+        };
+        const matchColors: Record<
+          ProductMatchType,
+          'error' | 'success' | 'info' | 'secondary'
+        > = {
+          NONE: 'error',
+          GTIN: 'success',
+          MANUAL: 'info',
+          PREVIOUS_MANUAL: 'secondary',
+        };
+        return (
+          <Chip
+            label={matchLabels[matchType]}
+            color={matchColors[matchType]}
+            size="small"
           />
         );
       },

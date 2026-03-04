@@ -1,6 +1,7 @@
 import {
   Box,
   CircularProgress,
+  ClickAwayListener,
   List,
   ListItem,
   ListItemButton,
@@ -73,8 +74,9 @@ export const ProductSelector = ({
         },
       ]}
     >
-      <Box
-        data-testid="product-selector"
+      <ClickAwayListener onClickAway={onClose}>
+        <Box
+          data-testid="product-selector"
         sx={{
           border: '1px solid',
           borderColor: 'primary.main',
@@ -156,10 +158,11 @@ export const ProductSelector = ({
                   </ListItemButton>
                 </ListItem>
               ))
-            )}
-          </List>
+        )}
+      </List>
         )}
       </Box>
+      </ClickAwayListener>
     </Popper>
   );
 };

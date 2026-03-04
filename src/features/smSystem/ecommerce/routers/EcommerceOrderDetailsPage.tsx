@@ -67,10 +67,14 @@ export const EcommerceOrderDetailsPage = () => {
               display: 'flex',
               alignItems: 'center',
               whiteSpace: 'nowrap',
-              overflow: 'visible',
+              overflow: 'hidden',
             },
             '& .MuiDataGrid-cellContent': {
-              overflow: 'visible',
+              overflow: 'hidden',
+              whiteSpace: 'nowrap',
+            },
+            '& .MuiDataGrid-cell--textLeft': {
+              overflow: 'hidden',
               whiteSpace: 'nowrap',
             },
           }}

@@ -415,6 +415,14 @@ export const InvoiceDetailsPage = () => {
                   </TableCell>
                 </TableRow>
                 <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold', width: '200px' }}>
+                    {'Data dołączenia'}
+                  </TableCell>
+                  <TableCell>
+                    {dayjs(invoice.createdAt).format('DD.MM.YYYY HH:mm')}
+                  </TableCell>
+                </TableRow>
+                <TableRow>
                   <TableCell sx={{ fontWeight: 'bold' }}>
                     {'Typ faktury'}
                   </TableCell>

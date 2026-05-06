@@ -15,6 +15,12 @@ const pageSize = 25;
 const endpoint = '/api/v1/invoices/';
 export const getInvoicesQueryKeyBase = 'invoices';
 
+const sortByApi: Record<InvoiceListSortBy, string> = {
+  invoiceDate: 'invoice_date',
+  createdAt: 'created_at',
+  status: 'status',
+};
+
 type Response = ListResponse<InvoiceListItem>;
 
 export const useGetInvoices = () => {
@@ -60,7 +66,7 @@ export const useGetInvoices = () => {
         invoiceDateFrom: invoiceDateFrom || undefined,
         invoiceDateTo: invoiceDateTo || undefined,
         status: status || undefined,
-        sortBy,
+        sortBy: sortByApi[sortBy],
         sortOrder,
         page: page + 1,
         pageSize,

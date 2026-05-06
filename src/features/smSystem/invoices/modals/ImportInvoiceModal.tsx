@@ -12,12 +12,8 @@ import { useState } from 'react';
 
 import { modalStyle } from '../../../../components';
 import { VisuallyHiddenInput } from '../../../../components/inputs';
+import { useNotify } from '../../../../hooks';
 import { getInvoicesQueryKeyBase, useUploadInvoice } from '../api';
-
-
-
-
-
 
 interface Props {
   open: boolean;
@@ -26,6 +22,7 @@ interface Props {
 
 export const ImportInvoiceModal = ({ open, onClose }: Props) => {
   const queryClient = useQueryClient();
+  const { notify } = useNotify();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
@@ -55,11 +52,12 @@ export const ImportInvoiceModal = ({ open, onClose }: Props) => {
       onClose();
     } catch (error: unknown) {
       const errorMessage =
-        (error as { response?: { data?: { error?: string } }; message?: string })
-          ?.response?.data?.error ||
-        (error as { message?: string })?.message ||
-        'Błąd podczas importowania faktury';
+        error instanceof Error
+          ? error.message
+          : (error as { response?: { data?: { error?: string } } })?.response
+              ?.data?.error || 'Błąd podczas importowania faktury';
       setUploadError(errorMessage);
+      notify('error', errorMessage);
     }
   };
 
@@ -97,7 +95,8 @@ export const ImportInvoiceModal = ({ open, onClose }: Props) => {
 
           {selectedFile && (
             <Typography variant="body2" color="text.secondary">
-              {'Wybrany plik: '}{selectedFile.name}
+              {'Wybrany plik: '}
+              {selectedFile.name}
             </Typography>
           )}
 

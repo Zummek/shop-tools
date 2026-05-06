@@ -1,10 +1,15 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import { axiosInstance } from '../../../../services';
 import { ListResponse } from '../../app/types';
-import { InvoiceListItem } from '../types';
+import {
+  InvoiceListItem,
+  InvoiceListSortBy,
+  InvoiceListSortOrder,
+  InvoiceStatus,
+} from '../types';
 
 const pageSize = 25;
 const endpoint = '/api/v1/invoices/';
@@ -22,6 +27,18 @@ export const useGetInvoices = () => {
   const [sellerName, setSellerName] = useState<string>('');
   const [invoiceDateFrom, setInvoiceDateFrom] = useState<string>('');
   const [invoiceDateTo, setInvoiceDateTo] = useState<string>('');
+  const [status, setStatus] = useState<InvoiceStatus | ''>('');
+  const [sortBy, setSortBy] = useState<InvoiceListSortBy>('invoiceDate');
+  const [sortOrder, setSortOrder] = useState<InvoiceListSortOrder>('desc');
+
+  const skipPageResetRef = useRef(true);
+  useEffect(() => {
+    if (skipPageResetRef.current) {
+      skipPageResetRef.current = false;
+      return;
+    }
+    setPage(0);
+  }, [status, sortBy, sortOrder]);
 
   useEffect(() => {
     const pageParam = searchParams.get('page');
@@ -42,6 +59,9 @@ export const useGetInvoices = () => {
         sellerName: sellerName || undefined,
         invoiceDateFrom: invoiceDateFrom || undefined,
         invoiceDateTo: invoiceDateTo || undefined,
+        status: status || undefined,
+        sortBy,
+        sortOrder,
         page: page + 1,
         pageSize,
       },
@@ -56,6 +76,9 @@ export const useGetInvoices = () => {
       sellerName,
       invoiceDateFrom,
       invoiceDateTo,
+      status,
+      sortBy,
+      sortOrder,
       page,
     ],
     queryFn: getInvoicesRequest,
@@ -82,5 +105,11 @@ export const useGetInvoices = () => {
     setInvoiceDateFrom,
     invoiceDateTo,
     setInvoiceDateTo,
+    status,
+    setStatus,
+    sortBy,
+    setSortBy,
+    sortOrder,
+    setSortOrder,
   };
 };

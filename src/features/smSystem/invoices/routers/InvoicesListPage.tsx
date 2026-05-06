@@ -1,8 +1,24 @@
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
-import { Box, Button, Chip, Stack, TextField, Typography } from '@mui/material';
-import { DataGrid, GridColDef, GridRowParams } from '@mui/x-data-grid';
+import {
+  Box,
+  Button,
+  Chip,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
+import {
+  DataGrid,
+  GridColDef,
+  GridRowParams,
+  GridSortModel,
+} from '@mui/x-data-grid';
 import { DatePicker } from '@mui/x-date-pickers';
 import dayjs, { Dayjs } from 'dayjs';
 import { useState } from 'react';
@@ -13,6 +29,7 @@ import { Pages } from '../../../../utils';
 import { formatPrice } from '../../products/utils';
 import {
   InvoiceListItem,
+  InvoiceListSortBy,
   InvoiceStatus,
   useExportInvoiceToPcMarket,
   useGetInvoices,
@@ -26,6 +43,7 @@ const columns: GridColDef<InvoiceListItem>[] = [
     headerName: 'Numer faktury',
     width: 200,
     minWidth: 150,
+    sortable: false,
   },
   {
     field: 'invoiceDate',
@@ -34,17 +52,25 @@ const columns: GridColDef<InvoiceListItem>[] = [
     valueFormatter: (value: string) => dayjs(value).format('DD.MM.YYYY'),
   },
   {
+    field: 'createdAt',
+    headerName: 'Data dołączenia',
+    width: 120,
+    valueFormatter: (value: string) => dayjs(value).format('DD.MM.YYYY HH:mm '),
+  },
+  {
     field: 'sellerName',
     headerName: 'Sprzedawca',
     width: 250,
     minWidth: 200,
     flex: 1,
+    sortable: false,
   },
   {
     field: 'grossAmount',
     headerName: 'Kwota brutto',
     width: 120,
     align: 'right',
+    sortable: false,
     valueFormatter: (value: string, row: InvoiceListItem) =>
       formatPrice(value, row.currency),
   },
@@ -66,6 +92,7 @@ const columns: GridColDef<InvoiceListItem>[] = [
     headerAlign: 'right',
     align: 'right',
     width: 50,
+    sortable: false,
     renderCell: () => (
       <Box
         sx={{
@@ -104,6 +131,12 @@ export const InvoicesListPage = () => {
     setInvoiceDateFrom,
     invoiceDateTo,
     setInvoiceDateTo,
+    status,
+    setStatus,
+    sortBy,
+    setSortBy,
+    sortOrder,
+    setSortOrder,
   } = useGetInvoices();
 
   const { exportInvoiceToPcMarket } = useExportInvoiceToPcMarket();
@@ -114,7 +147,7 @@ export const InvoicesListPage = () => {
   const handleRowClick = (params: GridRowParams) => {
     const invoiceDetailsPath = Pages.smSystemInvoiceDetails.replace(
       ':invoiceId',
-      params.id.toString()
+      params.id.toString(),
     );
     const currentParams = searchParams.toString();
     const urlWithParams = currentParams
@@ -152,6 +185,27 @@ export const InvoicesListPage = () => {
 
   const handleDateToChange = (value: Dayjs | null) => {
     setInvoiceDateTo(value ? value.format('YYYY-MM-DD') : '');
+  };
+
+  const invoiceStatuses: InvoiceStatus[] = [
+    'IMPORTED',
+    'PENDING_RECEIPT',
+    'PARTIALLY_RECEIVED',
+    'RECEIVED',
+  ];
+
+  const handleSortModelChange = (model: GridSortModel) => {
+    if (!model.length) {
+      setSortBy('invoiceDate');
+      setSortOrder('desc');
+      return;
+    }
+    const { field, sort } = model[0];
+    const allowed: InvoiceListSortBy[] = ['invoiceDate', 'createdAt', 'status'];
+    if (allowed.includes(field as InvoiceListSortBy) && sort) {
+      setSortBy(field as InvoiceListSortBy);
+      setSortOrder(sort);
+    }
   };
 
   return (
@@ -197,17 +251,35 @@ export const InvoicesListPage = () => {
             sx={{ minWidth: 200 }}
           />
           <DatePicker
-            label="Data od"
+            label="Data faktury od"
             value={invoiceDateFrom ? dayjs(invoiceDateFrom) : null}
             onChange={handleDateFromChange}
             slotProps={{ textField: { size: 'small' } }}
           />
           <DatePicker
-            label="Data do"
+            label="Data faktury do"
             value={invoiceDateTo ? dayjs(invoiceDateTo) : null}
             onChange={handleDateToChange}
             slotProps={{ textField: { size: 'small' } }}
           />
+          <FormControl size="small" sx={{ minWidth: 220 }}>
+            <InputLabel id="invoice-status-filter-label">{'Status'}</InputLabel>
+            <Select
+              labelId="invoice-status-filter-label"
+              label="Status"
+              value={status}
+              onChange={(e) => setStatus(e.target.value as InvoiceStatus | '')}
+            >
+              <MenuItem value="">
+                <em>{'Wszystkie'}</em>
+              </MenuItem>
+              {invoiceStatuses.map((s) => (
+                <MenuItem key={s} value={s}>
+                  {invoiceStatusLabels[s]}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </Stack>
       </Stack>
 
@@ -239,7 +311,9 @@ export const InvoicesListPage = () => {
             pageSize,
           }}
           paginationMode="server"
-          disableColumnSorting
+          sortingMode="server"
+          sortModel={[{ field: sortBy, sort: sortOrder }]}
+          onSortModelChange={handleSortModelChange}
           checkboxSelection
           onRowSelectionModelChange={(newSelection) => {
             setSelectedInvoiceIds(newSelection as number[]);

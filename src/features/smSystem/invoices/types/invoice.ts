@@ -39,10 +39,14 @@ export interface InvoiceItem {
   receivedAt: string | null;
 }
 
+export type InvoiceListSortBy = 'invoiceDate' | 'createdAt' | 'status';
+export type InvoiceListSortOrder = 'asc' | 'desc';
+
 export interface InvoiceListItem {
   id: number;
   invoiceNumber: string;
   invoiceDate: string;
+  createdAt: string;
   sellerName: string;
   buyerName: string;
   grossAmount: string;
@@ -80,6 +84,9 @@ export interface InvoiceListFilters {
   sellerName?: string;
   invoiceDateFrom?: string;
   invoiceDateTo?: string;
+  status?: InvoiceStatus;
+  sortBy?: InvoiceListSortBy;
+  sortOrder?: InvoiceListSortOrder;
   page?: number;
   pageSize?: number;
 }

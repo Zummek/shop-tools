@@ -7,6 +7,8 @@ export * from './useUpdateInvoiceStatus';
 export * from './useUpdateInvoiceItem';
 export type {
   InvoiceListItem,
+  InvoiceListSortBy,
+  InvoiceListSortOrder,
   Invoice,
   InvoiceItem,
   InvoiceStatus,

@@ -54,7 +54,7 @@ const columns: GridColDef<InvoiceListItem>[] = [
   {
     field: 'createdAt',
     headerName: 'Data dołączenia',
-    width: 120,
+    width: 150,
     valueFormatter: (value: string) => dayjs(value).format('DD.MM.YYYY HH:mm '),
   },
   {
@@ -285,22 +285,6 @@ export const InvoicesListPage = () => {
 
       <Box height={500} width="100%">
         <DataGrid
-          sx={{
-            '& .MuiDataGrid-columnHeaderTitle': {
-              whiteSpace: 'normal',
-              lineHeight: 'normal',
-            },
-            '& .MuiDataGrid-cell': {
-              display: 'flex',
-              alignItems: 'center',
-              whiteSpace: 'nowrap',
-              overflow: 'visible',
-            },
-            '& .MuiDataGrid-cellContent': {
-              overflow: 'visible',
-              whiteSpace: 'nowrap',
-            },
-          }}
           rows={invoices}
           rowCount={totalCount || 0}
           columns={columns}

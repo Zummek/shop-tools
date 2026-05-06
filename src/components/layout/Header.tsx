@@ -142,6 +142,8 @@ export const Header = ({ headerTitle, onDemoButtonClick }: Props) => {
                 <Button
                   href={`#${Pages.smSystemImportProducts}`}
                   variant={isImportProductsPage ? 'contained' : 'outlined'}
+                  // Deprecated: TODO: Feature to remove
+                  disabled
                 >
                   {'Import produktów'}
                 </Button>

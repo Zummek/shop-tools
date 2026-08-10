@@ -36,6 +36,7 @@ import {
   useUpdateInvoiceStatus,
 } from '../api';
 import { InvoiceProductCell } from '../components/InvoiceProductCell';
+import { EanSource } from '../types';
 import { invoiceStatusColors, invoiceStatusLabels } from '../utils';
 
 const INVOICE_STATUSES: InvoiceStatus[] = [
@@ -122,9 +123,37 @@ export const InvoiceDetailsPage = () => {
       ),
     },
     {
-      field: 'gtin',
+      field: 'exportEan',
       headerName: 'GTIN/EAN',
-      width: 140,
+      width: 200,
+      renderCell: ({ row }) => {
+        const eanSourceLabels: Record<Exclude<EanSource, 'NONE'>, string> = {
+          INVOICE: 'FV',
+          PRODUCT: 'SM',
+        };
+        const eanSourceColors: Record<
+          Exclude<EanSource, 'NONE'>,
+          'primary' | 'info'
+        > = {
+          INVOICE: 'primary',
+          PRODUCT: 'info',
+        };
+
+        return (
+          <Box display="flex" alignItems="center" gap={1} height="100%">
+            <Typography variant="body2" noWrap>
+              {row.exportEan || '—'}
+            </Typography>
+            {row.eanSource !== 'NONE' && (
+              <Chip
+                label={eanSourceLabels[row.eanSource]}
+                color={eanSourceColors[row.eanSource]}
+                size="small"
+              />
+            )}
+          </Box>
+        );
+      },
     },
     {
       field: 'product',

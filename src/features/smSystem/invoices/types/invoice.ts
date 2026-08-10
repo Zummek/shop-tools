@@ -15,12 +15,16 @@ export interface InvoiceProduct {
   unit: string | null;
 }
 
+export type EanSource = 'INVOICE' | 'PRODUCT' | 'NONE';
+
 export interface InvoiceItem {
   id: number;
   lineNumber: number;
   productName: string;
   supplierCode: string | null;
   gtin: string | null;
+  exportEan: string | null;
+  eanSource: EanSource;
   unit: string;
   quantity: string;
   unitNetPrice?: number;

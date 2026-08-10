@@ -102,13 +102,13 @@ export const EcommerceOrdersListPage = () => {
     navigate(
       Pages.smSystemEcommerceOrderDetails.replace(
         ':orderId',
-        params.id.toString()
-      )
+        params.id.toString(),
+      ),
     );
   };
 
   const handleImportOrders = () => {
-    if (!allegroConnection?.isActive) {
+    if (!allegroConnection?.isConnected) {
       notify('error', 'Twoja organizacja nie jest połączona z Allegro');
       return;
     }

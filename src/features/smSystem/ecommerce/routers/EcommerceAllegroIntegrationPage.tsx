@@ -28,7 +28,7 @@ export const EcommerceAllegroIntegrationPage = () => {
   const { disconnectAllegro, isPending: isDisconnectingAllegro } =
     useAllegroDisconnect();
 
-  const isConnected = !!allegroConnection?.isActive;
+  const isConnected = !!allegroConnection?.isConnected;
 
   const handleGetAllegroAuthUrl = async () => {
     const { data } = await getAllegroAuthUrl();

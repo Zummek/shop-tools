@@ -23,12 +23,17 @@ const sortByApi: Record<InvoiceListSortBy, string> = {
 
 type Response = ListResponse<InvoiceListItem>;
 
+const parsePageFromSearchParams = (searchParams: URLSearchParams): number => {
+  const pageParam = searchParams.get('page');
+  if (!pageParam) return 0;
+  const parsed = Number(pageParam) - 1;
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+};
+
 export const useGetInvoices = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const pageParam = searchParams.get('page');
-  const initialPage = pageParam ? Number(pageParam) - 1 : 0;
+  const page = parsePageFromSearchParams(searchParams);
 
-  const [page, setPage] = useState(initialPage);
   const [invoiceNumber, setInvoiceNumber] = useState<string>('');
   const [sellerName, setSellerName] = useState<string>('');
   const [invoiceDateFrom, setInvoiceDateFrom] = useState<string>('');
@@ -37,26 +42,38 @@ export const useGetInvoices = () => {
   const [sortBy, setSortBy] = useState<InvoiceListSortBy>('invoiceDate');
   const [sortOrder, setSortOrder] = useState<InvoiceListSortOrder>('desc');
 
+  const setPage = (nextPage: number) => {
+    const normalized = Math.max(0, nextPage);
+    setSearchParams(
+      (prev) => {
+        const currentPage = parsePageFromSearchParams(prev);
+        if (currentPage === normalized) return prev;
+
+        const params = new URLSearchParams(prev);
+        if (normalized <= 0) params.delete('page');
+        else params.set('page', String(normalized + 1));
+        return params;
+      },
+      { replace: true },
+    );
+  };
+
   const skipPageResetRef = useRef(true);
   useEffect(() => {
     if (skipPageResetRef.current) {
       skipPageResetRef.current = false;
       return;
     }
-    setPage(0);
-  }, [status, sortBy, sortOrder]);
-
-  useEffect(() => {
-    const pageParam = searchParams.get('page');
-    const newPage = pageParam ? Number(pageParam) - 1 : 0;
-    if (newPage !== page && newPage >= 0) setPage(newPage);
-  }, [searchParams, page]);
-
-  useEffect(() => {
-    const params: Record<string, string> = {};
-    if (page > 0) params.page = (page + 1).toString();
-    setSearchParams(params, { replace: true });
-  }, [page, setSearchParams]);
+    setSearchParams(
+      (prev) => {
+        if (!prev.get('page')) return prev;
+        const params = new URLSearchParams(prev);
+        params.delete('page');
+        return params;
+      },
+      { replace: true },
+    );
+  }, [status, sortBy, sortOrder, setSearchParams]);
 
   const getInvoicesRequest = async () => {
     const response = await axiosInstance.get<Response>(endpoint, {
@@ -98,7 +115,7 @@ export const useGetInvoices = () => {
   return {
     invoices,
     totalCount,
-    isLoading: isLoading || isFetching,
+    isLoading: isLoading || (isFetching && !data),
     hasNextPage,
     setPage,
     page,

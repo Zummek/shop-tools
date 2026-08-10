@@ -141,9 +141,6 @@ export const InvoicesListPage = () => {
 
   const { exportInvoiceToPcMarket } = useExportInvoiceToPcMarket();
 
-  const handlePageChange = (_event: unknown, page: number): void =>
-    setPage(page);
-
   const handleRowClick = (params: GridRowParams) => {
     const invoiceDetailsPath = Pages.smSystemInvoiceDetails.replace(
       ':invoiceId',
@@ -294,6 +291,7 @@ export const InvoicesListPage = () => {
             page,
             pageSize,
           }}
+          onPaginationModelChange={(model) => setPage(model.page)}
           paginationMode="server"
           sortingMode="server"
           sortModel={[{ field: sortBy, sort: sortOrder }]}
@@ -310,7 +308,6 @@ export const InvoicesListPage = () => {
           slotProps={{
             pagination: {
               showFirstButton: true,
-              onPageChange: handlePageChange,
             },
           }}
         />

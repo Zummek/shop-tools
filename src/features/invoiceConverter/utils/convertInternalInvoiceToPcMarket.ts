@@ -17,7 +17,7 @@ const convertPriceToDotPrice = (price: string) => {
 };
 
 export const convertInternalInvoiceToPcMarket = async (
-  invoice: Invoice
+  invoice: Invoice,
 ): Promise<string> => {
   const {
     documentNumber = '',
@@ -31,19 +31,26 @@ export const convertInternalInvoiceToPcMarket = async (
 
   const formattedDate = date ? dayjs(date).format('DD.MM.YYYY') : '';
   const paymentDays =
-    paymentDeadline && date ? dayjs(paymentDeadline).diff(date, 'days') : '';
+    paymentDeadline && date
+      ? String(dayjs(paymentDeadline).diff(date, 'days'))
+      : '';
   const exhibitorName = exhibitor?.name || '';
   const exhibitorNip = exhibitor ? formatNip(exhibitor.nip) : '';
   const recipientName = recipient?.name || '';
   const recipientNip = recipient ? formatNip(recipient.nip) : '';
 
+  const paymentFields = [
+    paymentWay ? `SposobPlatn:${paymentWay}` : null,
+    paymentDays ? `TerminPlatn:${paymentDays}` : null,
+  ]
+    .filter(Boolean)
+    .join('\n');
+
   let fileContent = `TypPolskichLiter:LA
 TypDok:FW
 NrDok:${documentNumber}
 Data:${formattedDate}
-SposobPlatn:${paymentWay}
-TerminPlatn:${paymentDays}
-NazwaWystawcy:${exhibitorName}
+${paymentFields ? `${paymentFields}\n` : ''}NazwaWystawcy:${exhibitorName}
 NIPWystawcy:${exhibitorNip}
 NazwaOdbiorcy:${recipientName}
 NIPOdbiorcy:${recipientNip}
@@ -58,7 +65,7 @@ IloscLini:${products.length}\n`;
     }}Vat{${pg.product.vat ?? ''}}Jm{${pg.product.unit ?? ''}}Asortyment{${
       pg.product.category ?? ''
     }}Sww{}PKWiU{}Ilosc{${pg.amount}}Cena{n${convertPriceToDotPrice(
-      pg.product.netPrice ?? ''
+      pg.product.netPrice ?? '',
     )}}Wartosc{n${value}}CenaSp{}\n`;
   });
 

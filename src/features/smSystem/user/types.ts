@@ -11,6 +11,7 @@ export interface CurrentUser {
   permissions?: {
     canAccessEcommerce: boolean;
     canViewPurchasePrices: boolean;
+    canViewAlerts: boolean;
   };
   organization: {
     id: number;

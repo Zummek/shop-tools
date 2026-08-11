@@ -27,6 +27,7 @@ import {
   isNavItemActive,
 } from '../../utils/navConfig';
 
+import { AlertsBell } from './AlertsBell';
 import { AppSwitcher } from './AppSwitcher';
 import { UserMenu } from './UserMenu';
 
@@ -241,6 +242,7 @@ export const AppLayout = ({ children }: Props) => {
             </Typography>
           )}
           <Box sx={{ flexGrow: 1 }} />
+          <AlertsBell />
           <UserMenu />
         </Toolbar>
       </AppBar>

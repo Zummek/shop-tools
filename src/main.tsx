@@ -7,6 +7,7 @@ import { Navigate, RouterProvider, createHashRouter } from 'react-router-dom';
 
 import { BarcodesGeneratorPage } from './features/BarcodesGenerator/routes/BarcodesGeneratorPage/BarcodesGeneratorPage';
 import { InvoiceConverterPage } from './features/invoiceConverter/routers/InvoiceConverterPage/InvoiceConverterPage';
+import { AlertsListPage } from './features/smSystem/alerts/routers/AlertsListPage/AlertsListPage';
 import { EcommerceOrderDetailsPage } from './features/smSystem/ecommerce/routers/EcommerceOrderDetailsPage';
 import { EcommerceOrdersListPage } from './features/smSystem/ecommerce/routers/EcommerceOrdersListPage';
 import { EcommerceIntegrationsPage } from './features/smSystem/ecommerce/routers/integrations/EcommerceIntegrationsPage';
@@ -182,6 +183,10 @@ const router = createHashRouter(
         {
           path: 'invoices/:invoiceId',
           element: <InvoiceDetailsPage />,
+        },
+        {
+          path: 'alerts',
+          element: <AlertsListPage />,
         },
       ],
     },

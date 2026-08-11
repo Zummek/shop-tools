@@ -24,4 +24,5 @@ export enum Pages {
   smSystemProductDetails = '/sm-system/products/:productId',
   smSystemInvoices = '/sm-system/invoices',
   smSystemInvoiceDetails = '/sm-system/invoices/:invoiceId',
+  smSystemAlerts = '/sm-system/alerts',
 }

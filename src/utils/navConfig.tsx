@@ -3,6 +3,7 @@ import BarChartOutlinedIcon from '@mui/icons-material/BarChartOutlined';
 import CableOutlinedIcon from '@mui/icons-material/CableOutlined';
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
 import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined';
+import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined';
 import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
 import SellOutlinedIcon from '@mui/icons-material/SellOutlined';
 import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined';
@@ -12,7 +13,10 @@ import { matchPath } from 'react-router-dom';
 
 import { Pages } from './pages';
 
-export type NavPermission = 'canAccessEcommerce' | 'canViewPurchasePrices';
+export type NavPermission =
+  | 'canAccessEcommerce'
+  | 'canViewPurchasePrices'
+  | 'canViewAlerts';
 
 export interface NavItem {
   label: string;
@@ -120,6 +124,17 @@ export const navSections: NavSection[] = [
         path: Pages.smSystemReports,
         icon: <BarChartOutlinedIcon />,
         activePaths: [Pages.smSystemUnfulfilledOrdersByTransfersReport],
+      },
+    ],
+  },
+  {
+    title: 'Alerty',
+    items: [
+      {
+        label: 'Alerty',
+        path: Pages.smSystemAlerts,
+        icon: <NotificationsOutlinedIcon />,
+        permission: 'canViewAlerts',
       },
     ],
   },

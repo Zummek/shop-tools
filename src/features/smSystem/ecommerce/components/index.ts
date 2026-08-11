@@ -3,3 +3,7 @@ export * from './Barcode';
 export * from './OrderItemsTableColumns';
 export * from './ProductCell';
 export * from './OrderDetailsSection';
+export * from './OrderStatusChip';
+export * from './WooStatusChip';
+export * from './OrdersStatsCards';
+export * from './OrdersDailyChart';

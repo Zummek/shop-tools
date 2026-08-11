@@ -33,7 +33,7 @@ export const SupplierDetailsPage = () => {
   useEffect(() => {
     if (!isLoadingSupplierDetails && dataSupplierDetails) {
       setSelectedBranches(
-        dataSupplierDetails.branches.map((branch) => branch.id)
+        dataSupplierDetails.branches.map((branch) => branch.id),
       );
     }
   }, [dataSupplierDetails, isLoadingSupplierDetails]);
@@ -52,33 +52,35 @@ export const SupplierDetailsPage = () => {
 
   const originalSelectedBranchIds = useMemo(
     () => dataSupplierDetails?.branches.map((branch) => branch.id) ?? [],
-    [dataSupplierDetails]
+    [dataSupplierDetails],
   );
 
   const isBranchesIdsChanged = useMemo(
     () =>
       originalSelectedBranchIds.length !== selectedBranchIds.length ||
       originalSelectedBranchIds.some((id) => !selectedBranchIds.includes(id)),
-    [originalSelectedBranchIds, selectedBranchIds]
+    [originalSelectedBranchIds, selectedBranchIds],
   );
 
   return (
     <Stack>
       <Stack width="100%" spacing={2} height={491}>
-        <Stack direction="row" spacing={3} alignItems="center">
+        <Stack direction="row" spacing={2} alignItems="center">
           <Button
             variant="outlined"
+            size="small"
             onClick={() => navigate(Pages.smSystemSuppliers)}
           >
             {'Powrót'}
           </Button>
-          <Typography variant="h5" flex={1}>
+          <Typography variant="subtitle1" flex={1} fontWeight={600} noWrap>
             {'Dostawca: '}
             {dataSupplierDetails?.name}
           </Typography>
 
           <Button
             variant="contained"
+            size="small"
             onClick={handleSave}
             loading={isSaving}
             disabled={!isBranchesIdsChanged}

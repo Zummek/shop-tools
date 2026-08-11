@@ -122,7 +122,7 @@ export const ProductsDocumentsPage = () => {
     setSelectedDocIds(rowSelectionModel as string[]);
 
   return (
-    <Stack spacing={4}>
+    <Stack spacing={2}>
       <Stack direction="row" spacing={2}>
         <LoadingButton
           variant="contained"

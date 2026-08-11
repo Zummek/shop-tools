@@ -1,1 +1,2 @@
-export * from './orderStatusMessage';
+export * from './orderStatusConfig';
+export * from './orderChannels';

@@ -1,19 +1,8 @@
-import {
-  Box,
-  Button,
-  ButtonGroup,
-  Modal,
-  Stack,
-  Typography,
-} from '@mui/material';
+import { AppBar, Box, Modal, Stack, Toolbar, Typography, Button } from '@mui/material';
 import { useState } from 'react';
 
-import {
-  useLogoutUser,
-  useUserSession,
-} from '../../features/smSystem/user/hooks';
-import { useAppSelector, useIsPage } from '../../hooks';
-import { Pages } from '../../utils/pages';
+import { AppSwitcher } from './AppSwitcher';
+import { UserMenu } from './UserMenu';
 
 interface Props {
   headerTitle: string;
@@ -21,190 +10,49 @@ interface Props {
 }
 
 export const Header = ({ headerTitle, onDemoButtonClick }: Props) => {
-  const { user } = useAppSelector((state) => state.smSystemUser);
   const [openWarningModal, setOpenWarningModal] = useState(false);
-
-  const { logoutUser } = useLogoutUser();
-  const { isSessionActive } = useUserSession();
 
   const handleDemoButtonClick = () => {
     setOpenWarningModal(false);
     onDemoButtonClick?.();
   };
 
-  const isProductsDocumentsPage = useIsPage([Pages.smSystemProductsDocuments]);
-  const isTransfersPage = useIsPage([Pages.smSystemTransfers]);
-  const isImportProductsPage = useIsPage([Pages.smSystemImportProducts]);
-
-  const areSuppliersFeaturePages = useIsPage([
-    Pages.smSystemSuppliers,
-    Pages.smSystemSupplierDetails,
-    Pages.smSystemOrders,
-    Pages.smSystemOrderDetails,
-  ]);
-
-  const isReportsPage = useIsPage([
-    Pages.smSystemReports,
-    Pages.smSystemUnfulfilledOrdersByTransfersReport,
-  ]);
-
-  const isPriceTagsGroupsPage = useIsPage([
-    Pages.smSystemPriceTagsGroups,
-    Pages.smSystemPriceTagsGroupDetails,
-  ]);
-
-  const isEcommerceOrdersPage = useIsPage([
-    Pages.smSystemEcommerceOrders,
-    Pages.smSystemEcommerceOrderDetails,
-  ]);
-
-  const isEcommerceAllegroPage = useIsPage(Pages.smSystemEcommerceAllegro);
-
-  const isInvoicesPage = useIsPage([
-    Pages.smSystemInvoices,
-    Pages.smSystemInvoiceDetails,
-  ]);
-
-  const showSmSystemHeader =
-    isProductsDocumentsPage ||
-    isTransfersPage ||
-    isImportProductsPage ||
-    areSuppliersFeaturePages ||
-    isReportsPage ||
-    isPriceTagsGroupsPage ||
-    isEcommerceOrdersPage ||
-    isEcommerceAllegroPage ||
-    isInvoicesPage;
-
   return (
-    <Stack spacing={2} direction="column">
-      <Box
-        display="flex"
-        flexDirection="row"
-        justifyContent="space-between"
-        alignItems="center"
+    <>
+      <AppBar
+        position="static"
+        color="default"
+        elevation={0}
+        sx={{
+          borderBottom: 1,
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+          mb: 3,
+        }}
       >
-        <Stack spacing={4} direction="row">
-          <Button variant="text" href={`#${Pages.barcodesGenerator}`}>
-            {'Generuj kody kreskowe'}
-          </Button>
-          <Button variant="text" href={`#${Pages.invoiceConverter}`}>
-            {'Konwenter faktur'}
-          </Button>
-          <Button variant="text" href={`#${Pages.smSystem}`}>
-            {'SM System'}
-          </Button>
-        </Stack>
-
-        <Box>
-          {isSessionActive && (
+        <Toolbar disableGutters sx={{ gap: 2 }}>
+          <AppSwitcher />
+          <Box sx={{ flexGrow: 1 }} />
+          {!!onDemoButtonClick && (
             <Button
               variant="outlined"
+              color="primary"
+              onClick={() => setOpenWarningModal(true)}
               size="small"
-              onClick={() => logoutUser()}
             >
-              {'Wyloguj'}
+              {'Demo'}
             </Button>
           )}
-        </Box>
-      </Box>
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        width="100%"
-      >
-        {showSmSystemHeader && (
-          <Stack spacing={2} direction="row" alignItems="center">
-            <Box>
-              <ButtonGroup variant="outlined">
-                <Button
-                  href={`#${Pages.smSystemTransfers}`}
-                  variant={isTransfersPage ? 'contained' : 'outlined'}
-                  size="small"
-                >
-                  {'Transfery'}
-                </Button>
-                <Button
-                  href={`#${Pages.smSystemProductsDocuments}`}
-                  variant={isProductsDocumentsPage ? 'contained' : 'outlined'}
-                  size="small"
-                >
-                  {'Dokumenty'}
-                </Button>
-                <Button
-                  href={`#${Pages.smSystemOrders}`}
-                  variant={areSuppliersFeaturePages ? 'contained' : 'outlined'}
-                  size="small"
-                >
-                  {'Zamówienia u dostawców'}
-                </Button>
-                <Button
-                  href={`#${Pages.smSystemImportProducts}`}
-                  variant={isImportProductsPage ? 'contained' : 'outlined'}
-                  // Deprecated: TODO: Feature to remove
-                  disabled
-                >
-                  {'Import produktów'}
-                </Button>
-                <Button
-                  href={`#${Pages.smSystemPriceTagsGroups}`}
-                  variant={isPriceTagsGroupsPage ? 'contained' : 'outlined'}
-                  size="small"
-                >
-                  {'Etykiety cenowe'}
-                </Button>
-                {user?.permissions?.canViewPurchasePrices && (
-                  <Button
-                    href={`#${Pages.smSystemInvoices}`}
-                    variant={isInvoicesPage ? 'contained' : 'outlined'}
-                    size="small"
-                  >
-                    {'Faktury'}
-                  </Button>
-                )}
-                {user?.permissions?.canAccessEcommerce && (
-                  <Button
-                    href={`#${Pages.smSystemEcommerceOrders}`}
-                    variant={isEcommerceOrdersPage ? 'contained' : 'outlined'}
-                    size="small"
-                  >
-                    {'Zamówienia ecommerce'}
-                  </Button>
-                )}
-                {user?.permissions?.canAccessEcommerce && (
-                  <Button
-                    href={`#${Pages.smSystemEcommerceAllegro}`}
-                    variant={isEcommerceAllegroPage ? 'contained' : 'outlined'}
-                    size="small"
-                  >
-                    {'Allegro'}
-                  </Button>
-                )}
-                <Button
-                  href={`#${Pages.smSystemReports}`}
-                  variant={isReportsPage ? 'contained' : 'outlined'}
-                  size="small"
-                >
-                  {'Raporty'}
-                </Button>
-              </ButtonGroup>
-            </Box>
-          </Stack>
-        )}
+          <UserMenu />
+        </Toolbar>
+      </AppBar>
 
-        <Typography variant="h3">{headerTitle}</Typography>
-        {!!onDemoButtonClick && (
-          <Button
-            variant="outlined"
-            color="primary"
-            onClick={() => setOpenWarningModal(true)}
-            size="small"
-          >
-            {'Demo'}
-          </Button>
-        )}
-      </Box>
+      {headerTitle && (
+        <Typography variant="h4" component="h1" mb={2}>
+          {headerTitle}
+        </Typography>
+      )}
+
       <Modal
         open={openWarningModal}
         onClose={() => setOpenWarningModal(false)}
@@ -249,6 +97,6 @@ export const Header = ({ headerTitle, onDemoButtonClick }: Props) => {
           </Stack>
         </Stack>
       </Modal>
-    </Stack>
+    </>
   );
 };

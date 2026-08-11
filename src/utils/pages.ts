@@ -16,7 +16,12 @@ export enum Pages {
   smSystemPriceTagsGroupDetails = '/sm-system/price-tags/groups/:groupId',
   smSystemEcommerceOrders = '/sm-system/ecommerce/orders',
   smSystemEcommerceOrderDetails = '/sm-system/ecommerce/orders/:orderId',
-  smSystemEcommerceAllegro = '/sm-system/ecommerce/allegro',
+  smSystemEcommerceIntegrations = '/sm-system/ecommerce/integrations',
+  smSystemEcommerceIntegrationsAllegro = '/sm-system/ecommerce/integrations/allegro',
+  smSystemEcommerceIntegrationsWooCommerce = '/sm-system/ecommerce/integrations/woocommerce',
+  smSystemEcommerceIntegrationsErli = '/sm-system/ecommerce/integrations/erli',
+  smSystemProducts = '/sm-system/products',
+  smSystemProductDetails = '/sm-system/products/:productId',
   smSystemInvoices = '/sm-system/invoices',
   smSystemInvoiceDetails = '/sm-system/invoices/:invoiceId',
 }

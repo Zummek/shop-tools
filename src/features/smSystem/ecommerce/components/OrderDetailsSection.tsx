@@ -1,29 +1,49 @@
-import { Chip, Divider, Paper, Stack, Typography } from '@mui/material';
+import { LoadingButton } from '@mui/lab';
+import {
+  Alert,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Divider,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  Stack,
+  Typography,
+} from '@mui/material';
 import dayjs from 'dayjs';
+import { useEffect, useState, type ReactNode } from 'react';
 
 import { LabelData } from '../../../../components';
 import { formatPrice } from '../../products/utils';
 import { EcommerceOrderDetails, OrderStatus } from '../types';
-import { orderStatusMessage } from '../utils/orderStatusMessage';
+import {
+  NEXT_ORDER_STATUS,
+  orderStatusConfig,
+  SM_TO_WOO_STATUS,
+  WOO_STATUS_OPTIONS,
+  WooStatusValue,
+  wooStatusLabel,
+} from '../utils';
+
+import { OrderStatusChip } from './OrderStatusChip';
+import { WooStatusChip } from './WooStatusChip';
 
 interface OrderDetailsSectionProps {
   ecommerceOrder: EcommerceOrderDetails;
+  isUpdatingStatus?: boolean;
+  onSmStatusChange?: (status: OrderStatus) => void;
+  onWooStatusChange?: (wooStatus: WooStatusValue) => void;
 }
-
-const statusColorMap: Record<
-  OrderStatus,
-  'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning'
-> = {
-  new: 'info',
-  receipt_prepared: 'warning',
-  packed: 'secondary',
-  shipped: 'success',
-  canceled: 'error',
-};
 
 const FIELD_MIN_WIDTH = 100;
 
-const SectionHeader = ({ children }: { children: React.ReactNode }) => (
+const SectionHeader = ({ children }: { children: ReactNode }) => (
   <Typography
     variant="subtitle1"
     fontWeight={600}
@@ -36,19 +56,43 @@ const SectionHeader = ({ children }: { children: React.ReactNode }) => (
 
 export const OrderDetailsSection = ({
   ecommerceOrder,
+  isUpdatingStatus = false,
+  onSmStatusChange,
+  onWooStatusChange,
 }: OrderDetailsSectionProps) => {
   const status = ecommerceOrder.status || 'new';
+  const isWooOrder = ecommerceOrder.orderSource === 'woocommerce';
+
+  const nextStatus = NEXT_ORDER_STATUS[status];
+  const canCancel = status !== 'shipped' && status !== 'canceled';
+
+  const [selectedWooStatus, setSelectedWooStatus] = useState<WooStatusValue>(
+    (ecommerceOrder.externalStatus as WooStatusValue) || 'processing',
+  );
+  const [confirmWooOpen, setConfirmWooOpen] = useState(false);
+  const [confirmCancelOpen, setConfirmCancelOpen] = useState(false);
+
+  useEffect(() => {
+    if (
+      ecommerceOrder.externalStatus &&
+      WOO_STATUS_OPTIONS.some((o) => o.value === ecommerceOrder.externalStatus)
+    )
+      setSelectedWooStatus(ecommerceOrder.externalStatus as WooStatusValue);
+  }, [ecommerceOrder.externalStatus]);
+
+  const wooStatusDirty =
+    selectedWooStatus !== (ecommerceOrder.externalStatus || '');
 
   const internalOrderValue = ecommerceOrder.orderItems.reduce(
     (total, item) =>
       total +
       (item.internalProduct?.branches?.[0]?.grossPrice || 0) * item.quantity,
-    0
+    0,
   );
 
   const externalOrderValue = ecommerceOrder.orderItems.reduce(
     (total, item) => total + item.externalPricePerItem * item.quantity,
-    0
+    0,
   );
 
   return (
@@ -70,13 +114,21 @@ export const OrderDetailsSection = ({
               <LabelData
                 label="Data zamówienia"
                 value={dayjs(ecommerceOrder.orderDate).format(
-                  'DD.MM.YYYY HH:mm'
+                  'DD.MM.YYYY HH:mm',
                 )}
                 minWidth={FIELD_MIN_WIDTH}
               />
               <LabelData
                 label="Miejsce zamówienia"
-                value={ecommerceOrder.orderSource}
+                value={
+                  ecommerceOrder.orderSource === 'woocommerce'
+                    ? 'WooCommerce'
+                    : ecommerceOrder.orderSource === 'allegro'
+                      ? 'Allegro'
+                      : ecommerceOrder.orderSource === 'erli'
+                        ? 'Erli'
+                        : ecommerceOrder.orderSource
+                }
                 minWidth={FIELD_MIN_WIDTH}
               />
               <LabelData
@@ -91,21 +143,6 @@ export const OrderDetailsSection = ({
               gap={4}
               alignItems="flex-start"
             >
-              <Stack sx={{ minWidth: FIELD_MIN_WIDTH }}>
-                <Typography
-                  variant="subtitle2"
-                  color="text.secondary"
-                  fontWeight={500}
-                >
-                  {'Status'}
-                </Typography>
-                <Chip
-                  label={orderStatusMessage[status]}
-                  color={statusColorMap[status]}
-                  size="small"
-                  sx={{ mt: 0.5, width: 'fit-content' }}
-                />
-              </Stack>
               <LabelData
                 label="Metoda płatności"
                 value={ecommerceOrder.paymentMethod}
@@ -128,6 +165,111 @@ export const OrderDetailsSection = ({
                 }
               />
             </Stack>
+            <Stack direction="row" flexWrap="wrap" gap={4}>
+              <Stack spacing={0.5} sx={{ minWidth: FIELD_MIN_WIDTH }}>
+                <Typography
+                  variant="subtitle2"
+                  color="text.secondary"
+                  fontWeight={500}
+                >
+                  {'Status SM'}
+                </Typography>
+                <OrderStatusChip status={status} />
+              </Stack>
+              {isWooOrder && (
+                <Stack spacing={0.5} sx={{ minWidth: FIELD_MIN_WIDTH }}>
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    fontWeight={500}
+                  >
+                    {'Status Woo'}
+                  </Typography>
+                  <WooStatusChip
+                    status={status}
+                    externalStatus={ecommerceOrder.externalStatus}
+                  />
+                </Stack>
+              )}
+            </Stack>
+
+            {onSmStatusChange && (nextStatus || canCancel) && (
+              <Stack spacing={1}>
+                <Stack direction="row" flexWrap="wrap" gap={1.5}>
+                  {nextStatus && (
+                    <LoadingButton
+                      variant="contained"
+                      loading={isUpdatingStatus}
+                      onClick={() => onSmStatusChange(nextStatus)}
+                    >
+                      {`Oznacz jako: ${orderStatusConfig[nextStatus].label}`}
+                    </LoadingButton>
+                  )}
+                  {canCancel && (
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      disabled={isUpdatingStatus}
+                      onClick={() => setConfirmCancelOpen(true)}
+                    >
+                      {'Anuluj zamówienie'}
+                    </Button>
+                  )}
+                </Stack>
+                <Typography variant="caption" color="text.secondary">
+                  {
+                    'Zmiana statusu SM dotyczy tylko workflow magazynowego — nie wysyła zmian do sklepu.'
+                  }
+                </Typography>
+              </Stack>
+            )}
+
+            {isWooOrder && onWooStatusChange && (
+              <Stack spacing={1.5}>
+                <Typography variant="subtitle2" fontWeight={600}>
+                  {'Aktualizuj status WooCommerce'}
+                </Typography>
+                <Stack
+                  direction={{ xs: 'column', sm: 'row' }}
+                  spacing={1.5}
+                  alignItems={{ sm: 'center' }}
+                >
+                  <FormControl size="small" sx={{ minWidth: 220 }}>
+                    <InputLabel id="woo-status-select-label">
+                      {'Status Woo'}
+                    </InputLabel>
+                    <Select
+                      labelId="woo-status-select-label"
+                      label="Status Woo"
+                      value={selectedWooStatus}
+                      onChange={(e) =>
+                        setSelectedWooStatus(e.target.value as WooStatusValue)
+                      }
+                      disabled={isUpdatingStatus}
+                    >
+                      {WOO_STATUS_OPTIONS.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <LoadingButton
+                    variant="outlined"
+                    loading={isUpdatingStatus}
+                    disabled={!wooStatusDirty}
+                    onClick={() => setConfirmWooOpen(true)}
+                  >
+                    {'Zapisz w WooCommerce'}
+                  </LoadingButton>
+                </Stack>
+                <Typography variant="caption" color="text.secondary">
+                  {`Status SM „${orderStatusConfig[status].label}” odpowiada statusowi „${wooStatusLabel(
+                    SM_TO_WOO_STATUS[status],
+                  )}” w WooCommerce.`}
+                </Typography>
+              </Stack>
+            )}
           </Stack>
         </Stack>
 
@@ -198,7 +340,7 @@ export const OrderDetailsSection = ({
               />
               <LabelData
                 label="Zew. wartość zamówienia"
-                value={`${formatPrice(externalOrderValue)} ${ecommerceOrder.orderItems[0].externalCurrency}`}
+                value={`${formatPrice(externalOrderValue)} ${ecommerceOrder.orderItems[0]?.externalCurrency ?? ''}`}
                 minWidth={FIELD_MIN_WIDTH}
               />
               <LabelData
@@ -216,14 +358,14 @@ export const OrderDetailsSection = ({
               <LabelData
                 label="Data zaimportowania"
                 value={dayjs(ecommerceOrder.createdAt).format(
-                  'DD.MM.YYYY HH:mm'
+                  'DD.MM.YYYY HH:mm',
                 )}
                 minWidth={FIELD_MIN_WIDTH}
               />
               <LabelData
                 label="Data modyfikacji"
                 value={dayjs(ecommerceOrder.updatedAt).format(
-                  'DD.MM.YYYY HH:mm'
+                  'DD.MM.YYYY HH:mm',
                 )}
                 minWidth={FIELD_MIN_WIDTH}
               />
@@ -231,6 +373,64 @@ export const OrderDetailsSection = ({
           </Stack>
         </Stack>
       </Stack>
+
+      <Dialog open={confirmWooOpen} onClose={() => setConfirmWooOpen(false)}>
+        <DialogTitle>{'Potwierdź zmianę statusu WooCommerce'}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {`Ustawić status w WooCommerce na „${wooStatusLabel(
+              selectedWooStatus,
+            )}”? Status SM nie zmieni się.`}
+          </DialogContentText>
+          <Alert severity="warning" sx={{ mt: 2 }}>
+            {
+              'Ta operacja nadpisze status zamówienia w sklepie. Używaj ostrożnie.'
+            }
+          </Alert>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setConfirmWooOpen(false)}>{'Anuluj'}</Button>
+          <LoadingButton
+            variant="contained"
+            color="error"
+            loading={isUpdatingStatus}
+            onClick={() => {
+              setConfirmWooOpen(false);
+              onWooStatusChange?.(selectedWooStatus);
+            }}
+          >
+            {'Potwierdź i zapisz w Woo'}
+          </LoadingButton>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={confirmCancelOpen}
+        onClose={() => setConfirmCancelOpen(false)}
+      >
+        <DialogTitle>{'Anulować zamówienie?'}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {
+              'Status SM zostanie ustawiony na „Anulowane”. Status w sklepie nie zmieni się automatycznie.'
+            }
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setConfirmCancelOpen(false)}>{'Wróć'}</Button>
+          <LoadingButton
+            variant="contained"
+            color="error"
+            loading={isUpdatingStatus}
+            onClick={() => {
+              setConfirmCancelOpen(false);
+              onSmStatusChange?.('canceled');
+            }}
+          >
+            {'Anuluj zamówienie'}
+          </LoadingButton>
+        </DialogActions>
+      </Dialog>
     </Paper>
   );
 };

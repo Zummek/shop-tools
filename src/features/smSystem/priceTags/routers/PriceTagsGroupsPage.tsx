@@ -1,6 +1,6 @@
 import AddIcon from '@mui/icons-material/Add';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import { Box, Button, Stack, TextField, Typography } from '@mui/material';
+import { Box, Button, Stack, TextField } from '@mui/material';
 import { DataGrid, GridColDef, GridRowParams } from '@mui/x-data-grid';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -64,10 +64,7 @@ export const PriceTagsGroupsPage = () => {
   };
 
   return (
-    <Stack spacing={4}>
-      <Typography variant="h4" component="h1">
-        {'Grupy etykiet cenowych'}
-      </Typography>
+    <Stack spacing={2}>
       <Box display="flex" alignItems="center" justifyContent="space-between">
         <TextField
           label="Szukaj po nazwie"

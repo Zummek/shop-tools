@@ -4,6 +4,7 @@ import { useNotify } from '../../../../hooks';
 import { axiosInstance } from '../../../../services';
 
 import { getEcommerceOrdersQueryKeyBase } from './useGetEcommerceOrders';
+import { getEcommerceOrdersStatsQueryKey } from './useGetEcommerceOrdersStats';
 
 interface Payload {
   id: number;
@@ -30,6 +31,9 @@ export const useDeleteEcommerceOrders = () => {
       queryClient.invalidateQueries({
         queryKey: [getEcommerceOrdersQueryKeyBase],
         exact: false,
+      });
+      queryClient.invalidateQueries({
+        queryKey: getEcommerceOrdersStatsQueryKey,
       });
     },
     onError: () => {

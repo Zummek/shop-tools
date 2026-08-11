@@ -1,18 +1,21 @@
 import { Alert, Box, Button, Stack, Typography } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import dayjs from 'dayjs';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { useNotify } from '../../../../hooks';
 import { Pages } from '../../../../utils';
 import {
   useGetEcommerceOrderDetails,
+  useUpdateEcommerceOrder,
   useUpdateEcommerceOrderItem,
 } from '../api';
 import { createOrderItemsColumns, OrderDetailsSection } from '../components';
 import { useOrderItemEditing } from '../hooks/useOrderItemEditing';
 import { ImportEcommerceOrderModal } from '../modals/ImportEcommerceOrderModal/ImportEcommerceOrderModal';
+import { OrderStatus } from '../types';
+import { WooStatusValue } from '../utils';
 
 export const EcommerceOrderDetailsPage = () => {
   const navigate = useNavigate();
@@ -25,6 +28,8 @@ export const EcommerceOrderDetailsPage = () => {
 
   const { ecommerceOrder, isLoading } = useGetEcommerceOrderDetails({ id });
   const { updateEcommerceOrderItem } = useUpdateEcommerceOrderItem();
+  const { updateEcommerceOrder, isPending: isUpdatingStatus } =
+    useUpdateEcommerceOrder();
 
   const weakMatchCount = (ecommerceOrder?.orderItems ?? []).filter(
     (item) =>
@@ -45,22 +50,71 @@ export const EcommerceOrderDetailsPage = () => {
     return response.orderItems.find((item) => item.id === payload.orderItemId);
   };
 
+  const handleSmStatusChange = useCallback(
+    async (nextStatus: OrderStatus) => {
+      if (!ecommerceOrder) return;
+      const isWoo = ecommerceOrder.orderSource === 'woocommerce';
+      try {
+        await updateEcommerceOrder({
+          id: ecommerceOrder.id,
+          status: nextStatus,
+          ...(isWoo ? { channelAction: 'local_only' as const } : {}),
+        });
+        notify('success', 'Status SM został zaktualizowany');
+      } catch {
+        // toast in hook
+      }
+    },
+    [ecommerceOrder, notify, updateEcommerceOrder],
+  );
+
+  const handleWooStatusChange = useCallback(
+    async (wooStatus: WooStatusValue) => {
+      if (!ecommerceOrder) return;
+      try {
+        await updateEcommerceOrder({
+          id: ecommerceOrder.id,
+          channelAction: 'set_external',
+          externalStatus: wooStatus,
+        });
+        notify('success', 'Status WooCommerce został zaktualizowany');
+      } catch {
+        // toast in hook
+      }
+    },
+    [ecommerceOrder, notify, updateEcommerceOrder],
+  );
+
   return (
-    <Stack spacing={4}>
-      <Box>
+    <Stack spacing={2}>
+      <Box
+        display="flex"
+        alignItems="center"
+        justifyContent="space-between"
+        gap={2}
+      >
+        <Typography variant="subtitle1" component="h1" fontWeight={600} noWrap>
+          {'Zamówienie ' +
+            dayjs(ecommerceOrder?.orderDate).format('DD.MM.YYYY HH:mm')}
+        </Typography>
         <Button
           variant="outlined"
+          size="small"
           onClick={() => navigate(Pages.smSystemEcommerceOrders)}
+          sx={{ flexShrink: 0 }}
         >
           {'Powrót'}
         </Button>
       </Box>
-      <Typography variant="h4" component="h1">
-        {'Zamówienie ' +
-          dayjs(ecommerceOrder?.orderDate).format('DD.MM.YYYY HH:mm')}
-      </Typography>
       {ecommerceOrder && (
-        <OrderDetailsSection ecommerceOrder={ecommerceOrder} />
+        <OrderDetailsSection
+          ecommerceOrder={ecommerceOrder}
+          isUpdatingStatus={isUpdatingStatus}
+          onSmStatusChange={(status) => void handleSmStatusChange(status)}
+          onWooStatusChange={(wooStatus) =>
+            void handleWooStatusChange(wooStatus)
+          }
+        />
       )}
       {weakMatchCount > 0 && (
         <Alert severity="warning">

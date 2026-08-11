@@ -136,14 +136,14 @@ export const PriceTagsGroupDetailsPage = () => {
       const isPriceTagNameChanged =
         updatedProduct.priceTagName !==
         priceTagGroupDetails?.products.find(
-          (product) => product.id === updatedProduct.id
+          (product) => product.id === updatedProduct.id,
         )?.priceTagName;
 
       if (!isPriceTagNameChanged) return updatedProduct;
 
       await updatePriceTagName(
         updatedProduct.id,
-        updatedProduct.priceTagName || ''
+        updatedProduct.priceTagName || '',
       );
       queryClient.setQueryData(
         getPriceTagGroupDetailsQueryKey(groupId || ''),
@@ -151,15 +151,15 @@ export const PriceTagsGroupDetailsPage = () => {
           return {
             ...oldData,
             products: oldData.products.map((product) =>
-              product.id === updatedProduct.id ? updatedProduct : product
+              product.id === updatedProduct.id ? updatedProduct : product,
             ),
           };
-        }
+        },
       );
       notify('success', 'Nazwa produktu na etykiecie została zaktualizowana');
       return updatedProduct;
     },
-    [updatePriceTagName, queryClient, groupId, notify, priceTagGroupDetails]
+    [updatePriceTagName, queryClient, groupId, notify, priceTagGroupDetails],
   );
 
   const handleUpdateUnit = useCallback(
@@ -171,14 +171,14 @@ export const PriceTagsGroupDetailsPage = () => {
           return {
             ...oldData,
             products: oldData.products.map((product) =>
-              product.id === productId ? updatedProduct : product
+              product.id === productId ? updatedProduct : product,
             ),
           };
-        }
+        },
       );
       notify('success', 'Jednostka została zaktualizowana');
     },
-    [updateUnit, notify, queryClient, groupId]
+    [updateUnit, notify, queryClient, groupId],
   );
 
   const handleUpdateUnitScale = useCallback(
@@ -190,14 +190,14 @@ export const PriceTagsGroupDetailsPage = () => {
           return {
             ...oldData,
             products: oldData.products.map((product) =>
-              product.id === productId ? updatedProduct : product
+              product.id === productId ? updatedProduct : product,
             ),
           };
-        }
+        },
       );
       notify('success', 'Skala została zaktualizowana');
     },
-    [updateUnitScale, notify, queryClient, groupId]
+    [updateUnitScale, notify, queryClient, groupId],
   );
 
   const handleUpdateUnitScaleValue = useMemo(
@@ -205,7 +205,7 @@ export const PriceTagsGroupDetailsPage = () => {
       debounce(async (productId: number, unitScaleValue: number | null) => {
         const updatedProduct = await updateUnitScaleValue(
           productId,
-          unitScaleValue
+          unitScaleValue,
         );
         queryClient.setQueryData(
           getPriceTagGroupDetailsQueryKey(groupId || ''),
@@ -213,13 +213,13 @@ export const PriceTagsGroupDetailsPage = () => {
             return {
               ...oldData,
               products: oldData.products.map((product) =>
-                product.id === productId ? updatedProduct : product
+                product.id === productId ? updatedProduct : product,
               ),
             };
-          }
+          },
         );
       }, 500),
-    [updateUnitScaleValue, queryClient, groupId]
+    [updateUnitScaleValue, queryClient, groupId],
   );
 
   const columns: GridColDef<PriceTagGroup['products'][number]>[] = [
@@ -274,7 +274,7 @@ export const PriceTagsGroupDetailsPage = () => {
       sortable: false,
       renderCell: (params) => {
         const branchData = params.row.branches.find(
-          (b) => b.branch.id === branch?.id
+          (b) => b.branch.id === branch?.id,
         );
         return (
           <Typography>
@@ -387,7 +387,7 @@ export const PriceTagsGroupDetailsPage = () => {
             onChange={(event) =>
               handleUpdateUnitScaleValue(
                 row.id,
-                event.target.value ? parseFloat(event.target.value) : null
+                event.target.value ? parseFloat(event.target.value) : null,
               )
             }
           />
@@ -420,7 +420,7 @@ export const PriceTagsGroupDetailsPage = () => {
     if (!searchTerm.trim()) return priceTagGroupDetails.products;
 
     return priceTagGroupDetails.products.filter((product) =>
-      product.name.toLowerCase().includes(searchTerm.toLowerCase())
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()),
     );
   }, [priceTagGroupDetails?.products, searchTerm]);
 
@@ -456,42 +456,58 @@ export const PriceTagsGroupDetailsPage = () => {
 
   return (
     <Box>
-      <Stack spacing={4}>
-        <Box>
-          <Button
-            variant="outlined"
-            color="primary"
-            href={`#${Pages.smSystemPriceTagsGroups}`}
-          >
-            {'Cofnij'}
-          </Button>
-        </Box>
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Stack direction="row" spacing={2} alignItems="center">
-            <Typography variant="h4" component="h1">
-              {`Grupa etykiet: ${isEditingName ? '' : priceTagGroupDetails?.name
-                }`}
+      <Stack spacing={2}>
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          gap={2}
+        >
+          <Stack direction="row" spacing={1} alignItems="center" minWidth={0}>
+            <Button
+              variant="outlined"
+              size="small"
+              color="primary"
+              href={`#${Pages.smSystemPriceTagsGroups}`}
+              sx={{ flexShrink: 0 }}
+            >
+              {'Cofnij'}
+            </Button>
+            <Typography
+              variant="subtitle1"
+              component="h1"
+              fontWeight={600}
+              noWrap
+            >
+              {`Grupa etykiet: ${
+                isEditingName ? '' : priceTagGroupDetails?.name
+              }`}
             </Typography>
             {isEditingName && (
               <TextField
+                size="small"
                 value={priceTagGroupName}
                 onChange={(e) => setPriceTagGroupName(e.target.value)}
               />
             )}
             {isEditingName && (
-              <IconButton onClick={handleUpdateName}>
+              <IconButton onClick={handleUpdateName} size="small">
                 <SaveIcon />
               </IconButton>
             )}
-            <IconButton onClick={() => setIsEditingName((prev) => !prev)}>
+            <IconButton
+              onClick={() => setIsEditingName((prev) => !prev)}
+              size="small"
+            >
               {isEditingName ? <CloseIcon /> : <EditIcon />}
             </IconButton>
             {isUpdatingPriceTagGroup && <CircularProgress size={20} />}
           </Stack>
-          <Stack direction="row" spacing={4}>
+          <Stack direction="row" spacing={1} flexShrink={0}>
             <Button
               variant="outlined"
               color="error"
+              size="small"
               onClick={() => setIsDeletingPriceTagGroupModalOpen(true)}
               sx={{ whiteSpace: 'nowrap' }}
             >
@@ -500,6 +516,7 @@ export const PriceTagsGroupDetailsPage = () => {
             <Button
               variant="contained"
               color="primary"
+              size="small"
               onClick={generatePriceListPdf}
               disabled={isSthToPrint}
               sx={{ whiteSpace: 'nowrap' }}

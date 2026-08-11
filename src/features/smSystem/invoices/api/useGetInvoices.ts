@@ -1,5 +1,5 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import { axiosInstance } from '../../../../services';
@@ -38,9 +38,9 @@ export const useGetInvoices = () => {
   const [sellerName, setSellerName] = useState<string>('');
   const [invoiceDateFrom, setInvoiceDateFrom] = useState<string>('');
   const [invoiceDateTo, setInvoiceDateTo] = useState<string>('');
-  const [status, setStatus] = useState<InvoiceStatus | ''>('');
-  const [sortBy, setSortBy] = useState<InvoiceListSortBy>('invoiceDate');
-  const [sortOrder, setSortOrder] = useState<InvoiceListSortOrder>('desc');
+  const [status, setStatusState] = useState<InvoiceStatus | ''>('');
+  const [sortBy, setSortByState] = useState<InvoiceListSortBy>('invoiceDate');
+  const [sortOrder, setSortOrderState] = useState<InvoiceListSortOrder>('desc');
 
   const setPage = (nextPage: number) => {
     const normalized = Math.max(0, nextPage);
@@ -58,22 +58,23 @@ export const useGetInvoices = () => {
     );
   };
 
-  const skipPageResetRef = useRef(true);
-  useEffect(() => {
-    if (skipPageResetRef.current) {
-      skipPageResetRef.current = false;
-      return;
-    }
-    setSearchParams(
-      (prev) => {
-        if (!prev.get('page')) return prev;
-        const params = new URLSearchParams(prev);
-        params.delete('page');
-        return params;
-      },
-      { replace: true },
-    );
-  }, [status, sortBy, sortOrder, setSearchParams]);
+  const setStatus = (value: InvoiceStatus | '') => {
+    if (value === status) return;
+    setStatusState(value);
+    setPage(0);
+  };
+
+  const setSortBy = (value: InvoiceListSortBy) => {
+    if (value === sortBy) return;
+    setSortByState(value);
+    setPage(0);
+  };
+
+  const setSortOrder = (value: InvoiceListSortOrder) => {
+    if (value === sortOrder) return;
+    setSortOrderState(value);
+    setPage(0);
+  };
 
   const getInvoicesRequest = async () => {
     const response = await axiosInstance.get<Response>(endpoint, {

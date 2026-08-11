@@ -29,7 +29,7 @@ export const OrderDetailsPage = () => {
   const [filterText, setFilterText] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<number | null>(
-    null
+    null,
   );
 
   const handleOpenModal = () => setIsModalOpen(true);
@@ -66,17 +66,18 @@ export const OrderDetailsPage = () => {
 
   return (
     <Stack spacing={2} width="100%">
-      <Stack direction="row" spacing={4} alignItems="center">
+      <Stack direction="row" spacing={2} alignItems="center">
         <Button
           variant="outlined"
+          size="small"
           onClick={() => navigate(Pages.smSystemOrders)}
         >
           {'Powrót'}
         </Button>
-        <Button variant="outlined" onClick={handleOpenModal}>
+        <Button variant="outlined" size="small" onClick={handleOpenModal}>
           {'Pobierz'}
         </Button>
-        <Typography variant="h5">
+        <Typography variant="subtitle1" fontWeight={600} noWrap>
           {'Zamówienie: '}
           {supplierName ? `${supplierName} - ${date}` : ''}
         </Typography>

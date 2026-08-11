@@ -5,6 +5,7 @@ import { LabelData } from '../../../../../components';
 interface Props {
   onClose: () => void;
   createdOrdersIds: number[];
+  updatedOrdersIds?: number[];
   errors: {
     errorCode: string;
     message: string;
@@ -16,6 +17,7 @@ interface Props {
 
 export const ImportEcommerceOrderModalImportedDetailsStep = ({
   createdOrdersIds,
+  updatedOrdersIds,
   errors,
   onClose,
 }: Props) => {
@@ -26,6 +28,9 @@ export const ImportEcommerceOrderModalImportedDetailsStep = ({
         label="Zaimportowano zamówień"
         value={createdOrdersIds.length}
       />
+      {updatedOrdersIds !== undefined && (
+        <LabelData label="Zaktualizowano" value={updatedOrdersIds.length} />
+      )}
       <LabelData label="Wystąpiło błędów" value={errors.length} />
       <Button variant="contained" onClick={onClose}>
         {'Zamknij'}

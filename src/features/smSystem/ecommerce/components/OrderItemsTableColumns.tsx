@@ -90,6 +90,8 @@ export const createOrderItemsColumns = ({
         MANUAL: 'Ręcznie',
         PREVIOUS_MANUAL: 'Auto (poprzednie)',
         SIMILARITY: 'Auto (podobna nazwa)',
+        CHANNEL_LINK: 'Auto (link kanału)',
+        SKU: 'Auto (SKU)',
       };
       const matchColors: Record<
         ProductMatchType,
@@ -100,6 +102,8 @@ export const createOrderItemsColumns = ({
         MANUAL: 'info',
         PREVIOUS_MANUAL: 'success',
         SIMILARITY: 'warning',
+        CHANNEL_LINK: 'success',
+        SKU: 'success',
       };
       return (
         <Chip

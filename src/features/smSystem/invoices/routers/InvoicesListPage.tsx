@@ -11,7 +11,6 @@ import {
   Select,
   Stack,
   TextField,
-  Typography,
 } from '@mui/material';
 import {
   DataGrid,
@@ -206,29 +205,24 @@ export const InvoicesListPage = () => {
   };
 
   return (
-    <Stack spacing={4}>
-      <Box display="flex" alignItems="center" justifyContent="space-between">
-        <Typography variant="h4" component="h1">
-          {'Faktury'}
-        </Typography>
-        <Box display="flex" gap={2}>
-          {selectedInvoiceIds.length > 0 && (
-            <Button
-              variant="outlined"
-              startIcon={<FileDownloadIcon />}
-              onClick={handleExportSelected}
-            >
-              {`Eksportuj zaznaczone (${selectedInvoiceIds.length})`}
-            </Button>
-          )}
+    <Stack spacing={2}>
+      <Box display="flex" justifyContent="flex-end" gap={2}>
+        {selectedInvoiceIds.length > 0 && (
           <Button
-            variant="contained"
-            startIcon={<CloudUploadIcon />}
-            onClick={() => setIsModalOpen(true)}
+            variant="outlined"
+            startIcon={<FileDownloadIcon />}
+            onClick={handleExportSelected}
           >
-            {'Importuj fakturę'}
+            {`Eksportuj zaznaczone (${selectedInvoiceIds.length})`}
           </Button>
-        </Box>
+        )}
+        <Button
+          variant="contained"
+          startIcon={<CloudUploadIcon />}
+          onClick={() => setIsModalOpen(true)}
+        >
+          {'Importuj fakturę'}
+        </Button>
       </Box>
 
       <Stack spacing={2}>

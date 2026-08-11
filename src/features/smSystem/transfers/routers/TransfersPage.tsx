@@ -126,7 +126,7 @@ export const TransfersPage = () => {
     setSelectedTransferIds(rowSelectionModel as number[]);
 
   return (
-    <Stack spacing={4}>
+    <Stack spacing={2}>
       <Stack direction="row" spacing={2}>
         <LoadingButton
           variant="contained"

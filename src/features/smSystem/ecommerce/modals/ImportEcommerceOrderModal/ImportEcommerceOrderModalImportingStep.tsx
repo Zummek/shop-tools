@@ -45,7 +45,7 @@ export const ImportEcommerceOrderModalImportingStep = ({
 }: Props) => {
   const { notify } = useNotify();
   const [selectedRange, setSelectedRange] = useState<ImportRangeDays>(
-    ImportRangeDays.lastDay
+    ImportRangeDays.lastDay,
   );
   const [customDateRange, setCustomDateRange] = useState<{
     from: Dayjs | null;
@@ -68,7 +68,7 @@ export const ImportEcommerceOrderModalImportingStep = ({
       if (customDateRange.from.isAfter(customDateRange.to)) {
         notify(
           'error',
-          'Data początkowa nie może być późniejsza od daty końcowej'
+          'Data początkowa nie może być późniejsza od daty końcowej',
         );
         return;
       }
@@ -152,6 +152,7 @@ export const ImportEcommerceOrderModalImportingStep = ({
                 setCustomDateRange({ ...customDateRange, from: value })
               }
               disabled={isPending}
+              format="DD.MM.YYYY"
             />
             <DatePicker
               label="Data końcowa"
@@ -160,6 +161,7 @@ export const ImportEcommerceOrderModalImportingStep = ({
                 setCustomDateRange({ ...customDateRange, to: value })
               }
               disabled={isPending}
+              format="DD.MM.YYYY"
             />
           </Stack>
         )}

@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { Pages } from '../../../../utils';
 import { useGetOrders } from '../api';
 import { AddOrderModal } from '../components/AddOrderModal/AddOrderModal';
+import { SuppliersOrdersToolbar } from '../components/SuppliersOrdersToolbar';
 import { Branch, Supplier } from '../types';
 
 const columns: GridColDef[] = [
@@ -72,11 +73,13 @@ export const OrdersPage = () => {
 
   return (
     <Stack spacing={2}>
-      <Box>
-        <Button variant="contained" onClick={handleOpenModal}>
-          {'Nowe zamówienie'}
-        </Button>
-      </Box>
+      <SuppliersOrdersToolbar
+        actions={
+          <Button variant="contained" size="small" onClick={handleOpenModal}>
+            {'Nowe zamówienie'}
+          </Button>
+        }
+      />
       <Box height={500}>
         <DataGrid
           rows={orders?.results ?? []}

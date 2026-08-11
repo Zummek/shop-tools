@@ -195,6 +195,8 @@ export const InvoiceDetailsPage = () => {
           MANUAL: 'Ręcznie',
           PREVIOUS_MANUAL: 'Auto (poprzednie)',
           SIMILARITY: 'Auto (podobna nazwa)',
+          CHANNEL_LINK: 'Auto (link kanału)',
+          SKU: 'Auto (SKU)',
         };
         const matchColors: Record<
           ProductMatchType,
@@ -205,6 +207,8 @@ export const InvoiceDetailsPage = () => {
           MANUAL: 'info',
           PREVIOUS_MANUAL: 'secondary',
           SIMILARITY: 'warning',
+          CHANNEL_LINK: 'success',
+          SKU: 'success',
         };
 
         return (
@@ -349,36 +353,48 @@ export const InvoiceDetailsPage = () => {
 
   if (isLoading || !invoice) {
     return (
-      <Stack spacing={4}>
-        <Typography variant="h4">{'Ładowanie...'}</Typography>
-      </Stack>
+      <Box display="flex" justifyContent="center" py={4}>
+        <Typography color="text.secondary">{'Ładowanie...'}</Typography>
+      </Box>
     );
   }
 
   return (
-    <Stack spacing={4}>
-      <Box>
-        <Button
-          variant="outlined"
-          onClick={() => {
-            const returnPage = searchParams.get('returnPage');
-            const invoicesPath = returnPage
-              ? `${Pages.smSystemInvoices}?page=${returnPage}`
-              : Pages.smSystemInvoices;
-            navigate(invoicesPath);
-          }}
-        >
-          {'Powrót'}
-        </Button>
-      </Box>
-
-      <Box display="flex" alignItems="center" justifyContent="space-between">
-        <Typography variant="h4" component="h1">
-          {`Faktura ${invoice.invoiceNumber}`}
-        </Typography>
-        <Box display="flex" gap={2}>
+    <Stack spacing={2}>
+      <Box
+        display="flex"
+        alignItems="center"
+        justifyContent="space-between"
+        gap={2}
+      >
+        <Box display="flex" alignItems="center" gap={1.5} minWidth={0}>
           <Button
             variant="outlined"
+            size="small"
+            onClick={() => {
+              const returnPage = searchParams.get('returnPage');
+              const invoicesPath = returnPage
+                ? `${Pages.smSystemInvoices}?page=${returnPage}`
+                : Pages.smSystemInvoices;
+              navigate(invoicesPath);
+            }}
+            sx={{ flexShrink: 0 }}
+          >
+            {'Powrót'}
+          </Button>
+          <Typography
+            variant="subtitle1"
+            component="h1"
+            fontWeight={600}
+            noWrap
+          >
+            {`Faktura ${invoice.invoiceNumber}`}
+          </Typography>
+        </Box>
+        <Box display="flex" gap={1} flexShrink={0}>
+          <Button
+            variant="outlined"
+            size="small"
             startIcon={<FileDownloadIcon />}
             onClick={handleExport}
           >
@@ -387,6 +403,7 @@ export const InvoiceDetailsPage = () => {
           <Button
             variant="outlined"
             color="error"
+            size="small"
             startIcon={<DeleteIcon />}
             onClick={handleDelete}
             disabled={isDeleting}

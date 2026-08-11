@@ -6,6 +6,7 @@ import { axiosInstance } from '../../../../services';
 
 import { allegroConnectionQueryKey } from './useGetAllegroConnection';
 import { getEcommerceOrdersQueryKeyBase } from './useGetEcommerceOrders';
+import { getEcommerceOrdersStatsQueryKey } from './useGetEcommerceOrdersStats';
 
 interface Payload {
   dateFrom: string;
@@ -41,6 +42,9 @@ export const useImportAllegroOrders = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: [getEcommerceOrdersQueryKeyBase],
+      });
+      queryClient.invalidateQueries({
+        queryKey: getEcommerceOrdersStatsQueryKey,
       });
     },
     onError: (error: AxiosError) => {

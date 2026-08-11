@@ -5,7 +5,9 @@ export type ProductMatchType =
   | 'GTIN'
   | 'MANUAL'
   | 'PREVIOUS_MANUAL'
-  | 'SIMILARITY';
+  | 'SIMILARITY'
+  | 'CHANNEL_LINK'
+  | 'SKU';
 
 export enum ProductUnit {
   kg = 'kg',

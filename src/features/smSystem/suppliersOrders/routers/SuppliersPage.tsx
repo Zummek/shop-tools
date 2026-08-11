@@ -1,10 +1,11 @@
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import { Box, FormControl, InputLabel, Stack, TextField } from '@mui/material';
+import { Box, Stack, TextField } from '@mui/material';
 import { DataGrid, GridColDef, GridRowParams } from '@mui/x-data-grid';
 import { useNavigate } from 'react-router-dom';
 
 import { Pages } from '../../../../utils';
 import { useGetSuppliers } from '../api';
+import { SuppliersOrdersToolbar } from '../components/SuppliersOrdersToolbar';
 import { Supplier } from '../types';
 
 const columns: GridColDef<Supplier>[] = [
@@ -63,14 +64,18 @@ export const SuppliersPage = () => {
 
   return (
     <Stack spacing={2}>
-      <FormControl sx={{ width: 300 }}>
-        <InputLabel shrink>{'Wyszukaj'}</InputLabel>
-        <TextField
-          placeholder="Nazwa dostawcy"
-          value={name}
-          onChange={handleChange}
-        />
-      </FormControl>
+      <SuppliersOrdersToolbar
+        actions={
+          <TextField
+            size="small"
+            label="Wyszukaj"
+            placeholder="Nazwa dostawcy"
+            value={name}
+            onChange={handleChange}
+            sx={{ width: 280 }}
+          />
+        }
+      />
 
       <Box height={500}>
         <DataGrid

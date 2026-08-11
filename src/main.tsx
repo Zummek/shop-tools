@@ -7,15 +7,20 @@ import { Navigate, RouterProvider, createHashRouter } from 'react-router-dom';
 
 import { BarcodesGeneratorPage } from './features/BarcodesGenerator/routes/BarcodesGeneratorPage/BarcodesGeneratorPage';
 import { InvoiceConverterPage } from './features/invoiceConverter/routers/InvoiceConverterPage/InvoiceConverterPage';
-import { EcommerceAllegroIntegrationPage } from './features/smSystem/ecommerce/routers/EcommerceAllegroIntegrationPage';
 import { EcommerceOrderDetailsPage } from './features/smSystem/ecommerce/routers/EcommerceOrderDetailsPage';
 import { EcommerceOrdersListPage } from './features/smSystem/ecommerce/routers/EcommerceOrdersListPage';
+import { EcommerceIntegrationsPage } from './features/smSystem/ecommerce/routers/integrations/EcommerceIntegrationsPage';
+import { IntegrationsAllegroPanel } from './features/smSystem/ecommerce/routers/integrations/IntegrationsAllegroPanel';
+import { IntegrationsErliPanel } from './features/smSystem/ecommerce/routers/integrations/IntegrationsErliPanel';
+import { IntegrationsWooCommercePanel } from './features/smSystem/ecommerce/routers/integrations/IntegrationsWooCommercePanel';
 import { InvoiceDetailsPage } from './features/smSystem/invoices/routers/InvoiceDetailsPage';
 import { InvoicesListPage } from './features/smSystem/invoices/routers/InvoicesListPage';
 import { SmSystemPageLayout } from './features/smSystem/layouts/SmSystemPageLayout';
 import { PriceTagsGroupDetailsPage } from './features/smSystem/priceTags/routers/PriceTagsGroupDetailsPage';
 import { PriceTagsGroupsPage } from './features/smSystem/priceTags/routers/PriceTagsGroupsPage';
 import { ImportProductsPage } from './features/smSystem/products/routers/ImportProductsPage/ImportProductsPage';
+import { ProductDetailsPage } from './features/smSystem/products/routers/ProductDetailsPage/ProductDetailsPage';
+import { ProductsListPage } from './features/smSystem/products/routers/ProductsListPage/ProductsListPage';
 import { ProductsDocumentsPage } from './features/smSystem/productsDocuments/routers/ProductsDocumentsPage';
 import { ReportsPage } from './features/smSystem/reports/routers/ReportsPage';
 import { UnfulfilledOrdersByTransfersReportPage } from './features/smSystem/reports/routers/UnfulfilledOrdersByTransfersReportPage';
@@ -68,6 +73,14 @@ const router = createHashRouter(
         {
           path: 'import-products',
           element: <ImportProductsPage />,
+        },
+        {
+          path: 'products',
+          element: <ProductsListPage />,
+        },
+        {
+          path: 'products/:productId',
+          element: <ProductDetailsPage />,
         },
         {
           path: 'reports',
@@ -125,8 +138,40 @@ const router = createHashRouter(
               element: <EcommerceOrderDetailsPage />,
             },
             {
+              path: 'integrations',
+              element: <EcommerceIntegrationsPage />,
+              children: [
+                {
+                  index: true,
+                  element: (
+                    <Navigate
+                      to="/sm-system/ecommerce/integrations/allegro"
+                      replace
+                    />
+                  ),
+                },
+                {
+                  path: 'allegro',
+                  element: <IntegrationsAllegroPanel />,
+                },
+                {
+                  path: 'woocommerce',
+                  element: <IntegrationsWooCommercePanel />,
+                },
+                {
+                  path: 'erli',
+                  element: <IntegrationsErliPanel />,
+                },
+              ],
+            },
+            {
               path: 'allegro',
-              element: <EcommerceAllegroIntegrationPage />,
+              element: (
+                <Navigate
+                  to="/sm-system/ecommerce/integrations/allegro"
+                  replace
+                />
+              ),
             },
           ],
         },
@@ -142,13 +187,13 @@ const router = createHashRouter(
     },
     {
       path: '*',
-      element: <Navigate to="/generate-price-list" />,
+      element: <Navigate to="/sm-system" />,
     },
   ],
   {
     // NOTE: use only in brower (not hash) router
     // basename: '/shop-tools',
-  }
+  },
 );
 
 setReduxStoreForAxios(store);
@@ -164,5 +209,5 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         </AxiosInterceptorsProvider>
       </ReactQueryClientProvider>
     </Provider>
-  </SnackbarProvider>
+  </SnackbarProvider>,
 );

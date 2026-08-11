@@ -107,6 +107,7 @@ export const navSections: NavSection[] = [
         activePaths: [
           Pages.smSystemEcommerceIntegrationsAllegro,
           Pages.smSystemEcommerceIntegrationsWooCommerce,
+          Pages.smSystemEcommerceIntegrationsErli,
         ],
       },
     ],

@@ -1,5 +1,5 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import { useAppSelector } from '../../../../hooks';
@@ -30,17 +30,24 @@ const isAlertChannelFilter = (
 ): value is AlertChannelFilter =>
   value === 'allegro' || value === 'woocommerce' || value === 'erli';
 
+const parsePageFromSearchParams = (searchParams: URLSearchParams): number => {
+  const pageParam = searchParams.get('page');
+  if (!pageParam) return 0;
+  const parsed = Number(pageParam) - 1;
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+};
+
 export const useGetAlerts = () => {
   const { user } = useAppSelector((state) => state.smSystemUser);
   const canViewAlerts = !!user?.permissions?.canViewAlerts;
   const [searchParams, setSearchParams] = useSearchParams();
-  const pageParam = searchParams.get('page');
+  const page = parsePageFromSearchParams(searchParams);
+
   const statusParam = searchParams.get('status');
   const typeParam = searchParams.get('type') as AlertType | null;
   const severityParam = searchParams.get('severity');
   const channelParam = searchParams.get('channel');
 
-  const initialPage = pageParam ? Number(pageParam) - 1 : 0;
   const initialStatus: AlertStatus | '' = isAlertStatus(statusParam)
     ? statusParam
     : 'active';
@@ -53,7 +60,6 @@ export const useGetAlerts = () => {
     ? channelParam
     : '';
 
-  const [page, setPage] = useState(initialPage);
   const [status, setStatusState] = useState<AlertStatus | ''>(initialStatus);
   const [type, setTypeState] = useState<AlertType | ''>(typeParam || '');
   const [severity, setSeverityState] = useState<AlertSeverity | ''>(
@@ -63,40 +69,80 @@ export const useGetAlerts = () => {
     initialChannel,
   );
 
-  useEffect(() => {
-    const pageParam = searchParams.get('page');
-    const newPage = pageParam ? Number(pageParam) - 1 : 0;
-    if (newPage !== page && newPage >= 0) setPage(newPage);
-  }, [searchParams, page]);
+  const setPage = (nextPage: number) => {
+    const normalized = Math.max(0, nextPage);
+    setSearchParams(
+      (prev) => {
+        const currentPage = parsePageFromSearchParams(prev);
+        if (currentPage === normalized) return prev;
 
-  useEffect(() => {
-    const params: Record<string, string> = {};
-    if (page > 0) params.page = (page + 1).toString();
-    if (status) params.status = status;
-    if (type) params.type = type;
-    if (severity) params.severity = severity;
-    if (channel) params.channel = channel;
-    setSearchParams(params, { replace: true });
-  }, [page, status, type, severity, channel, setSearchParams]);
+        const params = new URLSearchParams(prev);
+        if (normalized <= 0) params.delete('page');
+        else params.set('page', String(normalized + 1));
+        return params;
+      },
+      { replace: true },
+    );
+  };
 
   const setStatus = (value: AlertStatus | '') => {
+    if (value === status) return;
     setStatusState(value);
-    setPage(0);
+    setSearchParams(
+      (prev) => {
+        const params = new URLSearchParams(prev);
+        if (value) params.set('status', value);
+        else params.delete('status');
+        params.delete('page');
+        return params;
+      },
+      { replace: true },
+    );
   };
 
   const setType = (value: AlertType | '') => {
+    if (value === type) return;
     setTypeState(value);
-    setPage(0);
+    setSearchParams(
+      (prev) => {
+        const params = new URLSearchParams(prev);
+        if (value) params.set('type', value);
+        else params.delete('type');
+        params.delete('page');
+        return params;
+      },
+      { replace: true },
+    );
   };
 
   const setSeverity = (value: AlertSeverity | '') => {
+    if (value === severity) return;
     setSeverityState(value);
-    setPage(0);
+    setSearchParams(
+      (prev) => {
+        const params = new URLSearchParams(prev);
+        if (value) params.set('severity', value);
+        else params.delete('severity');
+        params.delete('page');
+        return params;
+      },
+      { replace: true },
+    );
   };
 
   const setChannel = (value: AlertChannelFilter | '') => {
+    if (value === channel) return;
     setChannelState(value);
-    setPage(0);
+    setSearchParams(
+      (prev) => {
+        const params = new URLSearchParams(prev);
+        if (value) params.set('channel', value);
+        else params.delete('channel');
+        params.delete('page');
+        return params;
+      },
+      { replace: true },
+    );
   };
 
   const getAlertsRequest = async () => {

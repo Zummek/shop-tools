@@ -33,7 +33,11 @@ import {
 } from '../../api';
 import { AlertSeverityChip, AlertStatusChip } from '../../components';
 import { AlertListItem, AlertSeverity, AlertStatus } from '../../types';
-import { ALERT_TYPE_OPTIONS, alertChannelLabel, alertTypeLabels } from '../../utils';
+import {
+  ALERT_TYPE_OPTIONS,
+  alertChannelLabel,
+  alertTypeLabels,
+} from '../../utils';
 
 const EllipsisCell = ({ value }: { value: string | null | undefined }) => {
   const text = value || '—';
@@ -168,7 +172,28 @@ export const AlertsListPage = () => {
       headerName: 'Wiadomość',
       minWidth: 220,
       flex: 1.4,
-      renderCell: ({ row }) => <EllipsisCell value={row.message} />,
+      renderCell: ({ row }) => {
+        const text = row.message || '—';
+        return (
+          <Tooltip title={text} enterDelay={500}>
+            <Typography
+              variant="body2"
+              sx={{
+                width: '100%',
+                whiteSpace: 'normal',
+                overflow: 'hidden',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                lineHeight: 1.4,
+                py: 0.5,
+              }}
+            >
+              {text}
+            </Typography>
+          </Tooltip>
+        );
+      },
     },
     {
       field: 'channel',
@@ -187,7 +212,8 @@ export const AlertsListPage = () => {
       field: 'lastSeenAt',
       headerName: 'Ostatnio wykryty',
       width: 160,
-      valueFormatter: (value: string) => dayjs(value).format('DD.MM.YYYY HH:mm'),
+      valueFormatter: (value: string) =>
+        dayjs(value).format('DD.MM.YYYY HH:mm'),
     },
     {
       field: 'status',
@@ -236,8 +262,7 @@ export const AlertsListPage = () => {
           );
         }
 
-        const isRowPending =
-          isAcknowledgePending && pendingAlertId === row.id;
+        const isRowPending = isAcknowledgePending && pendingAlertId === row.id;
 
         return (
           <Tooltip title="Oznacz jako sprawdzone">
@@ -314,16 +339,12 @@ export const AlertsListPage = () => {
           </Select>
         </FormControl>
         <FormControl size="small" sx={{ minWidth: 180 }}>
-          <InputLabel id="alert-severity-filter-label">
-            {'Ważność'}
-          </InputLabel>
+          <InputLabel id="alert-severity-filter-label">{'Ważność'}</InputLabel>
           <Select
             labelId="alert-severity-filter-label"
             label="Ważność"
             value={severity}
-            onChange={(e) =>
-              setSeverity(e.target.value as AlertSeverity | '')
-            }
+            onChange={(e) => setSeverity(e.target.value as AlertSeverity | '')}
           >
             <MenuItem value="">
               <em>{'Wszystkie'}</em>
@@ -400,7 +421,9 @@ export const AlertsListPage = () => {
         open={isAcknowledgeAllDialogOpen}
         onClose={() => setIsAcknowledgeAllDialogOpen(false)}
       >
-        <DialogTitle>{'Oznaczyć wszystkie alerty jako sprawdzone?'}</DialogTitle>
+        <DialogTitle>
+          {'Oznaczyć wszystkie alerty jako sprawdzone?'}
+        </DialogTitle>
         <DialogContent>
           <DialogContentText>
             {

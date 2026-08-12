@@ -183,7 +183,7 @@ export const AlertsListPage = () => {
                 whiteSpace: 'normal',
                 overflow: 'hidden',
                 display: '-webkit-box',
-                WebkitLineClamp: 2,
+                WebkitLineClamp: 3,
                 WebkitBoxOrient: 'vertical',
                 lineHeight: 1.4,
                 py: 0.5,

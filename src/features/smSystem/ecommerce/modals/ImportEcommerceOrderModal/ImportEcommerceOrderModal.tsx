@@ -34,10 +34,10 @@ type ImportChannel = 'allegro' | 'woocommerce' | 'erli';
 
 const CHANNEL_NOTES: Record<ImportChannel, string> = {
   woocommerce:
-    'WooCommerce: importowane są wszystkie statusy zamówień. Statusy synchronizują się w obie strony (SM ↔ Woo) — przy konflikcie system zapyta o decyzję.',
-  erli: 'Erli: importowane są tylko opłacone zamówienia (purchased). Statusy nie są synchronizowane z Erli.',
+    'WooCommerce: importuje wszystkie statusy w wybranym zakresie dat. Ponowny import odświeża statusy już istniejących zamówień. Statusy synchronizują się w obie strony (SM ↔ Woo) — przy konflikcie system zapyta o decyzję.',
+  erli: 'Erli: importuje wszystkie statusy w wybranym zakresie dat. Ponowny import odświeża statusy już istniejących zamówień. Statusów nie wysyłamy do Erli.',
   allegro:
-    'Allegro: importowane są tylko nowe zamówienia (NEW). Statusy nie są synchronizowane z Allegro.',
+    'Allegro: importuje wszystkie statusy w wybranym zakresie dat. Ponowny import odświeża statusy już istniejących zamówień. Statusów nie wysyłamy do Allegro.',
 };
 
 const CHANNEL_LABELS: Record<ImportChannel, string> = {
@@ -117,9 +117,11 @@ export const ImportEcommerceOrderModal = ({ open, onClose }: Props) => {
         ...(importWooCommerceOrdersData?.createdOrdersIds ?? []),
         ...(importErliOrdersData?.createdOrdersIds ?? []),
       ],
-      updatedOrdersIds: importWooCommerceOrdersData
-        ? (importWooCommerceOrdersData.updatedOrdersIds ?? [])
-        : undefined,
+      updatedOrdersIds: [
+        ...(importAllegroOrdersData?.updatedOrdersIds ?? []),
+        ...(importWooCommerceOrdersData?.updatedOrdersIds ?? []),
+        ...(importErliOrdersData?.updatedOrdersIds ?? []),
+      ],
       errors: [
         ...(importAllegroOrdersData?.errors ?? []),
         ...(importWooCommerceOrdersData?.errors ?? []),

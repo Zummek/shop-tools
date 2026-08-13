@@ -16,6 +16,7 @@ interface Payload {
 interface Response {
   message: string;
   createdOrdersIds: number[];
+  updatedOrdersIds?: number[];
   errors: {
     errorCode: string;
     message: string;

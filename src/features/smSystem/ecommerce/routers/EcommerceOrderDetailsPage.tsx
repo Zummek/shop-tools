@@ -85,6 +85,19 @@ export const EcommerceOrderDetailsPage = () => {
     [ecommerceOrder, notify, updateEcommerceOrder],
   );
 
+  const handleRefreshChannelStatus = useCallback(async () => {
+    if (!ecommerceOrder) return;
+    try {
+      await updateEcommerceOrder({
+        id: ecommerceOrder.id,
+        channelAction: 'accept_remote',
+      });
+      notify('success', 'Status z kanału został odświeżony');
+    } catch {
+      // toast in hook
+    }
+  }, [ecommerceOrder, notify, updateEcommerceOrder]);
+
   return (
     <Stack spacing={2}>
       <Box
@@ -114,6 +127,7 @@ export const EcommerceOrderDetailsPage = () => {
           onWooStatusChange={(wooStatus) =>
             void handleWooStatusChange(wooStatus)
           }
+          onRefreshChannelStatus={() => void handleRefreshChannelStatus()}
         />
       )}
       {weakMatchCount > 0 && (

@@ -72,3 +72,90 @@ export const isWooStatusInSync = (
     SM_TO_WOO_STATUS[status] === normalized
   );
 };
+
+const WOO_TERMINAL = new Set([
+  'completed',
+  'cancelled',
+  'refunded',
+  'failed',
+]);
+const ALLEGRO_TERMINAL = new Set(['sent', 'picked_up', 'cancelled']);
+const ERLI_TERMINAL = new Set([
+  'sent',
+  'delivered',
+  'cancelled',
+  'canceled',
+  'returned',
+]);
+
+const CHANNEL_LABELS: Record<string, string> = {
+  allegro: 'Allegro',
+  woocommerce: 'WooCommerce',
+  erli: 'Erli',
+};
+
+export const channelLabel = (source: string): string =>
+  CHANNEL_LABELS[source] || source;
+
+const ALLEGRO_STATUS_LABELS: Record<string, string> = {
+  new: 'Nowe',
+  processing: 'W realizacji',
+  ready_for_shipment: 'Gotowe do wysyłki',
+  ready_for_pickup: 'Gotowe do odbioru',
+  suspended: 'Wstrzymane',
+  sent: 'Wysłane',
+  picked_up: 'Odebrane',
+  cancelled: 'Anulowane',
+};
+
+const ERLI_STATUS_LABELS: Record<string, string> = {
+  pending: 'Oczekujące',
+  purchased: 'Opłacone',
+  readytosend: 'Gotowe do wysyłki',
+  ready_to_send: 'Gotowe do wysyłki',
+  sent: 'Wysłane',
+  delivered: 'Dostarczone',
+  cancelled: 'Anulowane',
+  canceled: 'Anulowane',
+  returned: 'Zwrócone',
+};
+
+export const externalStatusLabel = (
+  source: string,
+  status: string | null | undefined,
+): string => {
+  if (!status) return '—';
+  const normalized = status.toLowerCase().trim();
+  if (source === 'woocommerce') return wooStatusLabel(normalized);
+  if (source === 'allegro')
+    return ALLEGRO_STATUS_LABELS[normalized] || status;
+  if (source === 'erli') return ERLI_STATUS_LABELS[normalized] || status;
+  return status;
+};
+
+const isRemoteTerminal = (
+  source: string,
+  remoteStatus: string | null | undefined,
+): boolean => {
+  if (!remoteStatus) return false;
+  const normalized = remoteStatus.toLowerCase().trim();
+  if (source === 'woocommerce') return WOO_TERMINAL.has(normalized);
+  if (source === 'allegro') return ALLEGRO_TERMINAL.has(normalized);
+  if (source === 'erli') return ERLI_TERMINAL.has(normalized);
+  return false;
+};
+
+/**
+ * Whether a details-page "refresh from channel" button should be shown.
+ * Hide when SM is already shipped/canceled AND remote is already terminal.
+ */
+export const canRefreshOrderStatus = (
+  source: string,
+  smStatus: OrderStatus,
+  remoteStatus: string | null | undefined,
+): boolean => {
+  if (!['woocommerce', 'allegro', 'erli'].includes(source)) return false;
+  const smTerminal = smStatus === 'shipped' || smStatus === 'canceled';
+  if (smTerminal && isRemoteTerminal(source, remoteStatus)) return false;
+  return true;
+};

@@ -2,6 +2,7 @@ import { LoadingButton } from '@mui/lab';
 import {
   Alert,
   Button,
+  Chip,
   Dialog,
   DialogActions,
   DialogContent,
@@ -24,6 +25,9 @@ import { formatPrice } from '../../products/utils';
 import { EcommerceOrderDetails, OrderStatus } from '../types';
 import {
   NEXT_ORDER_STATUS,
+  canRefreshOrderStatus,
+  channelLabel,
+  externalStatusLabel,
   orderStatusConfig,
   SM_TO_WOO_STATUS,
   WOO_STATUS_OPTIONS,
@@ -39,6 +43,7 @@ interface OrderDetailsSectionProps {
   isUpdatingStatus?: boolean;
   onSmStatusChange?: (status: OrderStatus) => void;
   onWooStatusChange?: (wooStatus: WooStatusValue) => void;
+  onRefreshChannelStatus?: () => void;
 }
 
 const FIELD_MIN_WIDTH = 100;
@@ -59,9 +64,18 @@ export const OrderDetailsSection = ({
   isUpdatingStatus = false,
   onSmStatusChange,
   onWooStatusChange,
+  onRefreshChannelStatus,
 }: OrderDetailsSectionProps) => {
   const status = ecommerceOrder.status || 'new';
   const isWooOrder = ecommerceOrder.orderSource === 'woocommerce';
+  const channelName = channelLabel(ecommerceOrder.orderSource);
+  const showRefresh =
+    !!onRefreshChannelStatus &&
+    canRefreshOrderStatus(
+      ecommerceOrder.orderSource,
+      status,
+      ecommerceOrder.externalStatus,
+    );
 
   const nextStatus = NEXT_ORDER_STATUS[status];
   const canCancel = status !== 'shipped' && status !== 'canceled';
@@ -120,15 +134,7 @@ export const OrderDetailsSection = ({
               />
               <LabelData
                 label="Miejsce zamówienia"
-                value={
-                  ecommerceOrder.orderSource === 'woocommerce'
-                    ? 'WooCommerce'
-                    : ecommerceOrder.orderSource === 'allegro'
-                      ? 'Allegro'
-                      : ecommerceOrder.orderSource === 'erli'
-                        ? 'Erli'
-                        : ecommerceOrder.orderSource
-                }
+                value={channelName}
                 minWidth={FIELD_MIN_WIDTH}
               />
               <LabelData
@@ -176,7 +182,7 @@ export const OrderDetailsSection = ({
                 </Typography>
                 <OrderStatusChip status={status} />
               </Stack>
-              {isWooOrder && (
+              {isWooOrder ? (
                 <Stack spacing={0.5} sx={{ minWidth: FIELD_MIN_WIDTH }}>
                   <Typography
                     variant="subtitle2"
@@ -190,10 +196,29 @@ export const OrderDetailsSection = ({
                     externalStatus={ecommerceOrder.externalStatus}
                   />
                 </Stack>
+              ) : (
+                <Stack spacing={0.5} sx={{ minWidth: FIELD_MIN_WIDTH }}>
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    fontWeight={500}
+                  >
+                    {`Status ${channelName}`}
+                  </Typography>
+                  <Chip
+                    label={externalStatusLabel(
+                      ecommerceOrder.orderSource,
+                      ecommerceOrder.externalStatus,
+                    )}
+                    variant="outlined"
+                    size="small"
+                    sx={{ width: 'fit-content' }}
+                  />
+                </Stack>
               )}
             </Stack>
 
-            {onSmStatusChange && (nextStatus || canCancel) && (
+            {onSmStatusChange && (nextStatus || canCancel || showRefresh) && (
               <Stack spacing={1}>
                 <Stack direction="row" flexWrap="wrap" gap={1.5}>
                   {nextStatus && (
@@ -214,6 +239,15 @@ export const OrderDetailsSection = ({
                     >
                       {'Anuluj zamówienie'}
                     </Button>
+                  )}
+                  {showRefresh && (
+                    <LoadingButton
+                      variant="outlined"
+                      loading={isUpdatingStatus}
+                      onClick={() => onRefreshChannelStatus?.()}
+                    >
+                      {`Odśwież status z ${channelName}`}
+                    </LoadingButton>
                   )}
                 </Stack>
                 <Typography variant="caption" color="text.secondary">

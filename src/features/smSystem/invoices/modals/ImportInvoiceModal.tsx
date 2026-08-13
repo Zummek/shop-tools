@@ -23,13 +23,14 @@ interface Props {
 const MAX_VISIBLE_FILES = 8;
 
 const getErrorMessage = (error: unknown): string => {
-  if (error instanceof Error) {
-    return error.message;
-  }
-  return (
-    (error as { response?: { data?: { error?: string } } })?.response?.data
-      ?.error || 'Błąd podczas importowania faktury'
-  );
+  if (error instanceof Error) return error.message;
+
+  const responseError = (error as { response?: { data?: { error?: string } } })
+    ?.response?.data?.error;
+
+  if (responseError) return responseError;
+
+  return 'Błąd podczas importowania faktury';
 };
 
 export const ImportInvoiceModal = ({ open, onClose }: Props) => {

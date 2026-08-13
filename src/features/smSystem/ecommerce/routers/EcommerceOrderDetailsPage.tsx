@@ -89,12 +89,22 @@ export const EcommerceOrderDetailsPage = () => {
 
   const handleRefreshChannelStatus = useCallback(async () => {
     if (!ecommerceOrder) return;
+    const previousStatus = ecommerceOrder.status;
+    const previousExternal = ecommerceOrder.externalStatus;
     try {
-      await updateEcommerceOrder({
+      const updated = await updateEcommerceOrder({
         id: ecommerceOrder.id,
         channelAction: 'accept_remote',
       });
-      notify('success', 'Status z kanału został odświeżony');
+      const changed =
+        updated.status !== previousStatus ||
+        updated.externalStatus !== previousExternal;
+      notify(
+        'success',
+        changed
+          ? 'Status z kanału został odświeżony'
+          : 'Status z kanału jest aktualny',
+      );
     } catch {
       // toast in hook
     }

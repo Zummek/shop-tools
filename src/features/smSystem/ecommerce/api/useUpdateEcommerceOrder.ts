@@ -3,10 +3,14 @@ import { AxiosError } from 'axios';
 
 import { useNotify } from '../../../../hooks';
 import { axiosInstance } from '../../../../services';
+import { ListResponse } from '../../app/types';
 import { EcommerceOrderDetails, OrderStatus } from '../types';
 
 import { getEcommerceOrderDetailsQueryKey } from './useGetEcommerceOrderDetails';
-import { getEcommerceOrdersQueryKeyBase } from './useGetEcommerceOrders';
+import {
+  EcommerceOrderListItem,
+  getEcommerceOrdersQueryKeyBase,
+} from './useGetEcommerceOrders';
 import { getEcommerceOrdersStatsQueryKey } from './useGetEcommerceOrdersStats';
 
 interface EcommerceOrderItemPayload {
@@ -65,6 +69,26 @@ export const isWooStatusConflict = (
   );
 };
 
+const patchOrderInListCache = (
+  old: ListResponse<EcommerceOrderListItem> | undefined,
+  orderId: number,
+  patch: Pick<EcommerceOrderDetails, 'status' | 'externalStatus'>,
+) => {
+  if (!old?.results) return old;
+  return {
+    ...old,
+    results: old.results.map((order) =>
+      order.id === orderId
+        ? {
+            ...order,
+            status: patch.status,
+            externalStatus: patch.externalStatus,
+          }
+        : order,
+    ),
+  };
+};
+
 export const useUpdateEcommerceOrder = () => {
   const queryClient = useQueryClient();
   const { notify } = useNotify();
@@ -111,6 +135,14 @@ export const useUpdateEcommerceOrder = () => {
       queryClient.setQueryData(
         getEcommerceOrderDetailsQueryKey(variables.id),
         response,
+      );
+      queryClient.setQueriesData<ListResponse<EcommerceOrderListItem>>(
+        { queryKey: [getEcommerceOrdersQueryKeyBase] },
+        (old) =>
+          patchOrderInListCache(old, variables.id, {
+            status: response.status,
+            externalStatus: response.externalStatus,
+          }),
       );
       queryClient.invalidateQueries({
         queryKey: [getEcommerceOrdersQueryKeyBase],

@@ -1,12 +1,15 @@
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {
   Box,
   Button,
   FormControl,
+  FormControlLabel,
   InputLabel,
   MenuItem,
   Select,
   Stack,
+  Switch,
   Tooltip,
   Typography,
 } from '@mui/material';
@@ -31,13 +34,22 @@ import {
   WooStatusChip,
 } from '../components';
 import { ImportEcommerceOrderModal } from '../modals/ImportEcommerceOrderModal/ImportEcommerceOrderModal';
-import { wooStatusLabel } from '../utils';
+import { externalStatusLabel } from '../utils';
 
 const orderSourceLabel = (source: string) => {
   if (source === 'allegro') return 'Allegro';
   if (source === 'woocommerce') return 'WooCommerce';
   if (source === 'erli') return 'Erli';
   return source || '—';
+};
+
+const productReviewTooltip = (row: EcommerceOrderListItem) => {
+  const parts: string[] = [];
+  if (row.hasUnmatchedItems)
+    parts.push('Zamówienie ma pozycje bez produktu');
+  if (row.hasUncertainMatch)
+    parts.push('Zamówienie ma pozycje z niepewnym dopasowaniem (podobna nazwa)');
+  return parts.join('. ');
 };
 
 const EllipsisCell = ({ value }: { value: string | null | undefined }) => {
@@ -61,6 +73,28 @@ const EllipsisCell = ({ value }: { value: string | null | undefined }) => {
 
 const columns: GridColDef<EcommerceOrderListItem>[] = [
   {
+    field: 'needsProductReview',
+    headerName: '',
+    width: 48,
+    sortable: false,
+    disableColumnMenu: true,
+    align: 'center',
+    headerAlign: 'center',
+    renderCell: ({ row }) => {
+      if (!row.needsProductReview) return null;
+      const isUnmatched = row.hasUnmatchedItems;
+      return (
+        <Tooltip title={productReviewTooltip(row)}>
+          <WarningAmberIcon
+            fontSize="small"
+            color={isUnmatched ? 'error' : 'warning'}
+            aria-label={productReviewTooltip(row)}
+          />
+        </Tooltip>
+      );
+    },
+  },
+  {
     field: 'orderDate',
     headerName: 'Data zamówienia',
     width: 150,
@@ -80,10 +114,18 @@ const columns: GridColDef<EcommerceOrderListItem>[] = [
   },
   {
     field: 'externalStatus',
-    headerName: 'Status Woo',
+    headerName: 'Zew. Status',
     minWidth: 160,
     renderCell: ({ row }) => {
-      if (row.orderSource !== 'woocommerce') {
+      if (row.orderSource === 'woocommerce') {
+        return (
+          <WooStatusChip
+            status={row.status}
+            externalStatus={row.externalStatus}
+          />
+        );
+      }
+      if (!row.externalStatus) {
         return (
           <Typography variant="body2" color="text.secondary">
             {'—'}
@@ -91,16 +133,13 @@ const columns: GridColDef<EcommerceOrderListItem>[] = [
         );
       }
       return (
-        <WooStatusChip
-          status={row.status}
-          externalStatus={row.externalStatus}
-        />
+        <Typography variant="body2">
+          {externalStatusLabel(row.orderSource, row.externalStatus)}
+        </Typography>
       );
     },
     valueGetter: (_value, row) =>
-      row.orderSource === 'woocommerce'
-        ? wooStatusLabel(row.externalStatus)
-        : '',
+      externalStatusLabel(row.orderSource, row.externalStatus),
   },
   {
     field: 'buyerName',
@@ -174,6 +213,8 @@ export const EcommerceOrdersListPage = () => {
     setPage,
     orderSource,
     setOrderSource,
+    needsProductReview,
+    setNeedsProductReview,
   } = useGetEcommerceOrders();
   const { allegroConnection } = useGetAllegroConnection();
   const { wooCommerceConnection } = useGetWooCommerceConnection();
@@ -216,22 +257,34 @@ export const EcommerceOrdersListPage = () => {
         gap={2}
         flexWrap="wrap"
       >
-        <FormControl size="small" sx={{ minWidth: 200 }}>
-          <InputLabel id="order-source-filter-label">{'Źródło'}</InputLabel>
-          <Select
-            labelId="order-source-filter-label"
-            label="Źródło"
-            value={orderSource}
-            onChange={(e) =>
-              setOrderSource(e.target.value as OrderSourceFilter)
+        <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
+          <FormControl size="small" sx={{ minWidth: 200 }}>
+            <InputLabel id="order-source-filter-label">{'Źródło'}</InputLabel>
+            <Select
+              labelId="order-source-filter-label"
+              label="Źródło"
+              value={orderSource}
+              onChange={(e) =>
+                setOrderSource(e.target.value as OrderSourceFilter)
+              }
+            >
+              <MenuItem value="">{'Wszystkie'}</MenuItem>
+              <MenuItem value="allegro">{'Allegro'}</MenuItem>
+              <MenuItem value="woocommerce">{'WooCommerce'}</MenuItem>
+              <MenuItem value="erli">{'Erli'}</MenuItem>
+            </Select>
+          </FormControl>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={needsProductReview}
+                onChange={(e) => setNeedsProductReview(e.target.checked)}
+                size="small"
+              />
             }
-          >
-            <MenuItem value="">{'Wszystkie'}</MenuItem>
-            <MenuItem value="allegro">{'Allegro'}</MenuItem>
-            <MenuItem value="woocommerce">{'WooCommerce'}</MenuItem>
-            <MenuItem value="erli">{'Erli'}</MenuItem>
-          </Select>
-        </FormControl>
+            label="Wymagają uwagi"
+          />
+        </Stack>
         <Button variant="contained" onClick={handleImportOrders}>
           {'Importuj zamówienia'}
         </Button>

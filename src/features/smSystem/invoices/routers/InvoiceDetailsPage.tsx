@@ -192,6 +192,7 @@ export const InvoiceDetailsPage = () => {
         const matchLabels: Record<ProductMatchType, string> = {
           NONE: 'Niedopasowany',
           GTIN: 'Auto (EAN)',
+          EAN: 'Auto (EAN)',
           MANUAL: 'Ręcznie',
           PREVIOUS_MANUAL: 'Auto (poprzednie)',
           SIMILARITY: 'Auto (podobna nazwa)',
@@ -204,6 +205,7 @@ export const InvoiceDetailsPage = () => {
         > = {
           NONE: 'error',
           GTIN: 'success',
+          EAN: 'success',
           MANUAL: 'info',
           PREVIOUS_MANUAL: 'secondary',
           SIMILARITY: 'warning',

@@ -5,6 +5,7 @@ import { axiosInstance } from '../../../../services';
 import { EcommerceOrderDetails } from '../types';
 
 import { getEcommerceOrderDetailsQueryKey } from './useGetEcommerceOrderDetails';
+import { getEcommerceOrdersQueryKeyBase } from './useGetEcommerceOrders';
 
 export interface Payload {
   orderId: number;
@@ -42,6 +43,9 @@ export const useUpdateEcommerceOrderItem = () => {
         getEcommerceOrderDetailsQueryKey(variables.orderId),
         response
       );
+      queryClient.invalidateQueries({
+        queryKey: [getEcommerceOrdersQueryKeyBase],
+      });
     },
     onError: () => {
       notify('error', 'Błąd podczas aktualizacji zamówienia');

@@ -23,6 +23,9 @@ export interface EcommerceOrderListItem {
   deliveryName: string | null;
   itemsAmount: number;
   productsAmount: number;
+  hasUnmatchedItems: boolean;
+  hasUncertainMatch: boolean;
+  needsProductReview: boolean;
 }
 type Response = ListResponse<EcommerceOrderListItem>;
 
@@ -30,6 +33,7 @@ export const useGetEcommerceOrders = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const pageParam = searchParams.get('page');
   const sourceParam = searchParams.get('orderSource');
+  const needsReviewParam = searchParams.get('needsProductReview');
   const initialPage = pageParam ? Number(pageParam) - 1 : 0;
   const initialSource: OrderSourceFilter =
     sourceParam === 'allegro' ||
@@ -37,11 +41,15 @@ export const useGetEcommerceOrders = () => {
     sourceParam === 'erli'
       ? sourceParam
       : '';
+  const initialNeedsReview =
+    needsReviewParam === '1' || needsReviewParam === 'true';
 
   const [page, setPage] = useState(initialPage);
   const [query, setQuery] = useState<string>('');
   const [orderSource, setOrderSourceState] =
     useState<OrderSourceFilter>(initialSource);
+  const [needsProductReview, setNeedsProductReviewState] =
+    useState(initialNeedsReview);
 
   useEffect(() => {
     const pageParam = searchParams.get('page');
@@ -53,11 +61,17 @@ export const useGetEcommerceOrders = () => {
     const params: Record<string, string> = {};
     if (page > 0) params.page = (page + 1).toString();
     if (orderSource) params.orderSource = orderSource;
+    if (needsProductReview) params.needsProductReview = '1';
     setSearchParams(params, { replace: true });
-  }, [page, orderSource, setSearchParams]);
+  }, [page, orderSource, needsProductReview, setSearchParams]);
 
   const setOrderSource = (source: OrderSourceFilter) => {
     setOrderSourceState(source);
+    setPage(0);
+  };
+
+  const setNeedsProductReview = (value: boolean) => {
+    setNeedsProductReviewState(value);
     setPage(0);
   };
 
@@ -68,13 +82,20 @@ export const useGetEcommerceOrders = () => {
         page: page + 1,
         pageSize,
         ...(orderSource ? { orderSource } : {}),
+        ...(needsProductReview ? { needsProductReview: true } : {}),
       },
     });
     return response.data;
   };
 
   const { data, isLoading, isFetching } = useQuery({
-    queryKey: [getEcommerceOrdersQueryKeyBase, query, page, orderSource],
+    queryKey: [
+      getEcommerceOrdersQueryKeyBase,
+      query,
+      page,
+      orderSource,
+      needsProductReview,
+    ],
     queryFn: getEcommerceOrdersRequest,
     placeholderData: keepPreviousData,
   });
@@ -95,5 +116,7 @@ export const useGetEcommerceOrders = () => {
     pageSize,
     orderSource,
     setOrderSource,
+    needsProductReview,
+    setNeedsProductReview,
   };
 };

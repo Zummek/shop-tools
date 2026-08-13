@@ -31,11 +31,13 @@ export const EcommerceOrderDetailsPage = () => {
   const { updateEcommerceOrder, isPending: isUpdatingStatus } =
     useUpdateEcommerceOrder();
 
-  const weakMatchCount = (ecommerceOrder?.orderItems ?? []).filter(
-    (item) =>
-      item.productMatchType === 'SIMILARITY' ||
-      item.productMatchType === 'NONE',
+  const unmatchedCount = (ecommerceOrder?.orderItems ?? []).filter(
+    (item) => item.productMatchType === 'NONE',
   ).length;
+  const uncertainCount = (ecommerceOrder?.orderItems ?? []).filter(
+    (item) => item.productMatchType === 'SIMILARITY',
+  ).length;
+  const weakMatchCount = unmatchedCount + uncertainCount;
 
   const handleUpdateEcommerceOrderItemInternalProduct = async (payload: {
     orderItemId: number;
@@ -131,10 +133,25 @@ export const EcommerceOrderDetailsPage = () => {
         />
       )}
       {weakMatchCount > 0 && (
-        <Alert severity="warning">
-          {`${weakMatchCount} ${
-            weakMatchCount === 1 ? 'pozycja ma' : 'pozycji ma'
-          } dopasowanie przez podobną nazwę lub brak dopasowania do produktu wewnętrznego.`}
+        <Alert severity={unmatchedCount > 0 ? 'error' : 'warning'}>
+          {[
+            unmatchedCount > 0
+              ? `${unmatchedCount} ${
+                  unmatchedCount === 1
+                    ? 'pozycja bez produktu'
+                    : 'pozycji bez produktu'
+                }`
+              : null,
+            uncertainCount > 0
+              ? `${uncertainCount} ${
+                  uncertainCount === 1
+                    ? 'pozycja z niepewnym dopasowaniem (podobna nazwa)'
+                    : 'pozycji z niepewnym dopasowaniem (podobna nazwa)'
+                }`
+              : null,
+          ]
+            .filter(Boolean)
+            .join('. ') + '.'}
         </Alert>
       )}
       <Box height={500} width="100%">

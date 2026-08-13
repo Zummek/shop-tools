@@ -3,6 +3,7 @@ import { SimpleBranch } from '../../branches/types';
 export type ProductMatchType =
   | 'NONE'
   | 'GTIN'
+  | 'EAN'
   | 'MANUAL'
   | 'PREVIOUS_MANUAL'
   | 'SIMILARITY'

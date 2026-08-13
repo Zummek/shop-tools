@@ -87,6 +87,7 @@ export const createOrderItemsColumns = ({
       const matchLabels: Record<ProductMatchType, string> = {
         NONE: 'Niedopasowany',
         GTIN: 'Auto (EAN)',
+        EAN: 'Auto (EAN)',
         MANUAL: 'Ręcznie',
         PREVIOUS_MANUAL: 'Auto (poprzednie)',
         SIMILARITY: 'Auto (podobna nazwa)',
@@ -99,6 +100,7 @@ export const createOrderItemsColumns = ({
       > = {
         NONE: 'error',
         GTIN: 'success',
+        EAN: 'success',
         MANUAL: 'info',
         PREVIOUS_MANUAL: 'success',
         SIMILARITY: 'warning',

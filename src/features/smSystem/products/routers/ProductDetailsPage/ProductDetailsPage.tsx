@@ -161,6 +161,7 @@ export const ProductDetailsPage = () => {
         }}
       >
         <Stack direction="row" flexWrap="wrap" gap={4}>
+          <LabelData label="ID" value={product.id} />
           <LabelData label="SKU / ID wewnętrzne" value={product.internalId} />
           <LabelData
             label="VAT"

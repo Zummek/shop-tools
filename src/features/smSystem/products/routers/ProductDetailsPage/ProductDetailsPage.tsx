@@ -319,9 +319,7 @@ const scheduleChipLabel = (schedule: ChannelPriceSchedule) => {
       'DD.MM HH:mm',
     )}`;
   }
-  if (schedule.isApplied) {
-    return 'Zmiana ceny aktywna';
-  }
+  if (schedule.isApplied) return 'Zmiana ceny aktywna';
   if (schedule.nextWindowStartsAt) {
     return `Następne okno: ${dayjs(schedule.nextWindowStartsAt).format(
       'DD.MM HH:mm',

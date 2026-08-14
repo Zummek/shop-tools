@@ -5,6 +5,7 @@ import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
 import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined';
 import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined';
 import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
+import ScheduleOutlinedIcon from '@mui/icons-material/ScheduleOutlined';
 import SellOutlinedIcon from '@mui/icons-material/SellOutlined';
 import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined';
 import SwapHorizOutlinedIcon from '@mui/icons-material/SwapHorizOutlined';
@@ -102,6 +103,12 @@ export const navSections: NavSection[] = [
         icon: <ShoppingCartOutlinedIcon />,
         permission: 'canAccessEcommerce',
         activePaths: [Pages.smSystemEcommerceOrderDetails],
+      },
+      {
+        label: 'Zaplanowane zmiany cen',
+        path: Pages.smSystemEcommercePriceSchedules,
+        icon: <ScheduleOutlinedIcon />,
+        permission: 'canAccessEcommerce',
       },
       {
         label: 'Integracje',

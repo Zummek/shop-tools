@@ -20,6 +20,7 @@ export enum Pages {
   smSystemEcommerceIntegrationsAllegro = '/sm-system/ecommerce/integrations/allegro',
   smSystemEcommerceIntegrationsWooCommerce = '/sm-system/ecommerce/integrations/woocommerce',
   smSystemEcommerceIntegrationsErli = '/sm-system/ecommerce/integrations/erli',
+  smSystemEcommercePriceSchedules = '/sm-system/ecommerce/price-schedules',
   smSystemProducts = '/sm-system/products',
   smSystemProductDetails = '/sm-system/products/:productId',
   smSystemInvoices = '/sm-system/invoices',

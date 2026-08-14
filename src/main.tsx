@@ -10,6 +10,7 @@ import { InvoiceConverterPage } from './features/invoiceConverter/routers/Invoic
 import { AlertsListPage } from './features/smSystem/alerts/routers/AlertsListPage/AlertsListPage';
 import { EcommerceOrderDetailsPage } from './features/smSystem/ecommerce/routers/EcommerceOrderDetailsPage';
 import { EcommerceOrdersListPage } from './features/smSystem/ecommerce/routers/EcommerceOrdersListPage';
+import { PriceSchedulesPage } from './features/smSystem/ecommerce/routers/PriceSchedulesPage';
 import { EcommerceIntegrationsPage } from './features/smSystem/ecommerce/routers/integrations/EcommerceIntegrationsPage';
 import { IntegrationsAllegroPanel } from './features/smSystem/ecommerce/routers/integrations/IntegrationsAllegroPanel';
 import { IntegrationsErliPanel } from './features/smSystem/ecommerce/routers/integrations/IntegrationsErliPanel';
@@ -137,6 +138,10 @@ const router = createHashRouter(
             {
               path: 'orders/:orderId',
               element: <EcommerceOrderDetailsPage />,
+            },
+            {
+              path: 'price-schedules',
+              element: <PriceSchedulesPage />,
             },
             {
               path: 'integrations',

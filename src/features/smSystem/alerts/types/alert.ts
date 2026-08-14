@@ -20,7 +20,9 @@ export type AlertType =
   | 'offer_inactive_with_stock'
   | 'stock_drift'
   | 'velocity_anomaly'
-  | 'below_purchase_price';
+  | 'below_purchase_price'
+  | 'price_schedule_failed'
+  | 'price_schedule_diverged';
 
 export interface AlertAcknowledgedBy {
   id: number;

@@ -7,6 +7,8 @@ import {
   Button,
   Chip,
   CircularProgress,
+  Menu,
+  MenuItem,
   Paper,
   Stack,
   Table,
@@ -17,16 +19,20 @@ import {
   Typography,
 } from '@mui/material';
 import dayjs from 'dayjs';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 
 import { LabelData } from '../../../../../components';
-import { useAppSelector } from '../../../../../hooks';
+import { useAppSelector, useNotify } from '../../../../../hooks';
 import { Pages } from '../../../../../utils';
 import {
+  ChannelPriceSchedule,
   ChannelProductLink,
+  useDisablePriceSchedule,
+  useGetPriceSchedules,
   useGetProductChannelLinks,
 } from '../../../ecommerce/api';
+import { SchedulePriceChangeModal } from '../../../ecommerce/modals';
 import { useGetProductDetails } from '../../api';
 import { formatPrice } from '../../utils';
 
@@ -85,6 +91,17 @@ export const ProductDetailsPage = () => {
   const { product, isLoading } = useGetProductDetails(productId);
   const { channelLinks, isLoading: isLoadingLinks } =
     useGetProductChannelLinks(productId);
+  const { schedules } = useGetPriceSchedules({ productId });
+
+  const schedulesByLinkId = useMemo(() => {
+    const map = new Map<number, ChannelPriceSchedule[]>();
+    for (const schedule of schedules) {
+      const list = map.get(schedule.linkId) ?? [];
+      list.push(schedule);
+      map.set(schedule.linkId, list);
+    }
+    return map;
+  }, [schedules]);
 
   const { activeLinks, endedLinks } = useMemo(() => {
     const active: ChannelProductLink[] = [];
@@ -236,7 +253,11 @@ export const ProductDetailsPage = () => {
               </Typography>
             )}
             {activeLinks.map((link) => (
-              <ChannelOfferCard key={link.id} link={link} />
+              <ChannelOfferCard
+                key={link.id}
+                link={link}
+                schedules={schedulesByLinkId.get(link.id) ?? []}
+              />
             ))}
             {endedLinks.length > 0 && (
               <Accordion
@@ -257,7 +278,11 @@ export const ProductDetailsPage = () => {
                 <AccordionDetails>
                   <Stack spacing={2}>
                     {endedLinks.map((link) => (
-                      <ChannelOfferCard key={link.id} link={link} />
+                      <ChannelOfferCard
+                        key={link.id}
+                        link={link}
+                        schedules={schedulesByLinkId.get(link.id) ?? []}
+                      />
                     ))}
                   </Stack>
                 </AccordionDetails>
@@ -272,10 +297,69 @@ export const ProductDetailsPage = () => {
 
 interface ChannelOfferCardProps {
   link: ChannelProductLink;
+  schedules: ChannelPriceSchedule[];
 }
 
-const ChannelOfferCard = ({ link }: ChannelOfferCardProps) => {
+const pickPrimarySchedule = (schedules: ChannelPriceSchedule[]) => {
+  const enabled = schedules.filter((s) => s.isEnabled);
+  return (
+    enabled.find((s) => s.isApplied) ??
+    enabled
+      .filter((s) => s.nextWindowStartsAt)
+      .sort((a, b) =>
+        (a.nextWindowStartsAt ?? '').localeCompare(b.nextWindowStartsAt ?? ''),
+      )[0] ??
+    null
+  );
+};
+
+const scheduleChipLabel = (schedule: ChannelPriceSchedule) => {
+  if (schedule.isApplied && schedule.currentWindowEndsAt) {
+    return `Zmiana ceny aktywna do ${dayjs(schedule.currentWindowEndsAt).format(
+      'DD.MM HH:mm',
+    )}`;
+  }
+  if (schedule.isApplied) {
+    return 'Zmiana ceny aktywna';
+  }
+  if (schedule.nextWindowStartsAt) {
+    return `Następne okno: ${dayjs(schedule.nextWindowStartsAt).format(
+      'DD.MM HH:mm',
+    )}`;
+  }
+  return 'Harmonogram bez nadchodzących okien';
+};
+
+const ChannelOfferCard = ({ link, schedules }: ChannelOfferCardProps) => {
   const openUrl = channelOfferUrl(link);
+  const { notify } = useNotify();
+  const { disablePriceSchedule, isPending: isDisabling } =
+    useDisablePriceSchedule();
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
+
+  const schedule = pickPrimarySchedule(schedules);
+  const canSchedule =
+    link.channel === 'allegro' && !isEndedOffer(link) && link.price != null;
+
+  const handleDisable = async (mode: 'revert_now' | 'revert_at_window_end') => {
+    if (!schedule) return;
+    setMenuAnchor(null);
+    try {
+      const result = await disablePriceSchedule({ id: schedule.id, mode });
+      if (result.revertPending) {
+        notify(
+          'warning',
+          'Przywracanie ceny nie powiodło się — system będzie ponawiał co minutę',
+        );
+      } else {
+        notify('success', 'Harmonogram wyłączony');
+      }
+    } catch {
+      notify('error', 'Nie udało się wyłączyć harmonogramu');
+    }
+  };
 
   return (
     <Paper
@@ -341,6 +425,84 @@ const ChannelOfferCard = ({ link }: ChannelOfferCardProps) => {
           />
         </Stack>
 
+        {schedule && (
+          <Stack
+            direction="row"
+            spacing={1}
+            alignItems="center"
+            flexWrap="wrap"
+          >
+            <Chip
+              size="small"
+              color={
+                schedule.consecutiveFailures > 0
+                  ? 'error'
+                  : schedule.isApplied
+                    ? 'success'
+                    : 'info'
+              }
+              variant={schedule.isApplied ? 'filled' : 'outlined'}
+              label={
+                schedule.consecutiveFailures > 0
+                  ? 'Błąd zmiany ceny — ponawiam'
+                  : schedule.disableAfterRevert
+                    ? 'Wyłączanie po zakończeniu okna'
+                    : scheduleChipLabel(schedule)
+              }
+            />
+            {schedule.isApplied && (
+              <Typography variant="body2" color="text.secondary">
+                {`tymczasowa: ${formatPrice(
+                  schedule.temporaryPrice,
+                  schedule.currency,
+                )} · bazowa: ${formatPrice(
+                  schedule.originalPrice,
+                  schedule.currency,
+                )}`}
+              </Typography>
+            )}
+          </Stack>
+        )}
+
+        {canSchedule && (
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Button
+              size="small"
+              onClick={() => setModalOpen(true)}
+              sx={{ alignSelf: 'flex-start' }}
+            >
+              {schedule ? 'Edytuj harmonogram ceny' : 'Zaplanuj zmianę ceny'}
+            </Button>
+            {schedule && (
+              <>
+                <Button
+                  size="small"
+                  color="error"
+                  onClick={(e) => setMenuAnchor(e.currentTarget)}
+                  disabled={isDisabling}
+                >
+                  {'Wyłącz'}
+                </Button>
+                <Menu
+                  anchorEl={menuAnchor}
+                  open={!!menuAnchor}
+                  onClose={() => setMenuAnchor(null)}
+                >
+                  <MenuItem onClick={() => handleDisable('revert_now')}>
+                    {'Wyłącz i przywróć cenę bazową teraz'}
+                  </MenuItem>
+                  <MenuItem
+                    onClick={() => handleDisable('revert_at_window_end')}
+                    disabled={!schedule.isApplied}
+                  >
+                    {'Wyłącz — cena wróci po zakończeniu okna'}
+                  </MenuItem>
+                </Menu>
+              </>
+            )}
+          </Stack>
+        )}
+
         {openUrl && (
           <Button
             size="small"
@@ -353,6 +515,15 @@ const ChannelOfferCard = ({ link }: ChannelOfferCardProps) => {
           </Button>
         )}
       </Stack>
+
+      {canSchedule && (
+        <SchedulePriceChangeModal
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+          link={link}
+          schedule={schedule}
+        />
+      )}
     </Paper>
   );
 };

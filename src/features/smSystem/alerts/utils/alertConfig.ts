@@ -25,6 +25,11 @@ export const ALERT_TYPE_OPTIONS: { value: AlertType; label: string }[] = [
   { value: 'stock_drift', label: 'Rozbieżność stanów' },
   { value: 'velocity_anomaly', label: 'Anomalia sprzedaży' },
   { value: 'below_purchase_price', label: 'Cena poniżej zakupu' },
+  { value: 'price_schedule_failed', label: 'Błąd zaplanowanej zmiany ceny' },
+  {
+    value: 'price_schedule_diverged',
+    label: 'Cena oferty zmieniona poza harmonogramem',
+  },
 ];
 
 export const alertTypeLabels: Record<AlertType, string> =

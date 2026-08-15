@@ -3,6 +3,11 @@ import { DataGrid, GridColDef, GridRowParams } from '@mui/x-data-grid';
 import { useMemo } from 'react';
 
 import { ProductsToOrder } from '../types';
+import {
+  getStockUrgencyClassName,
+  StockUrgencyThresholds,
+  stockUrgencyRowSx,
+} from '../utils/stockUrgency';
 
 interface Props {
   isLoading: boolean;
@@ -11,6 +16,7 @@ interface Props {
   setSelectedProductId: (id: number | null) => void;
   filterText: string;
   disableSelectingProduct?: boolean;
+  urgencyThresholds: StockUrgencyThresholds;
 }
 
 const columns: GridColDef<ProductsToOrder>[] = [
@@ -58,11 +64,11 @@ const columns: GridColDef<ProductsToOrder>[] = [
   },
 ];
 
-const minDaysOfStock = (product: ProductsToOrder): number => {
+const minDaysOfStock = (product: ProductsToOrder): number | null => {
   const values = product.ordersPerBranch
     .map((row) => row.daysOfStock)
     .filter((value): value is number => value != null);
-  if (values.length === 0) return Number.POSITIVE_INFINITY;
+  if (values.length === 0) return null;
   return Math.min(...values);
 };
 
@@ -73,9 +79,15 @@ export const ProductsInOrderTable = ({
   setSelectedProductId,
   filterText,
   disableSelectingProduct: disabled = false,
+  urgencyThresholds,
 }: Props) => {
   const sortedProducts = useMemo(
-    () => [...products].sort((a, b) => minDaysOfStock(a) - minDaysOfStock(b)),
+    () =>
+      [...products].sort((a, b) => {
+        const aDays = minDaysOfStock(a) ?? Number.POSITIVE_INFINITY;
+        const bDays = minDaysOfStock(b) ?? Number.POSITIVE_INFINITY;
+        return aDays - bDays;
+      }),
     [products],
   );
 
@@ -105,24 +117,15 @@ export const ProductsInOrderTable = ({
         ],
       }}
       rowSelectionModel={selectedProductId ? [selectedProductId] : []}
-      getRowClassName={(params) => {
-        const days = minDaysOfStock(params.row);
-        if (days === Number.POSITIVE_INFINITY) return '';
-        if (days < 3) return 'urgency-critical';
-        if (days < 7) return 'urgency-warning';
-        return '';
-      }}
+      getRowClassName={(params) =>
+        getStockUrgencyClassName(minDaysOfStock(params.row), urgencyThresholds)
+      }
       sx={{
         cursor: disabled ? 'not-allowed' : 'pointer',
         '& .MuiDataGrid-row': {
           opacity: disabled ? 0.7 : 1,
         },
-        '& .urgency-critical': {
-          backgroundColor: 'rgba(211, 47, 47, 0.12)',
-        },
-        '& .urgency-warning': {
-          backgroundColor: 'rgba(237, 108, 2, 0.12)',
-        },
+        ...stockUrgencyRowSx,
       }}
       localeText={{
         noRowsLabel: 'Brak produktów',

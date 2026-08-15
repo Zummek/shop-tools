@@ -21,6 +21,11 @@ import {
   OrdersPerBranch,
   ProposalExplanation,
 } from '../types';
+import {
+  getStockUrgencyClassName,
+  resolveStockUrgencyThresholds,
+  stockUrgencyRowSx,
+} from '../utils/stockUrgency';
 
 const formatExplanation = (explanation?: ProposalExplanation | null) => {
   if (!explanation) return 'Brak uzasadnienia propozycji';
@@ -93,7 +98,7 @@ const getColumns = (
             <br />
             {'na (dni)'}
           </Typography>
-          <Tooltip title="Ile dni wystarczy obecny stan magazynowy przy sprzedaży z wybranego okna. Kreska oznacza brak sprzedaży — wtedy nie da się tego wyliczyć.">
+          <Tooltip title="Ile dni wystarczy obecny stan magazynowy przy sprzedaży z wybranego okna. Kreska oznacza brak sprzedaży — wtedy nie da się tego wyliczyć. Czerwony/pomarańczowy wiersz oznacza niski stan względem ustawień dostawcy (czas dostawy, zapas, okres przeglądu).">
             <InfoOutlinedIcon
               fontSize="small"
               color="action"
@@ -238,8 +243,10 @@ export const ProductDetailsInOrderTable = ({
   isLoading,
 }: Props) => {
   const { updateOrderDetails, isLoading: isSaving } = useUpdateOrderDetails();
-  const leadTime = orderDetails?.supplier.leadTimeDays ?? 3;
-  const safety = orderDetails?.supplier.safetyDays ?? 2;
+  const urgencyThresholds = useMemo(
+    () => resolveStockUrgencyThresholds(orderDetails?.supplier),
+    [orderDetails?.supplier],
+  );
 
   const processRowUpdate = useCallback(
     async (updatedOrderPerBranch: OrdersPerBranch) => {
@@ -319,18 +326,9 @@ export const ProductDetailsInOrderTable = ({
           processRowUpdate={processRowUpdate}
           onCellEditStart={handleEditStart}
           loading={isLoading || isSaving}
-          getRowClassName={(params) => {
-            const days = params.row.daysOfStock;
-            if (days == null) return '';
-            if (days < leadTime + safety) return 'urgency-critical';
-            if (
-              days <
-              leadTime + safety + (orderDetails?.supplier.reviewPeriodDays ?? 7)
-            )
-              return 'urgency-warning';
-
-            return '';
-          }}
+          getRowClassName={(params) =>
+            getStockUrgencyClassName(params.row.daysOfStock, urgencyThresholds)
+          }
           sx={{
             '& .MuiDataGrid-columnHeaderTitle': {
               whiteSpace: 'normal',
@@ -346,12 +344,7 @@ export const ProductDetailsInOrderTable = ({
             '& .MuiDataGrid-cell--editing.error': {
               backgroundColor: '#ffcccc',
             },
-            '& .urgency-critical': {
-              backgroundColor: 'rgba(211, 47, 47, 0.12)',
-            },
-            '& .urgency-warning': {
-              backgroundColor: 'rgba(237, 108, 2, 0.12)',
-            },
+            ...stockUrgencyRowSx,
           }}
           localeText={{
             noRowsLabel: 'Brak sklepów',

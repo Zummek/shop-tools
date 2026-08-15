@@ -22,9 +22,11 @@ import { Pages } from '../../../../utils';
 import { useApplyProposals } from '../api/useApplyProposals';
 import { useGetOrderDetails } from '../api/useGetOrderDetails';
 import { DownloadDataModal } from '../components/DownloadDataModal';
+import { StockUrgencyLegend } from '../components/StockUrgencyLegend';
 import { ProductDetailsInBranchesTable } from '../tables/ProductDetailsInBranchesTable';
 import { ProductDetailsInOrderTable } from '../tables/ProductDetailsInOrderTable';
 import { ProductsInOrderTable } from '../tables/ProductsInOrderTable';
+import { resolveStockUrgencyThresholds } from '../utils/stockUrgency';
 
 export const OrderDetailsPage = () => {
   const navigate = useNavigate();
@@ -85,6 +87,11 @@ export const OrderDetailsPage = () => {
     [orderDetails],
   );
 
+  const urgencyThresholds = useMemo(
+    () => resolveStockUrgencyThresholds(orderDetails?.supplier),
+    [orderDetails?.supplier],
+  );
+
   const handleConfirmApplyProposals = async () => {
     await applyProposals(orderId);
     setIsApplyConfirmOpen(false);
@@ -135,6 +142,8 @@ export const OrderDetailsPage = () => {
         </Stack>
       </Stack>
 
+      <StockUrgencyLegend thresholds={urgencyThresholds} />
+
       <Stack spacing={2} direction="row">
         <Stack spacing={2} width={320} height={616}>
           <TextField
@@ -165,6 +174,7 @@ export const OrderDetailsPage = () => {
             setSelectedProductId={handleProductSelection}
             filterText={filterText}
             disableSelectingProduct={isEditing}
+            urgencyThresholds={urgencyThresholds}
           />
         </Stack>
 

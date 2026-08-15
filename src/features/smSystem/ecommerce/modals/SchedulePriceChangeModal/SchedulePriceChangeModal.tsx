@@ -60,6 +60,7 @@ export const SchedulePriceChangeModal = ({
   const isEdit = !!schedule;
 
   const [priceInput, setPriceInput] = useState('');
+  const [originalPriceInput, setOriginalPriceInput] = useState('');
   const [windows, setWindows] = useState<PriceScheduleWindow[]>([]);
   const [apiError, setApiError] = useState<string | null>(null);
 
@@ -74,12 +75,16 @@ export const SchedulePriceChangeModal = ({
     setApiError(null);
     if (schedule) {
       setPriceInput((schedule.temporaryPrice / 100).toFixed(2));
+      setOriginalPriceInput((schedule.originalPrice / 100).toFixed(2));
       setWindows(schedule.windows.map((w) => ({ ...w })));
     } else {
       setPriceInput('');
+      setOriginalPriceInput(
+        link.price != null ? (link.price / 100).toFixed(2) : '',
+      );
       setWindows([]);
     }
-  }, [open, schedule]);
+  }, [open, schedule, link.price]);
 
   const updateWindow = (index: number, patch: Partial<PriceScheduleWindow>) => {
     setWindows((prev) =>
@@ -99,8 +104,16 @@ export const SchedulePriceChangeModal = ({
   };
 
   const priceCents = Math.round(parseFloat(priceInput) * 100);
+  const originalPriceCents = Math.round(parseFloat(originalPriceInput) * 100);
   const isPriceValid = Number.isFinite(priceCents) && priceCents > 0;
-  const canSubmit = isPriceValid && windows.length > 0 && !isPending;
+  const isOriginalPriceValid =
+    Number.isFinite(originalPriceCents) && originalPriceCents > 0;
+  const pricesDiffer = priceCents !== originalPriceCents;
+  const canSubmit =
+    isPriceValid &&
+    windows.length > 0 &&
+    !isPending &&
+    (!isEdit || (isOriginalPriceValid && pricesDiffer));
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
@@ -109,7 +122,11 @@ export const SchedulePriceChangeModal = ({
       if (isEdit) {
         await updatePriceSchedule({
           id: schedule.id,
-          payload: { temporaryPrice: priceCents, windows },
+          payload: {
+            temporaryPrice: priceCents,
+            originalPrice: originalPriceCents,
+            windows,
+          },
         });
         notify('success', 'Harmonogram ceny zaktualizowany');
       } else {
@@ -129,8 +146,14 @@ export const SchedulePriceChangeModal = ({
       const linkError = Array.isArray(data?.linkId)
         ? data.linkId.join(' ')
         : null;
+      const originalError = Array.isArray(data?.originalPrice)
+        ? data.originalPrice.join(' ')
+        : null;
       setApiError(
-        windowsError || linkError || 'Nie udało się zapisać harmonogramu',
+        windowsError ||
+          linkError ||
+          originalError ||
+          'Nie udało się zapisać harmonogramu',
       );
     }
   };
@@ -173,7 +196,31 @@ export const SchedulePriceChangeModal = ({
           helperText={
             priceInput !== '' && !isPriceValid
               ? 'Podaj dodatnią cenę'
-              : 'Cena obowiązująca w aktywnych oknach; po zakończeniu okna wraca cena bazowa'
+              : 'Cena obowiązująca w aktywnych oknach'
+          }
+          fullWidth
+        />
+
+        <TextField
+          label="Cena bazowa (PLN)"
+          type="number"
+          value={originalPriceInput}
+          onChange={(e) => setOriginalPriceInput(e.target.value)}
+          inputProps={{ min: 0.01, step: 0.01 }}
+          disabled={!isEdit}
+          error={
+            isEdit &&
+            originalPriceInput !== '' &&
+            (!isOriginalPriceValid || !pricesDiffer)
+          }
+          helperText={
+            !isEdit
+              ? 'Aktualna cena oferty — po zakończeniu okna oferta wraca do tej kwoty. Możesz ją zmienić po utworzeniu harmonogramu.'
+              : !isOriginalPriceValid
+                ? 'Podaj dodatnią cenę'
+                : !pricesDiffer
+                  ? 'Cena bazowa musi różnić się od tymczasowej'
+                  : 'Obowiązuje poza oknami. Nowa kwota zostanie ustawiona na ofercie przy następnym powrocie z ceny tymczasowej.'
           }
           fullWidth
         />
@@ -291,7 +338,7 @@ export const SchedulePriceChangeModal = ({
         {isEdit && schedule.isApplied && (
           <Alert severity="info">
             {
-              'Cena tymczasowa jest teraz aktywna — zmiany zaczną obowiązywać od następnego okna.'
+              'Cena tymczasowa jest teraz aktywna — nowa cena tymczasowa od następnego okna, nowa cena bazowa przy następnym powrocie.'
             }
           </Alert>
         )}

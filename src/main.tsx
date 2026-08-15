@@ -18,6 +18,12 @@ import { IntegrationsWooCommercePanel } from './features/smSystem/ecommerce/rout
 import { InvoiceDetailsPage } from './features/smSystem/invoices/routers/InvoiceDetailsPage';
 import { InvoicesListPage } from './features/smSystem/invoices/routers/InvoicesListPage';
 import { SmSystemPageLayout } from './features/smSystem/layouts/SmSystemPageLayout';
+import { NewSuppliersOrdersPageLayout } from './features/smSystem/newSuppliersOrders/layout/SuppliersOrdersPageLayout';
+import { ConditionsPage as V2ConditionsPage } from './features/smSystem/newSuppliersOrders/routers/ConditionsPage';
+import { OrderDetailsPage as V2OrderDetailsPage } from './features/smSystem/newSuppliersOrders/routers/OrderDetailsPage';
+import { OrdersPage as V2OrdersPage } from './features/smSystem/newSuppliersOrders/routers/OrdersPage';
+import { SupplierDetailsPage as V2SupplierDetailsPage } from './features/smSystem/newSuppliersOrders/routers/SupplierDetailsPage';
+import { SuppliersPage as V2SuppliersPage } from './features/smSystem/newSuppliersOrders/routers/SuppliersPage';
 import { PriceTagsGroupDetailsPage } from './features/smSystem/priceTags/routers/PriceTagsGroupDetailsPage';
 import { PriceTagsGroupsPage } from './features/smSystem/priceTags/routers/PriceTagsGroupsPage';
 import { ImportProductsPage } from './features/smSystem/products/routers/ImportProductsPage/ImportProductsPage';
@@ -112,6 +118,36 @@ const router = createHashRouter(
             {
               path: 'orders/:orderId',
               element: <OrderDetailsPage />,
+            },
+          ],
+        },
+        {
+          path: 'suppliers-orders-v2',
+          element: <NewSuppliersOrdersPageLayout />,
+          children: [
+            {
+              index: true,
+              element: <Navigate to="/sm-system/suppliers-orders-v2/orders" />,
+            },
+            {
+              path: 'suppliers',
+              element: <V2SuppliersPage />,
+            },
+            {
+              path: 'suppliers/:supplierId',
+              element: <V2SupplierDetailsPage />,
+            },
+            {
+              path: 'orders',
+              element: <V2OrdersPage />,
+            },
+            {
+              path: 'orders/:orderId',
+              element: <V2OrderDetailsPage />,
+            },
+            {
+              path: 'conditions',
+              element: <V2ConditionsPage />,
             },
           ],
         },

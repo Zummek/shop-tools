@@ -86,6 +86,17 @@ export const navSections: NavSection[] = [
         ],
       },
       {
+        label: 'Nowe zamówienia u dostawców',
+        path: Pages.smSystemOrdersV2,
+        icon: <LocalShippingOutlinedIcon />,
+        activePaths: [
+          Pages.smSystemSuppliersV2,
+          Pages.smSystemSupplierDetailsV2,
+          Pages.smSystemOrderDetailsV2,
+          Pages.smSystemOrderConditionsV2,
+        ],
+      },
+      {
         label: 'Faktury',
         path: Pages.smSystemInvoices,
         icon: <ReceiptLongOutlinedIcon />,

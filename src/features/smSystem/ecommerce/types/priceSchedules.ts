@@ -32,7 +32,7 @@ export interface ChannelPriceSchedule {
   linkId: number;
   /** cents */
   temporaryPrice: number;
-  /** cents, captured at creation */
+  /** cents, captured at creation; editable afterwards */
   originalPrice: number;
   currency: string;
   isEnabled: boolean;
@@ -65,6 +65,7 @@ export interface PriceSchedulePayload {
 
 export interface UpdatePriceSchedulePayload {
   temporaryPrice?: number;
+  originalPrice?: number;
   windows?: PriceScheduleWindow[];
 }
 

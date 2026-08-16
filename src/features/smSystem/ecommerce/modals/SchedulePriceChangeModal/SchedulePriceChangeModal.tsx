@@ -111,9 +111,10 @@ export const SchedulePriceChangeModal = ({
   const pricesDiffer = priceCents !== originalPriceCents;
   const canSubmit =
     isPriceValid &&
+    isOriginalPriceValid &&
+    pricesDiffer &&
     windows.length > 0 &&
-    !isPending &&
-    (!isEdit || (isOriginalPriceValid && pricesDiffer));
+    !isPending;
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
@@ -133,6 +134,7 @@ export const SchedulePriceChangeModal = ({
         await createPriceSchedule({
           linkId: link.id,
           temporaryPrice: priceCents,
+          originalPrice: originalPriceCents,
           windows,
         });
         notify('success', 'Harmonogram ceny utworzony');
@@ -207,20 +209,18 @@ export const SchedulePriceChangeModal = ({
           value={originalPriceInput}
           onChange={(e) => setOriginalPriceInput(e.target.value)}
           inputProps={{ min: 0.01, step: 0.01 }}
-          disabled={!isEdit}
           error={
-            isEdit &&
             originalPriceInput !== '' &&
             (!isOriginalPriceValid || !pricesDiffer)
           }
           helperText={
-            !isEdit
-              ? 'Aktualna cena oferty — po zakończeniu okna oferta wraca do tej kwoty. Możesz ją zmienić po utworzeniu harmonogramu.'
-              : !isOriginalPriceValid
-                ? 'Podaj dodatnią cenę'
-                : !pricesDiffer
-                  ? 'Cena bazowa musi różnić się od tymczasowej'
-                  : 'Obowiązuje poza oknami. Nowa kwota zostanie ustawiona na ofercie przy następnym powrocie z ceny tymczasowej.'
+            !isOriginalPriceValid
+              ? 'Podaj dodatnią cenę'
+              : !pricesDiffer
+                ? 'Cena bazowa musi różnić się od tymczasowej'
+                : isEdit
+                  ? 'Obowiązuje poza oknami. Nowa kwota zostanie ustawiona na ofercie przy następnym powrocie z ceny tymczasowej.'
+                  : 'Po zakończeniu okna oferta wraca do tej kwoty. Domyślnie aktualna cena oferty.'
           }
           fullWidth
         />

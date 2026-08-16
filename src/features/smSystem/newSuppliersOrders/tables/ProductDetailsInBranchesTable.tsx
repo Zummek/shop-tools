@@ -56,9 +56,16 @@ export const ProductDetailsInBranchesTable = ({
     [orderDetails, selectedProductId],
   );
 
+  const rows = useMemo(() => {
+    const items = selectedProduct?.notSelectedBranches ?? [];
+    return [...items].sort((a, b) =>
+      a.branch.name.localeCompare(b.branch.name, 'pl'),
+    );
+  }, [selectedProduct]);
+
   return (
     <DataGrid
-      rows={selectedProduct?.notSelectedBranches ?? []}
+      rows={rows}
       columns={getColumns(orderDetails)}
       loading={isLoading}
       disableColumnSorting

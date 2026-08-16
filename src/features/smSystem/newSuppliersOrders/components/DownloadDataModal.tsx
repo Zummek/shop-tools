@@ -1,7 +1,7 @@
 import { Button, Modal, Stack, Typography } from '@mui/material';
 import { DataGrid, GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
 import dayjs from 'dayjs';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { OrderDetails } from '../types';
 
@@ -51,6 +51,14 @@ export const DownloadDataModal = ({
 }: Props) => {
   const [selectedBranches, setSelectedBranches] = useState<number[]>([]);
 
+  const sortedBranches = useMemo(
+    () =>
+      [...(orderDetails?.selectedBranches ?? [])].sort((a, b) =>
+        a.name.localeCompare(b.name, 'pl'),
+      ),
+    [orderDetails?.selectedBranches],
+  );
+
   const handleRowSelectionModelChange = (
     selectedBranchesIds: GridRowSelectionModel,
   ) => {
@@ -76,7 +84,7 @@ export const DownloadDataModal = ({
 
     if (filteredProducts.length === 0) return;
 
-    const branchesNames = orderDetails.selectedBranches
+    const branchesNames = sortedBranches
       .filter((branch) => selectedBranches.includes(branch.id))
       .map((branch) => branch.name)
       .join(', ');
@@ -105,7 +113,7 @@ export const DownloadDataModal = ({
         </Typography>
 
         <DataGrid
-          rows={orderDetails?.selectedBranches || []}
+          rows={sortedBranches}
           columns={columns}
           disableColumnSorting
           disableColumnMenu

@@ -306,11 +306,9 @@ export const ProductDetailsInOrderTable = ({
 
   const rows = useMemo(() => {
     const items = product?.ordersPerBranch ?? [];
-    return [...items].sort((a, b) => {
-      const aDays = a.daysOfStock ?? Number.POSITIVE_INFINITY;
-      const bDays = b.daysOfStock ?? Number.POSITIVE_INFINITY;
-      return aDays - bDays;
-    });
+    return [...items].sort((a, b) =>
+      a.branch.name.localeCompare(b.branch.name, 'pl'),
+    );
   }, [product]);
 
   return (

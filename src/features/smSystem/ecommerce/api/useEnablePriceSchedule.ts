@@ -1,31 +1,22 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { axiosInstance } from '../../../../services';
-import {
-  ChannelPriceSchedule,
-  UpdatePriceSchedulePayload,
-} from '../types/priceSchedules';
+import { ChannelPriceSchedule } from '../types/priceSchedules';
 
 import { priceSchedulesQueryKeyBase } from './useGetPriceSchedules';
 
-const endpoint = (id: number) => `/api/v1/ecommerce/price-schedules/${id}/`;
+const endpoint = (id: number) =>
+  `/api/v1/ecommerce/price-schedules/${id}/enable/`;
 
-export const useUpdatePriceSchedule = () => {
+export const useEnablePriceSchedule = () => {
   const queryClient = useQueryClient();
 
-  const { mutateAsync, isPending, error, reset } = useMutation({
-    mutationFn: async ({
-      id,
-      payload,
-    }: {
-      id: number;
-      payload: UpdatePriceSchedulePayload;
-    }) => {
-      const response = await axiosInstance.patch<
+  const { mutateAsync, isPending } = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await axiosInstance.post<
         ChannelPriceSchedule & { applyPending?: boolean; applyError?: string }
-      >(endpoint(id), payload);
+      >(endpoint(id));
       if (response.status === 400) throw response.data;
-
       return response.data;
     },
     onSuccess: () => {
@@ -35,9 +26,7 @@ export const useUpdatePriceSchedule = () => {
   });
 
   return {
-    updatePriceSchedule: mutateAsync,
+    enablePriceSchedule: mutateAsync,
     isPending,
-    error,
-    reset,
   };
 };

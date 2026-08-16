@@ -29,6 +29,7 @@ import {
   ChannelPriceSchedule,
   ChannelProductLink,
   useDisablePriceSchedule,
+  useEnablePriceSchedule,
   useGetPriceSchedules,
   useGetProductChannelLinks,
 } from '../../../ecommerce/api';
@@ -302,18 +303,24 @@ interface ChannelOfferCardProps {
 
 const pickPrimarySchedule = (schedules: ChannelPriceSchedule[]) => {
   const enabled = schedules.filter((s) => s.isEnabled);
-  return (
+  const fromEnabled =
     enabled.find((s) => s.isApplied) ??
     enabled
       .filter((s) => s.nextWindowStartsAt)
       .sort((a, b) =>
         (a.nextWindowStartsAt ?? '').localeCompare(b.nextWindowStartsAt ?? ''),
       )[0] ??
+    enabled[0] ??
+    null;
+  if (fromEnabled) return fromEnabled;
+  return (
+    [...schedules].filter((s) => !s.isEnabled).sort((a, b) => b.id - a.id)[0] ??
     null
   );
 };
 
 const scheduleChipLabel = (schedule: ChannelPriceSchedule) => {
+  if (!schedule.isEnabled) return 'Harmonogram wyłączony';
   if (schedule.isApplied && schedule.currentWindowEndsAt) {
     return `Zmiana ceny aktywna do ${dayjs(schedule.currentWindowEndsAt).format(
       'DD.MM HH:mm',
@@ -333,6 +340,8 @@ const ChannelOfferCard = ({ link, schedules }: ChannelOfferCardProps) => {
   const { notify } = useNotify();
   const { disablePriceSchedule, isPending: isDisabling } =
     useDisablePriceSchedule();
+  const { enablePriceSchedule, isPending: isEnabling } =
+    useEnablePriceSchedule();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
@@ -356,6 +365,23 @@ const ChannelOfferCard = ({ link, schedules }: ChannelOfferCardProps) => {
       }
     } catch {
       notify('error', 'Nie udało się wyłączyć harmonogramu');
+    }
+  };
+
+  const handleEnable = async () => {
+    if (!schedule) return;
+    try {
+      const result = await enablePriceSchedule(schedule.id);
+      if (result.applyPending) {
+        notify(
+          'warning',
+          'Włączenie udało się, ale zmiana ceny nie powiodła się — system będzie ponawiał co minutę',
+        );
+      } else {
+        notify('success', 'Harmonogram włączony');
+      }
+    } catch {
+      notify('error', 'Nie udało się włączyć harmonogramu');
     }
   };
 
@@ -433,19 +459,23 @@ const ChannelOfferCard = ({ link, schedules }: ChannelOfferCardProps) => {
             <Chip
               size="small"
               color={
-                schedule.consecutiveFailures > 0
-                  ? 'error'
-                  : schedule.isApplied
-                    ? 'success'
-                    : 'info'
+                !schedule.isEnabled
+                  ? 'default'
+                  : schedule.consecutiveFailures > 0
+                    ? 'error'
+                    : schedule.isApplied
+                      ? 'success'
+                      : 'info'
               }
               variant={schedule.isApplied ? 'filled' : 'outlined'}
               label={
-                schedule.consecutiveFailures > 0
-                  ? 'Błąd zmiany ceny — ponawiam'
-                  : schedule.disableAfterRevert
-                    ? 'Wyłączanie po zakończeniu okna'
-                    : scheduleChipLabel(schedule)
+                !schedule.isEnabled
+                  ? 'Harmonogram wyłączony'
+                  : schedule.consecutiveFailures > 0
+                    ? 'Błąd zmiany ceny — ponawiam'
+                    : schedule.disableAfterRevert
+                      ? 'Wyłączanie po zakończeniu okna'
+                      : scheduleChipLabel(schedule)
               }
             />
             {schedule.isApplied && (
@@ -471,7 +501,7 @@ const ChannelOfferCard = ({ link, schedules }: ChannelOfferCardProps) => {
             >
               {schedule ? 'Edytuj harmonogram ceny' : 'Zaplanuj zmianę ceny'}
             </Button>
-            {schedule && (
+            {schedule?.isEnabled && (
               <>
                 <Button
                   size="small"
@@ -487,7 +517,9 @@ const ChannelOfferCard = ({ link, schedules }: ChannelOfferCardProps) => {
                   onClose={() => setMenuAnchor(null)}
                 >
                   <MenuItem onClick={() => handleDisable('revert_now')}>
-                    {'Wyłącz i przywróć cenę bazową teraz'}
+                    {schedule.isApplied
+                      ? 'Wyłącz i przywróć cenę bazową teraz'
+                      : 'Wyłącz'}
                   </MenuItem>
                   <MenuItem
                     onClick={() => handleDisable('revert_at_window_end')}
@@ -497,6 +529,11 @@ const ChannelOfferCard = ({ link, schedules }: ChannelOfferCardProps) => {
                   </MenuItem>
                 </Menu>
               </>
+            )}
+            {schedule && !schedule.isEnabled && (
+              <Button size="small" onClick={handleEnable} disabled={isEnabling}>
+                {'Włącz'}
+              </Button>
             )}
           </Stack>
         )}

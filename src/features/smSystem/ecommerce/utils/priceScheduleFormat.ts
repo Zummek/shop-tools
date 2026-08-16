@@ -15,6 +15,7 @@ export const PRICE_SCHEDULE_EVENT_LABELS: Record<
   failed: 'Błąd zmiany ceny',
   diverged: 'Cena zmieniona poza systemem',
   disabled: 'Harmonogram wyłączony',
+  enabled: 'Harmonogram włączony',
 };
 
 export const formatPriceScheduleWindow = (window: PriceScheduleWindow) =>

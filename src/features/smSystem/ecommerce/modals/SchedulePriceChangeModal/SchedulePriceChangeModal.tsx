@@ -4,9 +4,14 @@ import { LoadingButton } from '@mui/lab';
 import {
   Alert,
   Button,
+  FormControl,
+  FormControlLabel,
+  FormLabel,
   IconButton,
   MenuItem,
   Modal,
+  Radio,
+  RadioGroup,
   Select,
   Stack,
   TextField,
@@ -20,6 +25,8 @@ import { formatPrice } from '../../../products/utils';
 import {
   ChannelPriceSchedule,
   ChannelProductLink,
+  PriceScheduleApplyMode,
+  PriceScheduleOriginalApplyMode,
   PriceScheduleWindow,
   useCreatePriceSchedule,
   useUpdatePriceSchedule,
@@ -63,6 +70,10 @@ export const SchedulePriceChangeModal = ({
   const [originalPriceInput, setOriginalPriceInput] = useState('');
   const [windows, setWindows] = useState<PriceScheduleWindow[]>([]);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [applyMode, setApplyMode] =
+    useState<PriceScheduleApplyMode>('apply_now');
+  const [originalApplyMode, setOriginalApplyMode] =
+    useState<PriceScheduleOriginalApplyMode>('apply_now');
 
   const { createPriceSchedule, isPending: isCreating } =
     useCreatePriceSchedule();
@@ -73,6 +84,8 @@ export const SchedulePriceChangeModal = ({
   useEffect(() => {
     if (!open) return;
     setApiError(null);
+    setApplyMode('apply_now');
+    setOriginalApplyMode(schedule?.isApplied ? 'next_revert' : 'apply_now');
     if (schedule) {
       setPriceInput((schedule.temporaryPrice / 100).toFixed(2));
       setOriginalPriceInput((schedule.originalPrice / 100).toFixed(2));
@@ -109,6 +122,19 @@ export const SchedulePriceChangeModal = ({
   const isOriginalPriceValid =
     Number.isFinite(originalPriceCents) && originalPriceCents > 0;
   const pricesDiffer = priceCents !== originalPriceCents;
+  const temporaryPriceChanged =
+    !!schedule && isPriceValid && priceCents !== schedule.temporaryPrice;
+  const originalPriceChanged =
+    !!schedule &&
+    isOriginalPriceValid &&
+    originalPriceCents !== schedule.originalPrice;
+  const showTempApplyOptions =
+    isEdit && !!schedule?.isApplied && temporaryPriceChanged;
+  const showOriginalApplyOptions = isEdit && originalPriceChanged;
+  const originalApplyNowEndsTemp =
+    !!schedule?.isApplied &&
+    showOriginalApplyOptions &&
+    originalApplyMode === 'apply_now';
   const canSubmit =
     isPriceValid &&
     isOriginalPriceValid &&
@@ -121,15 +147,26 @@ export const SchedulePriceChangeModal = ({
     setApiError(null);
     try {
       if (isEdit) {
-        await updatePriceSchedule({
+        const result = await updatePriceSchedule({
           id: schedule.id,
           payload: {
             temporaryPrice: priceCents,
             originalPrice: originalPriceCents,
             windows,
+            ...(showTempApplyOptions && !originalApplyNowEndsTemp
+              ? { applyMode }
+              : {}),
+            ...(showOriginalApplyOptions ? { originalApplyMode } : {}),
           },
         });
-        notify('success', 'Harmonogram ceny zaktualizowany');
+        if (result.applyPending) {
+          notify(
+            'warning',
+            'Zapisano nową cenę, ale zmiana na ofercie nie powiodła się. Spróbuj ponownie albo poczekaj na następne zastosowanie harmonogramu.',
+          );
+        } else {
+          notify('success', 'Harmonogram ceny zaktualizowany');
+        }
       } else {
         await createPriceSchedule({
           linkId: link.id,
@@ -151,10 +188,18 @@ export const SchedulePriceChangeModal = ({
       const originalError = Array.isArray(data?.originalPrice)
         ? data.originalPrice.join(' ')
         : null;
+      const applyModeError = Array.isArray(data?.applyMode)
+        ? data.applyMode.join(' ')
+        : null;
+      const originalApplyModeError = Array.isArray(data?.originalApplyMode)
+        ? data.originalApplyMode.join(' ')
+        : null;
       setApiError(
         windowsError ||
           linkError ||
           originalError ||
+          applyModeError ||
+          originalApplyModeError ||
           'Nie udało się zapisać harmonogramu',
       );
     }
@@ -203,6 +248,33 @@ export const SchedulePriceChangeModal = ({
           fullWidth
         />
 
+        {showTempApplyOptions && (
+          <FormControl>
+            <FormLabel sx={{ fontWeight: 600 }}>
+              {'Cena tymczasowa jest teraz na ofercie'}
+            </FormLabel>
+            <RadioGroup
+              value={originalApplyNowEndsTemp ? 'next_window' : applyMode}
+              onChange={(e) =>
+                setApplyMode(e.target.value as PriceScheduleApplyMode)
+              }
+            >
+              <FormControlLabel
+                value="apply_now"
+                control={<Radio />}
+                disabled={isPending || originalApplyNowEndsTemp}
+                label="Zastosuj nową cenę tymczasową na ofercie teraz"
+              />
+              <FormControlLabel
+                value="next_window"
+                control={<Radio />}
+                disabled={isPending}
+                label="Zastosuj od następnego okna — obecna cena zostaje do końca tego okna"
+              />
+            </RadioGroup>
+          </FormControl>
+        )}
+
         <TextField
           label="Cena bazowa (PLN)"
           type="number"
@@ -219,11 +291,46 @@ export const SchedulePriceChangeModal = ({
               : !pricesDiffer
                 ? 'Cena bazowa musi różnić się od tymczasowej'
                 : isEdit
-                  ? 'Obowiązuje poza oknami. Nowa kwota zostanie ustawiona na ofercie przy następnym powrocie z ceny tymczasowej.'
+                  ? 'Obowiązuje poza oknami tymczasowej ceny'
                   : 'Po zakończeniu okna oferta wraca do tej kwoty. Domyślnie aktualna cena oferty.'
           }
           fullWidth
         />
+
+        {showOriginalApplyOptions && (
+          <FormControl>
+            <FormLabel sx={{ fontWeight: 600 }}>
+              {schedule?.isApplied
+                ? 'Cena tymczasowa jest teraz na ofercie'
+                : 'Cena bazowa jest teraz na ofercie'}
+            </FormLabel>
+            <RadioGroup
+              value={originalApplyMode}
+              onChange={(e) =>
+                setOriginalApplyMode(
+                  e.target.value as PriceScheduleOriginalApplyMode,
+                )
+              }
+            >
+              <FormControlLabel
+                value="apply_now"
+                control={<Radio />}
+                disabled={isPending}
+                label={
+                  schedule?.isApplied
+                    ? 'Zastosuj nową cenę bazową na ofercie teraz — kończy aktualną cenę tymczasową'
+                    : 'Zastosuj nową cenę bazową na ofercie teraz'
+                }
+              />
+              <FormControlLabel
+                value="next_revert"
+                control={<Radio />}
+                disabled={isPending}
+                label="Zastosuj przy następnym powrocie z ceny tymczasowej"
+              />
+            </RadioGroup>
+          </FormControl>
+        )}
 
         <Stack spacing={1.5}>
           <Stack
@@ -334,14 +441,6 @@ export const SchedulePriceChangeModal = ({
         </Stack>
 
         {apiError && <Alert severity="error">{apiError}</Alert>}
-
-        {isEdit && schedule.isApplied && (
-          <Alert severity="info">
-            {
-              'Cena tymczasowa jest teraz aktywna — nowa cena tymczasowa od następnego okna, nowa cena bazowa przy następnym powrocie.'
-            }
-          </Alert>
-        )}
 
         <Stack direction="row" spacing={2} justifyContent="flex-end">
           <Button variant="outlined" onClick={onClose} disabled={isPending}>

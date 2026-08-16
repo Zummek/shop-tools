@@ -33,6 +33,7 @@ import {
   ChannelProductLink,
   PriceScheduleEvent,
   useDisablePriceSchedule,
+  useEnablePriceSchedule,
   useGetPriceSchedules,
 } from '../api';
 import {
@@ -171,6 +172,8 @@ export const PriceSchedulesPage = () => {
   const { schedules, isLoading } = useGetPriceSchedules();
   const { disablePriceSchedule, isPending: isDisabling } =
     useDisablePriceSchedule();
+  const { enablePriceSchedule, isPending: isEnabling } =
+    useEnablePriceSchedule();
 
   const [editedSchedule, setEditedSchedule] =
     useState<ChannelPriceSchedule | null>(null);
@@ -202,6 +205,22 @@ export const PriceSchedulesPage = () => {
       }
     } catch {
       notify('error', 'Nie udało się wyłączyć harmonogramu');
+    }
+  };
+
+  const handleEnable = async (schedule: ChannelPriceSchedule) => {
+    try {
+      const result = await enablePriceSchedule(schedule.id);
+      if (result.applyPending) {
+        notify(
+          'warning',
+          'Włączenie udało się, ale zmiana ceny nie powiodła się — system będzie ponawiał co minutę',
+        );
+      } else {
+        notify('success', 'Harmonogram włączony');
+      }
+    } catch {
+      notify('error', 'Nie udało się włączyć harmonogramu');
     }
   };
 
@@ -315,7 +334,7 @@ export const PriceSchedulesPage = () => {
     {
       field: 'actions',
       headerName: '',
-      width: 230,
+      width: 280,
       sortable: false,
       renderCell: (params) => {
         const schedule = params.row;
@@ -328,25 +347,28 @@ export const PriceSchedulesPage = () => {
             >
               <HistoryOutlinedIcon fontSize="small" />
             </IconButton>
-            {schedule.isEnabled && (
-              <>
-                <Button
-                  size="small"
-                  onClick={() => setEditedSchedule(schedule)}
-                >
-                  {'Edytuj'}
-                </Button>
-                <Button
-                  size="small"
-                  color="error"
-                  disabled={isDisabling}
-                  onClick={(e) =>
-                    setMenuState({ anchor: e.currentTarget, schedule })
-                  }
-                >
-                  {'Wyłącz'}
-                </Button>
-              </>
+            <Button size="small" onClick={() => setEditedSchedule(schedule)}>
+              {'Edytuj'}
+            </Button>
+            {schedule.isEnabled ? (
+              <Button
+                size="small"
+                color="error"
+                disabled={isDisabling}
+                onClick={(e) =>
+                  setMenuState({ anchor: e.currentTarget, schedule })
+                }
+              >
+                {'Wyłącz'}
+              </Button>
+            ) : (
+              <Button
+                size="small"
+                disabled={isEnabling}
+                onClick={() => handleEnable(schedule)}
+              >
+                {'Włącz'}
+              </Button>
             )}
           </Stack>
         );
@@ -414,7 +436,9 @@ export const PriceSchedulesPage = () => {
         onClose={() => setMenuState(null)}
       >
         <MenuItem onClick={() => handleDisable('revert_now')}>
-          {'Wyłącz i przywróć cenę bazową teraz'}
+          {menuState?.schedule.isApplied
+            ? 'Wyłącz i przywróć cenę bazową teraz'
+            : 'Wyłącz'}
         </MenuItem>
         <MenuItem
           onClick={() => handleDisable('revert_at_window_end')}

@@ -10,12 +10,17 @@ export interface PriceScheduleWindow {
 
 export type PriceScheduleDisableMode = 'revert_now' | 'revert_at_window_end';
 
+export type PriceScheduleApplyMode = 'next_window' | 'apply_now';
+
+export type PriceScheduleOriginalApplyMode = 'next_revert' | 'apply_now';
+
 export type PriceScheduleEventType =
   | 'applied'
   | 'reverted'
   | 'failed'
   | 'diverged'
-  | 'disabled';
+  | 'disabled'
+  | 'enabled';
 
 export interface PriceScheduleEvent {
   id: number;
@@ -69,6 +74,8 @@ export interface UpdatePriceSchedulePayload {
   temporaryPrice?: number;
   originalPrice?: number;
   windows?: PriceScheduleWindow[];
+  applyMode?: PriceScheduleApplyMode;
+  originalApplyMode?: PriceScheduleOriginalApplyMode;
 }
 
 export interface DisablePriceSchedulePayload {

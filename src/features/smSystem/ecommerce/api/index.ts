@@ -5,6 +5,7 @@ export * from './useDeleteEcommerceOrders';
 export * from './useErliDisconnect';
 export * from './useCreatePriceSchedule';
 export * from './useDisablePriceSchedule';
+export * from './useEnablePriceSchedule';
 export * from './useGetAllegroAuthUrl';
 export * from './useGetAllegroConnection';
 export * from './useGetAllegroOffers';

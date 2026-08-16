@@ -82,20 +82,7 @@ export const AxiosInterceptorsProvider = ({
       if (httpCode !== 400) {
         const errorMessage = getResponseErrorsMessageMsg(error);
 
-        if (errorMessage === null) return;
-
-        notify('error', errorMessage);
-
-        // if (standardErrorMsgKey === errorKey) {
-        // captureError({
-        //   httpCode,
-        //   errorCode: error.code,
-        //   errorMessage: error.message,
-        //   errorStack: error.stack,
-        //   requestBody: JSON.stringify(error.config.data),
-        //   response: JSON.stringify(error.response?.data),
-        // });
-        // }
+        if (errorMessage !== null) notify('error', errorMessage);
       }
 
       throw error;
@@ -103,7 +90,7 @@ export const AxiosInterceptorsProvider = ({
 
     const responseInterceptors = axiosResponse.use(
       responseInterceptor,
-      errorInterceptor
+      errorInterceptor,
     );
 
     return () => {

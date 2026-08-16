@@ -1,5 +1,6 @@
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import * as Sentry from '@sentry/react';
 import { SnackbarProvider } from 'notistack';
 import ReactDOM from 'react-dom/client';
 import { Provider } from 'react-redux';
@@ -39,9 +40,16 @@ import { SupplierDetailsPage } from './features/smSystem/suppliersOrders/routers
 import { SuppliersPage } from './features/smSystem/suppliersOrders/routers/SuppliersPage';
 import { TransfersPage } from './features/smSystem/transfers/routers/TransfersPage';
 import { LoginPage } from './features/smSystem/user/routes/LoginPage';
-import { ReactQueryClientProvider, setReduxStoreForAxios } from './services';
+import {
+  ReactQueryClientProvider,
+  SentryContext,
+  initSentry,
+  setReduxStoreForAxios,
+} from './services';
 import { AxiosInterceptorsProvider } from './services/AxiosInterceptorsProvider';
 import { store } from './store/store';
+
+initSentry();
 
 const router = createHashRouter(
   [
@@ -245,15 +253,21 @@ const router = createHashRouter(
 setReduxStoreForAxios(store);
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <SnackbarProvider>
-    <Provider store={store}>
-      <ReactQueryClientProvider>
-        <AxiosInterceptorsProvider store={store}>
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <RouterProvider router={router} />
-          </LocalizationProvider>
-        </AxiosInterceptorsProvider>
-      </ReactQueryClientProvider>
-    </Provider>
-  </SnackbarProvider>,
+  <Sentry.ErrorBoundary
+    fallback={<p>Wystąpił nieoczekiwany błąd. Odśwież stronę.</p>}
+  >
+    <SnackbarProvider>
+      <Provider store={store}>
+        <SentryContext>
+          <ReactQueryClientProvider>
+            <AxiosInterceptorsProvider store={store}>
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <RouterProvider router={router} />
+              </LocalizationProvider>
+            </AxiosInterceptorsProvider>
+          </ReactQueryClientProvider>
+        </SentryContext>
+      </Provider>
+    </SnackbarProvider>
+  </Sentry.ErrorBoundary>,
 );

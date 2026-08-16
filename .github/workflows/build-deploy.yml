@@ -41,6 +41,7 @@ jobs:
         run: yarn build
         env:
           VITE_SM_API_URL: ${{ vars.VITE_SM_API_URL }}
+          VITE_SENTRY_DSN: ${{ vars.VITE_SENTRY_DSN }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v6

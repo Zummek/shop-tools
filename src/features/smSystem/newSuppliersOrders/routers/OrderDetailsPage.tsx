@@ -8,6 +8,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  FormLabel,
   InputAdornment,
   Stack,
   TextField,
@@ -174,20 +175,27 @@ export const OrderDetailsPage = () => {
               },
             }}
           />
-          <ToggleButtonGroup
-            value={productSortBy}
-            exclusive
-            fullWidth
-            size="small"
-            color="primary"
-            onChange={(_, value: ProductsInOrderSortBy | null) => {
-              if (value !== null) setProductSortBy(value);
-            }}
-            aria-label="Sortowanie produktów"
-          >
-            <ToggleButton value="stockPriority">{'Pilność stanu'}</ToggleButton>
-            <ToggleButton value="name">{'Nazwa'}</ToggleButton>
-          </ToggleButtonGroup>
+          <Stack spacing={0.5}>
+            <FormLabel id="product-sort-label" sx={{ fontSize: 12 }}>
+              {'Sortuj według'}
+            </FormLabel>
+            <ToggleButtonGroup
+              value={productSortBy}
+              exclusive
+              fullWidth
+              size="small"
+              color="primary"
+              onChange={(_, value: ProductsInOrderSortBy | null) => {
+                if (value !== null) setProductSortBy(value);
+              }}
+              aria-labelledby="product-sort-label"
+            >
+              <ToggleButton value="stockPriority">
+                {'Pilność stanu'}
+              </ToggleButton>
+              <ToggleButton value="name">{'Nazwa'}</ToggleButton>
+            </ToggleButtonGroup>
+          </Stack>
           <Box flex={1} minHeight={0}>
             <ProductsInOrderTable
               isLoading={isLoading}

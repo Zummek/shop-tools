@@ -229,10 +229,10 @@ export const OrderDetailsPage = () => {
         open={isApplyConfirmOpen}
         onClose={() => setIsApplyConfirmOpen(false)}
       >
-        <DialogTitle>{'Przywrócić wszystkie propozycje?'}</DialogTitle>
+        <DialogTitle>{'Zastosować wszystkie propozycje?'}</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            {`Propozycje są już wpisane przy tworzeniu zamówienia. Ta akcja nadpisze ręcznie zmienione ilości w ${differingCount} pozycjach i przywróci propozycje systemowe.`}
+            {`Ta akcja wpisze proponowane ilości w ${differingCount} pozycjach. Ręcznie wpisane ilości zostaną nadpisane.`}
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
@@ -245,7 +245,7 @@ export const OrderDetailsPage = () => {
             loading={isApplying}
             onClick={handleConfirmApplyProposals}
           >
-            {'Nadpisz i zastosuj'}
+            {'Zastosuj'}
           </Button>
         </DialogActions>
       </Dialog>

@@ -11,6 +11,8 @@ import {
   InputAdornment,
   Stack,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from '@mui/material';
 import dayjs from 'dayjs';
@@ -25,7 +27,10 @@ import { DownloadDataModal } from '../components/DownloadDataModal';
 import { StockUrgencyLegend } from '../components/StockUrgencyLegend';
 import { ProductDetailsInBranchesTable } from '../tables/ProductDetailsInBranchesTable';
 import { ProductDetailsInOrderTable } from '../tables/ProductDetailsInOrderTable';
-import { ProductsInOrderTable } from '../tables/ProductsInOrderTable';
+import {
+  ProductsInOrderSortBy,
+  ProductsInOrderTable,
+} from '../tables/ProductsInOrderTable';
 import { resolveStockUrgencyThresholds } from '../utils/stockUrgency';
 
 export const OrderDetailsPage = () => {
@@ -36,6 +41,8 @@ export const OrderDetailsPage = () => {
 
   const [isEditing, setIsEditing] = useState(false);
   const [filterText, setFilterText] = useState('');
+  const [productSortBy, setProductSortBy] =
+    useState<ProductsInOrderSortBy>('stockPriority');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isApplyConfirmOpen, setIsApplyConfirmOpen] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<number | null>(
@@ -167,15 +174,32 @@ export const OrderDetailsPage = () => {
               },
             }}
           />
-          <ProductsInOrderTable
-            isLoading={isLoading}
-            products={orderDetails?.productsToOrder ?? []}
-            selectedProductId={selectedProductId}
-            setSelectedProductId={handleProductSelection}
-            filterText={filterText}
-            disableSelectingProduct={isEditing}
-            urgencyThresholds={urgencyThresholds}
-          />
+          <ToggleButtonGroup
+            value={productSortBy}
+            exclusive
+            fullWidth
+            size="small"
+            color="primary"
+            onChange={(_, value: ProductsInOrderSortBy | null) => {
+              if (value !== null) setProductSortBy(value);
+            }}
+            aria-label="Sortowanie produktów"
+          >
+            <ToggleButton value="stockPriority">{'Pilność stanu'}</ToggleButton>
+            <ToggleButton value="name">{'Nazwa'}</ToggleButton>
+          </ToggleButtonGroup>
+          <Box flex={1} minHeight={0}>
+            <ProductsInOrderTable
+              isLoading={isLoading}
+              products={orderDetails?.productsToOrder ?? []}
+              selectedProductId={selectedProductId}
+              setSelectedProductId={handleProductSelection}
+              filterText={filterText}
+              disableSelectingProduct={isEditing}
+              urgencyThresholds={urgencyThresholds}
+              sortBy={productSortBy}
+            />
+          </Box>
         </Stack>
 
         <Stack spacing={2} flex={1}>

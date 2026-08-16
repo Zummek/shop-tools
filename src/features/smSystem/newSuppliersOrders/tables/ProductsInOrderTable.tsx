@@ -9,6 +9,8 @@ import {
   stockUrgencyRowSx,
 } from '../utils/stockUrgency';
 
+export type ProductsInOrderSortBy = 'stockPriority' | 'name';
+
 interface Props {
   isLoading: boolean;
   products: ProductsToOrder[];
@@ -17,6 +19,7 @@ interface Props {
   filterText: string;
   disableSelectingProduct?: boolean;
   urgencyThresholds: StockUrgencyThresholds;
+  sortBy: ProductsInOrderSortBy;
 }
 
 const columns: GridColDef<ProductsToOrder>[] = [
@@ -80,16 +83,21 @@ export const ProductsInOrderTable = ({
   filterText,
   disableSelectingProduct: disabled = false,
   urgencyThresholds,
+  sortBy,
 }: Props) => {
-  const sortedProducts = useMemo(
-    () =>
-      [...products].sort((a, b) => {
-        const aDays = minDaysOfStock(a) ?? Number.POSITIVE_INFINITY;
-        const bDays = minDaysOfStock(b) ?? Number.POSITIVE_INFINITY;
-        return aDays - bDays;
-      }),
-    [products],
-  );
+  const sortedProducts = useMemo(() => {
+    const compareByName = (a: ProductsToOrder, b: ProductsToOrder) =>
+      a.name.localeCompare(b.name, 'pl');
+
+    return [...products].sort((a, b) => {
+      if (sortBy === 'name') return compareByName(a, b);
+
+      const aDays = minDaysOfStock(a) ?? Number.POSITIVE_INFINITY;
+      const bDays = minDaysOfStock(b) ?? Number.POSITIVE_INFINITY;
+      const byStock = aDays - bDays;
+      return byStock !== 0 ? byStock : compareByName(a, b);
+    });
+  }, [products, sortBy]);
 
   const handleRowClick = (params: GridRowParams<ProductsToOrder>) => {
     if (!disabled) setSelectedProductId(params.row.id);
@@ -121,6 +129,7 @@ export const ProductsInOrderTable = ({
         getStockUrgencyClassName(minDaysOfStock(params.row), urgencyThresholds)
       }
       sx={{
+        height: '100%',
         cursor: disabled ? 'not-allowed' : 'pointer',
         '& .MuiDataGrid-row': {
           opacity: disabled ? 0.7 : 1,

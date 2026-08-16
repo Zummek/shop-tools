@@ -18,13 +18,15 @@ export const useDisablePriceSchedule = () => {
     mutationFn: async ({
       id,
       mode,
+      force,
     }: {
       id: number;
       mode: PriceScheduleDisableMode;
+      force?: boolean;
     }) => {
       const response = await axiosInstance.post<
         ChannelPriceSchedule & { revertPending?: boolean; revertError?: string }
-      >(endpoint(id), { mode });
+      >(endpoint(id), { mode, force });
       return response.data;
     },
     onSuccess: () => {

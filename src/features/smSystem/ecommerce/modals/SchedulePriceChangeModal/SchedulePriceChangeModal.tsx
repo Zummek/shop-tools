@@ -17,6 +17,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
 
 import { modalStyle } from '../../../../../components';
@@ -31,7 +32,7 @@ import {
   useCreatePriceSchedule,
   useUpdatePriceSchedule,
 } from '../../api';
-import { WEEKDAY_LABELS } from '../../utils';
+import { formatPriceScheduleWindows, WEEKDAY_LABELS } from '../../utils';
 
 const NIGHTS_PRESET: PriceScheduleWindow[] = [0, 1, 2, 3, 4].map((weekday) => ({
   startWeekday: weekday,
@@ -39,6 +40,23 @@ const NIGHTS_PRESET: PriceScheduleWindow[] = [0, 1, 2, 3, 4].map((weekday) => ({
   endWeekday: (weekday + 1) % 7,
   endTime: '07:00',
 }));
+
+/** Digits with an optional single decimal part, comma or dot. */
+const PRICE_INPUT_RE = /^\d+([.,]\d{1,2})?$/;
+
+const parsePriceInput = (value: string): number => {
+  const trimmed = value.trim();
+  if (!PRICE_INPUT_RE.test(trimmed)) return NaN;
+  return Math.round(parseFloat(trimmed.replace(',', '.')) * 100);
+};
+
+const isWindowValid = (window: PriceScheduleWindow) =>
+  !!window.startTime &&
+  !!window.endTime &&
+  !(
+    window.startWeekday === window.endWeekday &&
+    window.startTime === window.endTime
+  );
 
 const WEEKEND_PRESET: PriceScheduleWindow[] = [
   { startWeekday: 5, startTime: '00:00', endWeekday: 0, endTime: '07:00' },
@@ -70,6 +88,9 @@ export const SchedulePriceChangeModal = ({
   const [originalPriceInput, setOriginalPriceInput] = useState('');
   const [windows, setWindows] = useState<PriceScheduleWindow[]>([]);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [pendingPreset, setPendingPreset] = useState<
+    PriceScheduleWindow[] | null
+  >(null);
   const [applyMode, setApplyMode] =
     useState<PriceScheduleApplyMode>('apply_now');
   const [originalApplyMode, setOriginalApplyMode] =
@@ -84,6 +105,7 @@ export const SchedulePriceChangeModal = ({
   useEffect(() => {
     if (!open) return;
     setApiError(null);
+    setPendingPreset(null);
     setApplyMode('apply_now');
     setOriginalApplyMode(schedule?.isApplied ? 'next_revert' : 'apply_now');
     if (schedule) {
@@ -116,12 +138,13 @@ export const SchedulePriceChangeModal = ({
     setWindows((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const priceCents = Math.round(parseFloat(priceInput) * 100);
-  const originalPriceCents = Math.round(parseFloat(originalPriceInput) * 100);
+  const priceCents = parsePriceInput(priceInput);
+  const originalPriceCents = parsePriceInput(originalPriceInput);
   const isPriceValid = Number.isFinite(priceCents) && priceCents > 0;
   const isOriginalPriceValid =
     Number.isFinite(originalPriceCents) && originalPriceCents > 0;
   const pricesDiffer = priceCents !== originalPriceCents;
+  const allWindowsValid = windows.every(isWindowValid);
   const temporaryPriceChanged =
     !!schedule && isPriceValid && priceCents !== schedule.temporaryPrice;
   const originalPriceChanged =
@@ -140,7 +163,25 @@ export const SchedulePriceChangeModal = ({
     isOriginalPriceValid &&
     pricesDiffer &&
     windows.length > 0 &&
+    allWindowsValid &&
     !isPending;
+  const showSummary =
+    isPriceValid &&
+    isOriginalPriceValid &&
+    pricesDiffer &&
+    windows.length > 0 &&
+    allWindowsValid;
+  const currency = link.currency || 'PLN';
+  const showStaleBaseHint =
+    link.price != null &&
+    isOriginalPriceValid &&
+    link.price !== originalPriceCents &&
+    !schedule?.isApplied;
+
+  const applyPreset = (preset: PriceScheduleWindow[]) => {
+    if (windows.length === 0) setWindows(preset);
+    else setPendingPreset(preset);
+  };
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
@@ -168,13 +209,27 @@ export const SchedulePriceChangeModal = ({
           notify('success', 'Harmonogram ceny zaktualizowany');
         }
       } else {
-        await createPriceSchedule({
+        const created = await createPriceSchedule({
           linkId: link.id,
           temporaryPrice: priceCents,
           originalPrice: originalPriceCents,
           windows,
         });
-        notify('success', 'Harmonogram ceny utworzony');
+        if (created.isInsideWindowNow) {
+          notify(
+            'info',
+            'Harmonogram utworzony — jesteś w aktywnym oknie, cena tymczasowa zmieni się w ciągu minuty',
+          );
+        } else if (created.nextWindowStartsAt) {
+          notify(
+            'success',
+            `Harmonogram utworzony — najbliższa zmiana ceny: ${dayjs(
+              created.nextWindowStartsAt,
+            ).format('DD.MM HH:mm')}`,
+          );
+        } else {
+          notify('success', 'Harmonogram ceny utworzony');
+        }
       }
       onClose();
     } catch (err) {
@@ -235,14 +290,15 @@ export const SchedulePriceChangeModal = ({
 
         <TextField
           label="Cena tymczasowa (PLN)"
-          type="number"
+          type="text"
+          inputMode="decimal"
+          placeholder="np. 79,99"
           value={priceInput}
           onChange={(e) => setPriceInput(e.target.value)}
-          inputProps={{ min: 0.01, step: 0.01 }}
           error={priceInput !== '' && !isPriceValid}
           helperText={
             priceInput !== '' && !isPriceValid
-              ? 'Podaj dodatnią cenę'
+              ? 'Podaj dodatnią cenę, np. 79,99'
               : 'Cena obowiązująca w aktywnych oknach'
           }
           fullWidth
@@ -277,17 +333,18 @@ export const SchedulePriceChangeModal = ({
 
         <TextField
           label="Cena bazowa (PLN)"
-          type="number"
+          type="text"
+          inputMode="decimal"
+          placeholder="np. 99,99"
           value={originalPriceInput}
           onChange={(e) => setOriginalPriceInput(e.target.value)}
-          inputProps={{ min: 0.01, step: 0.01 }}
           error={
             originalPriceInput !== '' &&
             (!isOriginalPriceValid || !pricesDiffer)
           }
           helperText={
             !isOriginalPriceValid
-              ? 'Podaj dodatnią cenę'
+              ? 'Podaj dodatnią cenę, np. 99,99'
               : !pricesDiffer
                 ? 'Cena bazowa musi różnić się od tymczasowej'
                 : isEdit
@@ -296,6 +353,28 @@ export const SchedulePriceChangeModal = ({
           }
           fullWidth
         />
+
+        {showStaleBaseHint && (
+          <Alert
+            severity="warning"
+            action={
+              <Button
+                size="small"
+                color="inherit"
+                onClick={() =>
+                  setOriginalPriceInput(((link.price ?? 0) / 100).toFixed(2))
+                }
+              >
+                {'Ustaw jako bazową'}
+              </Button>
+            }
+          >
+            {`Aktualna cena na ofercie to ${formatPrice(
+              link.price ?? 0,
+              currency,
+            )} — różni się od ceny bazowej harmonogramu. Po zakończeniu okna oferta wróci do ceny bazowej.`}
+          </Alert>
+        )}
 
         {showOriginalApplyOptions && (
           <FormControl>
@@ -318,7 +397,7 @@ export const SchedulePriceChangeModal = ({
                 disabled={isPending}
                 label={
                   schedule?.isApplied
-                    ? 'Zastosuj nową cenę bazową na ofercie teraz — kończy aktualną cenę tymczasową'
+                    ? 'Zastosuj nową cenę bazową na ofercie teraz — kończy bieżące okno, cena tymczasowa wróci dopiero przy następnym oknie'
                     : 'Zastosuj nową cenę bazową na ofercie teraz'
                 }
               />
@@ -341,23 +420,52 @@ export const SchedulePriceChangeModal = ({
             gap={1}
           >
             <Typography variant="subtitle2" fontWeight={600}>
-              {'Okna tygodniowe (cykliczne)'}
+              {'Okna tygodniowe (cykliczne, godziny wg czasu polskiego)'}
             </Typography>
             <Stack direction="row" spacing={1} flexWrap="wrap">
-              <Button size="small" onClick={() => setWindows(NIGHTS_PRESET)}>
+              <Button size="small" onClick={() => applyPreset(NIGHTS_PRESET)}>
                 {'Noce (pn–pt 17:00–07:00)'}
               </Button>
-              <Button size="small" onClick={() => setWindows(WEEKEND_PRESET)}>
+              <Button size="small" onClick={() => applyPreset(WEEKEND_PRESET)}>
                 {'Weekend (sob 00:00 – pon 07:00)'}
               </Button>
               <Button
                 size="small"
-                onClick={() => setWindows(NIGHTS_AND_WEEKEND_PRESET)}
+                onClick={() => applyPreset(NIGHTS_AND_WEEKEND_PRESET)}
               >
                 {'Noce + weekend'}
               </Button>
             </Stack>
           </Stack>
+
+          {pendingPreset && (
+            <Alert
+              severity="warning"
+              action={
+                <Stack direction="row" spacing={1}>
+                  <Button
+                    size="small"
+                    color="inherit"
+                    onClick={() => {
+                      setWindows(pendingPreset);
+                      setPendingPreset(null);
+                    }}
+                  >
+                    {'Zastąp'}
+                  </Button>
+                  <Button
+                    size="small"
+                    color="inherit"
+                    onClick={() => setPendingPreset(null)}
+                  >
+                    {'Anuluj'}
+                  </Button>
+                </Stack>
+              }
+            >
+              {`Gotowiec zastąpi obecne okna (${windows.length}).`}
+            </Alert>
+          )}
 
           {windows.length === 0 && (
             <Typography variant="body2" color="text.secondary">
@@ -418,6 +526,12 @@ export const SchedulePriceChangeModal = ({
                 onChange={(e) =>
                   updateWindow(index, { endTime: e.target.value })
                 }
+                error={!isWindowValid(window)}
+                helperText={
+                  !isWindowValid(window)
+                    ? 'Koniec musi różnić się od startu'
+                    : undefined
+                }
                 sx={{ width: 110 }}
               />
               <IconButton
@@ -439,6 +553,17 @@ export const SchedulePriceChangeModal = ({
             {'Dodaj okno'}
           </Button>
         </Stack>
+
+        {showSummary && (
+          <Alert severity="info">
+            {`Podsumowanie: cena ${formatPrice(priceCents, currency)} ` +
+              `będzie obowiązywać ${formatPriceScheduleWindows(windows)}. ` +
+              `Poza oknami oferta wróci do ${formatPrice(
+                originalPriceCents,
+                currency,
+              )}. Godziny wg czasu polskiego.`}
+          </Alert>
+        )}
 
         {apiError && <Alert severity="error">{apiError}</Alert>}
 

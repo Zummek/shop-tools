@@ -43,6 +43,8 @@ export interface ChannelPriceSchedule {
   isEnabled: boolean;
   isApplied: boolean;
   disableAfterRevert: boolean;
+  /** set while a mid-window base-price push keeps the temp price paused */
+  snoozedUntil: string | null;
   consecutiveFailures: number;
   lastError: string | null;
   lastAppliedAt: string | null;
@@ -56,6 +58,8 @@ export interface ChannelPriceSchedule {
   marketplace: string | null;
   productId: number | null;
   productName: string | null;
+  /** last synced offer price, cents — may differ from originalPrice */
+  linkPrice: number | null;
   isInsideWindowNow: boolean;
   currentWindowEndsAt: string | null;
   nextWindowStartsAt: string | null;
@@ -80,4 +84,6 @@ export interface UpdatePriceSchedulePayload {
 
 export interface DisablePriceSchedulePayload {
   mode: PriceScheduleDisableMode;
+  /** skips the channel write — escape hatch for unpatchable offers */
+  force?: boolean;
 }

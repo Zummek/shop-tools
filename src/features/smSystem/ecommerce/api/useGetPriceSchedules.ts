@@ -29,6 +29,9 @@ export const useGetPriceSchedules = (filters: Filters = {}) => {
       );
       return response.data;
     },
+    // The engine ticks every minute; keep open pages fresh around window
+    // boundaries.
+    refetchInterval: 60_000,
   });
 
   return {

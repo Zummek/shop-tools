@@ -1,4 +1,5 @@
 import {
+  ChannelPriceSchedule,
   PriceScheduleEvent,
   PriceScheduleEventType,
   PriceScheduleWindow,
@@ -28,3 +29,18 @@ export const formatPriceScheduleWindows = (windows: PriceScheduleWindow[]) =>
 
 export const formatPriceScheduleEventLabel = (event: PriceScheduleEvent) =>
   PRICE_SCHEDULE_EVENT_LABELS[event.event] ?? event.event;
+
+/**
+ * True while a mid-window base-price push keeps the temporary price paused
+ * until the current window ends.
+ */
+export const isPriceScheduleSnoozed = (
+  schedule: Pick<
+    ChannelPriceSchedule,
+    'isEnabled' | 'isApplied' | 'snoozedUntil'
+  >,
+) =>
+  schedule.isEnabled &&
+  !schedule.isApplied &&
+  !!schedule.snoozedUntil &&
+  new Date(schedule.snoozedUntil).getTime() > Date.now();

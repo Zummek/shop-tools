@@ -4,6 +4,7 @@ export * from './useConnectWooCommerce';
 export * from './useDeleteEcommerceOrders';
 export * from './useErliDisconnect';
 export * from './useCreatePriceSchedule';
+export * from './useDeletePriceSchedule';
 export * from './useDisablePriceSchedule';
 export * from './useEnablePriceSchedule';
 export * from './useGetAllegroAuthUrl';

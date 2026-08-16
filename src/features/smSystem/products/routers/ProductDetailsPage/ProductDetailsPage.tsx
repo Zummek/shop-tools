@@ -7,6 +7,10 @@ import {
   Button,
   Chip,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Menu,
   MenuItem,
   Paper,
@@ -34,6 +38,7 @@ import {
   useGetProductChannelLinks,
 } from '../../../ecommerce/api';
 import { SchedulePriceChangeModal } from '../../../ecommerce/modals';
+import { isPriceScheduleSnoozed } from '../../../ecommerce/utils';
 import { useGetProductDetails } from '../../api';
 import { formatPrice } from '../../utils';
 
@@ -327,6 +332,11 @@ const scheduleChipLabel = (schedule: ChannelPriceSchedule) => {
     )}`;
   }
   if (schedule.isApplied) return 'Zmiana ceny aktywna';
+  if (isPriceScheduleSnoozed(schedule)) {
+    return `Wstrzymana do ${dayjs(schedule.snoozedUntil).format(
+      'DD.MM HH:mm',
+    )}`;
+  }
   if (schedule.nextWindowStartsAt) {
     return `Następne okno: ${dayjs(schedule.nextWindowStartsAt).format(
       'DD.MM HH:mm',
@@ -345,16 +355,24 @@ const ChannelOfferCard = ({ link, schedules }: ChannelOfferCardProps) => {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
+  const [confirmDisable, setConfirmDisable] = useState<{
+    mode: 'revert_now' | 'revert_at_window_end';
+    force?: boolean;
+  } | null>(null);
 
   const schedule = pickPrimarySchedule(schedules);
   const canSchedule =
     link.channel === 'allegro' && !isEndedOffer(link) && link.price != null;
 
-  const handleDisable = async (mode: 'revert_now' | 'revert_at_window_end') => {
-    if (!schedule) return;
-    setMenuAnchor(null);
+  const handleDisable = async () => {
+    if (!schedule || !confirmDisable) return;
+    setConfirmDisable(null);
     try {
-      const result = await disablePriceSchedule({ id: schedule.id, mode });
+      const result = await disablePriceSchedule({
+        id: schedule.id,
+        mode: confirmDisable.mode,
+        force: confirmDisable.force,
+      });
       if (result.revertPending) {
         notify(
           'warning',
@@ -366,6 +384,24 @@ const ChannelOfferCard = ({ link, schedules }: ChannelOfferCardProps) => {
     } catch {
       notify('error', 'Nie udało się wyłączyć harmonogramu');
     }
+  };
+
+  const disableConfirmText = () => {
+    if (!schedule || !confirmDisable) return '';
+    if (confirmDisable.force)
+      return 'Cena na ofercie NIE zostanie zmieniona — użyj tej opcji tylko, gdy oferta nie odpowiada (np. została usunięta). Harmonogram zostanie wyłączony.';
+    if (confirmDisable.mode === 'revert_now') {
+      return schedule.isApplied
+        ? `Oferta od razu wróci do ceny bazowej ${formatPrice(
+            schedule.originalPrice,
+            schedule.currency,
+          )}, a harmonogram zostanie wyłączony.`
+        : 'Harmonogram zostanie wyłączony. Cena na ofercie nie ulegnie zmianie.';
+    }
+    return `Cena tymczasowa będzie obowiązywać do końca bieżącego okna, potem oferta wróci do ${formatPrice(
+      schedule.originalPrice,
+      schedule.currency,
+    )} i harmonogram się wyłączy.`;
   };
 
   const handleEnable = async () => {
@@ -465,7 +501,9 @@ const ChannelOfferCard = ({ link, schedules }: ChannelOfferCardProps) => {
                     ? 'error'
                     : schedule.isApplied
                       ? 'success'
-                      : 'info'
+                      : isPriceScheduleSnoozed(schedule)
+                        ? 'warning'
+                        : 'info'
               }
               variant={schedule.isApplied ? 'filled' : 'outlined'}
               label={
@@ -516,18 +554,60 @@ const ChannelOfferCard = ({ link, schedules }: ChannelOfferCardProps) => {
                   open={!!menuAnchor}
                   onClose={() => setMenuAnchor(null)}
                 >
-                  <MenuItem onClick={() => handleDisable('revert_now')}>
+                  <MenuItem
+                    onClick={() => {
+                      setConfirmDisable({ mode: 'revert_now' });
+                      setMenuAnchor(null);
+                    }}
+                  >
                     {schedule.isApplied
                       ? 'Wyłącz i przywróć cenę bazową teraz'
                       : 'Wyłącz'}
                   </MenuItem>
                   <MenuItem
-                    onClick={() => handleDisable('revert_at_window_end')}
+                    onClick={() => {
+                      setConfirmDisable({ mode: 'revert_at_window_end' });
+                      setMenuAnchor(null);
+                    }}
                     disabled={!schedule.isApplied}
                   >
                     {'Wyłącz — cena wróci po zakończeniu okna'}
                   </MenuItem>
+                  <MenuItem
+                    onClick={() => {
+                      setConfirmDisable({ mode: 'revert_now', force: true });
+                      setMenuAnchor(null);
+                    }}
+                  >
+                    {'Wyłącz bez zmiany ceny na kanale (wymuszone)'}
+                  </MenuItem>
                 </Menu>
+                <Dialog
+                  open={!!confirmDisable}
+                  onClose={() => setConfirmDisable(null)}
+                  maxWidth="sm"
+                  fullWidth
+                >
+                  <DialogTitle>{'Wyłączenie harmonogramu'}</DialogTitle>
+                  <DialogContent>
+                    <Typography variant="body2">
+                      {disableConfirmText()}
+                    </Typography>
+                  </DialogContent>
+                  <DialogActions>
+                    <Button onClick={() => setConfirmDisable(null)}>
+                      {'Anuluj'}
+                    </Button>
+                    <Button
+                      color="error"
+                      variant="contained"
+                      disabled={isDisabling}
+                      onClick={handleDisable}
+                    >
+                      {'Wyłącz'}
+                    </Button>
+                  </DialogActions>
+                </Dialog>
               </>
             )}
             {schedule && !schedule.isEnabled && (

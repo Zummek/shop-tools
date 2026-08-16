@@ -1,4 +1,5 @@
 import AddIcon from '@mui/icons-material/Add';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import {
@@ -7,6 +8,7 @@ import {
   Chip,
   CircularProgress,
   Dialog,
+  DialogActions,
   DialogContent,
   DialogTitle,
   IconButton,
@@ -31,7 +33,9 @@ import { formatPrice } from '../../products/utils';
 import {
   ChannelPriceSchedule,
   ChannelProductLink,
+  PriceScheduleDisableMode,
   PriceScheduleEvent,
+  useDeletePriceSchedule,
   useDisablePriceSchedule,
   useEnablePriceSchedule,
   useGetPriceSchedules,
@@ -43,6 +47,7 @@ import {
 import {
   formatPriceScheduleEventLabel,
   formatPriceScheduleWindows,
+  isPriceScheduleSnoozed,
 } from '../utils';
 
 const statusChip = (schedule: ChannelPriceSchedule) => {
@@ -62,6 +67,18 @@ const statusChip = (schedule: ChannelPriceSchedule) => {
     return <Chip size="small" label="Wyłączanie po oknie" color="warning" />;
   if (schedule.isApplied)
     return <Chip size="small" label="Zmiana ceny aktywna" color="success" />;
+  if (isPriceScheduleSnoozed(schedule)) {
+    return (
+      <Chip
+        size="small"
+        label={`Wstrzymana do ${dayjs(schedule.snoozedUntil).format(
+          'DD.MM HH:mm',
+        )}`}
+        color="warning"
+        title="Cena bazowa zastosowana od razu — cena tymczasowa wróci przy następnym oknie"
+      />
+    );
+  }
   return <Chip size="small" label="Zaplanowana" color="info" />;
 };
 
@@ -153,7 +170,7 @@ const scheduleToLink = (
   matchType: 'NONE',
   matchStatus: 'confirmed',
   isActive: true,
-  price: schedule.originalPrice,
+  price: schedule.linkPrice ?? schedule.originalPrice,
   currency: schedule.currency,
   stockAvailable: null,
   stockSold: null,
@@ -174,6 +191,8 @@ export const PriceSchedulesPage = () => {
     useDisablePriceSchedule();
   const { enablePriceSchedule, isPending: isEnabling } =
     useEnablePriceSchedule();
+  const { deletePriceSchedule, isPending: isDeleting } =
+    useDeletePriceSchedule();
 
   const [editedSchedule, setEditedSchedule] =
     useState<ChannelPriceSchedule | null>(null);
@@ -185,16 +204,28 @@ export const PriceSchedulesPage = () => {
     anchor: HTMLElement;
     schedule: ChannelPriceSchedule;
   } | null>(null);
+  const [confirmDisable, setConfirmDisable] = useState<{
+    schedule: ChannelPriceSchedule;
+    mode: PriceScheduleDisableMode;
+    force?: boolean;
+  } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ChannelPriceSchedule | null>(
+    null,
+  );
 
   if (!user?.permissions?.canAccessEcommerce)
     return <Navigate to={Pages.smSystem} replace />;
 
-  const handleDisable = async (mode: 'revert_now' | 'revert_at_window_end') => {
-    const schedule = menuState?.schedule;
-    setMenuState(null);
-    if (!schedule) return;
+  const handleDisable = async () => {
+    const target = confirmDisable;
+    setConfirmDisable(null);
+    if (!target) return;
     try {
-      const result = await disablePriceSchedule({ id: schedule.id, mode });
+      const result = await disablePriceSchedule({
+        id: target.schedule.id,
+        mode: target.mode,
+        force: target.force,
+      });
       if (result.revertPending) {
         notify(
           'warning',
@@ -206,6 +237,48 @@ export const PriceSchedulesPage = () => {
     } catch {
       notify('error', 'Nie udało się wyłączyć harmonogramu');
     }
+  };
+
+  const handleDelete = async () => {
+    const target = deleteTarget;
+    setDeleteTarget(null);
+    if (!target) return;
+    try {
+      await deletePriceSchedule(target.id);
+      notify('success', 'Harmonogram usunięty');
+    } catch {
+      notify('error', 'Nie udało się usunąć harmonogramu');
+    }
+  };
+
+  const disableConfirmText = () => {
+    if (!confirmDisable) return '';
+    const { schedule, mode, force } = confirmDisable;
+    const offer = schedule.offerName || schedule.externalOfferId;
+    if (force) {
+      return (
+        `Wyłączyć harmonogram dla "${offer}" bez zmiany ceny na kanale? ` +
+        'Cena na ofercie NIE zostanie zmieniona — użyj tej opcji tylko, gdy oferta nie odpowiada (np. została usunięta).'
+      );
+    }
+    if (mode === 'revert_now') {
+      return schedule.isApplied
+        ? `Wyłączyć harmonogram dla "${offer}"? Oferta od razu wróci do ceny bazowej ${formatPrice(
+            schedule.originalPrice,
+            schedule.currency,
+          )}.`
+        : `Wyłączyć harmonogram dla "${offer}"? Cena na ofercie nie ulegnie zmianie.`;
+    }
+    return (
+      `Wyłączyć harmonogram dla "${offer}" po zakończeniu bieżącego okna? ` +
+      `Cena tymczasowa ${formatPrice(
+        schedule.temporaryPrice,
+        schedule.currency,
+      )} będzie obowiązywać do końca okna, potem oferta wróci do ${formatPrice(
+        schedule.originalPrice,
+        schedule.currency,
+      )}.`
+    );
   };
 
   const handleEnable = async (schedule: ChannelPriceSchedule) => {
@@ -326,7 +399,9 @@ export const PriceSchedulesPage = () => {
       width: 150,
       valueGetter: (_value, row) =>
         row.isApplied
-          ? null
+          ? row.currentWindowEndsAt
+            ? `do ${dayjs(row.currentWindowEndsAt).format('DD.MM HH:mm')}`
+            : '—'
           : row.nextWindowStartsAt
             ? dayjs(row.nextWindowStartsAt).format('DD.MM HH:mm')
             : '—',
@@ -362,13 +437,23 @@ export const PriceSchedulesPage = () => {
                 {'Wyłącz'}
               </Button>
             ) : (
-              <Button
-                size="small"
-                disabled={isEnabling}
-                onClick={() => handleEnable(schedule)}
-              >
-                {'Włącz'}
-              </Button>
+              <>
+                <Button
+                  size="small"
+                  disabled={isEnabling}
+                  onClick={() => handleEnable(schedule)}
+                >
+                  {'Włącz'}
+                </Button>
+                <IconButton
+                  size="small"
+                  aria-label="Usuń harmonogram"
+                  disabled={isDeleting}
+                  onClick={() => setDeleteTarget(schedule)}
+                >
+                  <DeleteOutlineIcon fontSize="small" />
+                </IconButton>
+              </>
             )}
           </Stack>
         );
@@ -435,18 +520,94 @@ export const PriceSchedulesPage = () => {
         open={!!menuState}
         onClose={() => setMenuState(null)}
       >
-        <MenuItem onClick={() => handleDisable('revert_now')}>
+        <MenuItem
+          onClick={() => {
+            setConfirmDisable({
+              schedule: menuState!.schedule,
+              mode: 'revert_now',
+            });
+            setMenuState(null);
+          }}
+        >
           {menuState?.schedule.isApplied
             ? 'Wyłącz i przywróć cenę bazową teraz'
             : 'Wyłącz'}
         </MenuItem>
         <MenuItem
-          onClick={() => handleDisable('revert_at_window_end')}
+          onClick={() => {
+            setConfirmDisable({
+              schedule: menuState!.schedule,
+              mode: 'revert_at_window_end',
+            });
+            setMenuState(null);
+          }}
           disabled={!menuState?.schedule.isApplied}
         >
           {'Wyłącz — cena wróci po zakończeniu okna'}
         </MenuItem>
+        <MenuItem
+          onClick={() => {
+            setConfirmDisable({
+              schedule: menuState!.schedule,
+              mode: 'revert_now',
+              force: true,
+            });
+            setMenuState(null);
+          }}
+        >
+          {'Wyłącz bez zmiany ceny na kanale (wymuszone)'}
+        </MenuItem>
       </Menu>
+
+      <Dialog
+        open={!!confirmDisable}
+        onClose={() => setConfirmDisable(null)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>{'Wyłączenie harmonogramu'}</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2">{disableConfirmText()}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmDisable(null)}>{'Anuluj'}</Button>
+          <Button
+            color="error"
+            variant="contained"
+            disabled={isDisabling}
+            onClick={handleDisable}
+          >
+            {'Wyłącz'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>{'Usunięcie harmonogramu'}</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2">
+            {`Usunąć harmonogram dla "${
+              deleteTarget?.offerName || deleteTarget?.externalOfferId
+            }"? Historia zdarzeń zostanie usunięta. Tej operacji nie można cofnąć.`}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteTarget(null)}>{'Anuluj'}</Button>
+          <Button
+            color="error"
+            variant="contained"
+            disabled={isDeleting}
+            onClick={handleDelete}
+          >
+            {'Usuń'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {historySchedule && (
         <Dialog

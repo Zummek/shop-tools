@@ -1,3 +1,4 @@
+import AddIcon from '@mui/icons-material/Add';
 import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import {
@@ -34,7 +35,10 @@ import {
   useDisablePriceSchedule,
   useGetPriceSchedules,
 } from '../api';
-import { SchedulePriceChangeModal } from '../modals';
+import {
+  SchedulePriceChangeModal,
+  SelectAllegroOfferForScheduleModal,
+} from '../modals';
 import {
   formatPriceScheduleEventLabel,
   formatPriceScheduleWindows,
@@ -170,6 +174,8 @@ export const PriceSchedulesPage = () => {
 
   const [editedSchedule, setEditedSchedule] =
     useState<ChannelPriceSchedule | null>(null);
+  const [createLink, setCreateLink] = useState<ChannelProductLink | null>(null);
+  const [pickOfferOpen, setPickOfferOpen] = useState(false);
   const [historySchedule, setHistorySchedule] =
     useState<ChannelPriceSchedule | null>(null);
   const [menuState, setMenuState] = useState<{
@@ -350,13 +356,28 @@ export const PriceSchedulesPage = () => {
 
   return (
     <Stack spacing={2}>
-      <Stack spacing={0.5}>
-        <Typography variant="h5">{'Zaplanowane zmiany cen'}</Typography>
-        <Typography variant="body2" color="text.secondary">
-          {
-            'Cykliczne tymczasowe ceny dla ofert Allegro. Tworzenie z poziomu karty produktu.'
-          }
-        </Typography>
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="flex-start"
+        gap={2}
+      >
+        <Stack spacing={0.5}>
+          <Typography variant="h5">{'Zaplanowane zmiany cen'}</Typography>
+          <Typography variant="body2" color="text.secondary">
+            {
+              'Cykliczne tymczasowe ceny dla ofert Allegro. Możesz też utworzyć harmonogram z karty produktu.'
+            }
+          </Typography>
+        </Stack>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => setPickOfferOpen(true)}
+          sx={{ flexShrink: 0 }}
+        >
+          {'Zaplanuj zmianę ceny'}
+        </Button>
       </Stack>
 
       {isLoading && schedules.length === 0 ? (
@@ -453,6 +474,23 @@ export const PriceSchedulesPage = () => {
             )}
           </DialogContent>
         </Dialog>
+      )}
+
+      <SelectAllegroOfferForScheduleModal
+        open={pickOfferOpen}
+        onClose={() => setPickOfferOpen(false)}
+        onSelect={(link) => {
+          setPickOfferOpen(false);
+          setCreateLink(link);
+        }}
+      />
+
+      {createLink && (
+        <SchedulePriceChangeModal
+          open={!!createLink}
+          onClose={() => setCreateLink(null)}
+          link={createLink}
+        />
       )}
 
       {editedSchedule && (

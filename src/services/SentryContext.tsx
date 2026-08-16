@@ -14,8 +14,6 @@ export const SentryContext = ({ children }: SentryContextProps) => {
     if (user) {
       Sentry.setUser({
         id: user.id.toString(),
-        email: user.email,
-        username: user.username,
       });
     } else {
       Sentry.setUser(null);

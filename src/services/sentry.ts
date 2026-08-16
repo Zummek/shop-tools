@@ -1,15 +1,35 @@
 import * as Sentry from '@sentry/react';
 import { AxiosError, isAxiosError } from 'axios';
+import { useEffect } from 'react';
+import {
+  createRoutesFromChildren,
+  matchRoutes,
+  useLocation,
+  useNavigationType,
+} from 'react-router-dom';
 
-import { isDev, sentryDsn } from '../utils/envs';
+import {
+  isDev,
+  sentryDsn,
+  sentryEnvironment,
+  sentryRelease,
+} from '../utils/envs';
 
 export const initSentry = () => {
   if (isDev || !sentryDsn) return;
 
   Sentry.init({
     dsn: sentryDsn,
+    environment: sentryEnvironment,
+    release: sentryRelease,
     integrations: [
-      Sentry.browserTracingIntegration(),
+      Sentry.reactRouterV6BrowserTracingIntegration({
+        useEffect,
+        useLocation,
+        useNavigationType,
+        createRoutesFromChildren,
+        matchRoutes,
+      }),
       Sentry.replayIntegration({
         maskAllText: true,
         blockAllMedia: true,
@@ -41,7 +61,6 @@ const getAxiosContext = (error: AxiosError) => ({
   status: error.response?.status,
   code: error.code,
   message: error.message,
-  responseData: error.response?.data,
 });
 
 export const captureError = (error: unknown) => {

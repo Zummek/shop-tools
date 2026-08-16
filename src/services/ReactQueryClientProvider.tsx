@@ -7,7 +7,11 @@ import {
 import { AxiosError, isAxiosError } from 'axios';
 import { ReactNode } from 'react';
 
+import { isDev } from '../utils/envs';
+
 import { captureError } from './sentry';
+
+const IGNORED_HTTP_STATUSES = new Set([400, 401, 403, 404, 422]);
 
 const shouldCaptureQueryError = (error: unknown) => {
   if (!isAxiosError(error)) return true;
@@ -19,7 +23,7 @@ const shouldCaptureQueryError = (error: unknown) => {
     return false;
 
   const status = error.response?.status;
-  if (status === 400 || status === 401) return false;
+  if (status !== undefined && IGNORED_HTTP_STATUSES.has(status)) return false;
 
   return true;
 };
@@ -28,13 +32,13 @@ const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error) => {
       if (shouldCaptureQueryError(error)) captureError(error);
-      console.error('React Query error:', error);
+      if (isDev) console.error('React Query error:', error);
     },
   }),
   mutationCache: new MutationCache({
     onError: (error) => {
       if (shouldCaptureQueryError(error)) captureError(error);
-      console.error('React Query mutation error:', error);
+      if (isDev) console.error('React Query mutation error:', error);
     },
   }),
   defaultOptions: {

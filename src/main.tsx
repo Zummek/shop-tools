@@ -51,7 +51,10 @@ import { store } from './store/store';
 
 initSentry();
 
-const router = createHashRouter(
+const sentryCreateHashRouter =
+  Sentry.wrapCreateBrowserRouterV6(createHashRouter);
+
+const router = sentryCreateHashRouter(
   [
     {
       path: '/',
@@ -254,7 +257,14 @@ setReduxStoreForAxios(store);
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <Sentry.ErrorBoundary
-    fallback={<p>Wystąpił nieoczekiwany błąd. Odśwież stronę.</p>}
+    fallback={({ resetError }) => (
+      <div style={{ padding: 24, fontFamily: 'sans-serif' }}>
+        <p>Wystąpił nieoczekiwany błąd. Odśwież stronę.</p>
+        <button type="button" onClick={resetError}>
+          Spróbuj ponownie
+        </button>
+      </div>
+    )}
   >
     <SnackbarProvider>
       <Provider store={store}>

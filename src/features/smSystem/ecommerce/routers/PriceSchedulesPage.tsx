@@ -2,6 +2,7 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Button,
@@ -25,7 +26,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { DataGrid, GridColDef } from '@mui/x-data-grid';
+import { DataGrid, GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
 import dayjs from 'dayjs';
 import { MouseEvent, useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
@@ -38,10 +39,12 @@ import {
   ChannelProductLink,
   PriceScheduleDisableMode,
   PriceScheduleEvent,
+  REFRESH_PRICE_SCHEDULE_MAX_IDS,
   useDeletePriceSchedule,
   useDisablePriceSchedule,
   useEnablePriceSchedule,
   useGetPriceSchedules,
+  useRefreshPriceSchedulePrices,
 } from '../api';
 import {
   SchedulePriceChangeModal,
@@ -50,6 +53,7 @@ import {
 import {
   formatPriceScheduleEventLabel,
   formatPriceScheduleWindows,
+  isPriceScheduleChannelMismatch,
   isPriceScheduleSnoozed,
 } from '../utils';
 
@@ -210,6 +214,7 @@ export const PriceSchedulesPage = () => {
   const [deleteTarget, setDeleteTarget] = useState<ChannelPriceSchedule | null>(
     null,
   );
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
   const isActiveTab = tab === 'active';
   const { schedules, isLoading, isPlaceholderData } = useGetPriceSchedules({
@@ -225,6 +230,8 @@ export const PriceSchedulesPage = () => {
     useEnablePriceSchedule();
   const { deletePriceSchedule, isPending: isDeleting } =
     useDeletePriceSchedule();
+  const { refreshPriceSchedulePrices, isPending: isRefreshing } =
+    useRefreshPriceSchedulePrices();
 
   useEffect(() => {
     const timeout = setTimeout(() => setQuery(searchInput.trim()), 300);
@@ -315,6 +322,43 @@ export const PriceSchedulesPage = () => {
     }
   };
 
+  const handleRefreshPrices = async () => {
+    const ids =
+      selectedIds.length > 0
+        ? selectedIds
+        : visibleSchedules.map((schedule) => schedule.id);
+    if (ids.length === 0) return;
+    if (ids.length > REFRESH_PRICE_SCHEDULE_MAX_IDS) {
+      notify(
+        'error',
+        `Można pobrać maksymalnie ${REFRESH_PRICE_SCHEDULE_MAX_IDS} ofert na raz. Zaznacz mniej wierszy.`,
+      );
+      return;
+    }
+    try {
+      const result = await refreshPriceSchedulePrices(ids);
+      const mismatchCount = result.results.filter(
+        isPriceScheduleChannelMismatch,
+      ).length;
+      const failed = result.errors.length;
+      const refreshed = result.results.length;
+      if (failed && refreshed === 0) {
+        notify('error', `Nie udało się pobrać cen (${failed})`);
+        return;
+      }
+      const mismatchPart = mismatchCount
+        ? `, ${mismatchCount} różni się od harmonogramu`
+        : '';
+      const failedPart = failed ? `, ${failed} nieudane` : '';
+      notify(
+        failed ? 'warning' : 'success',
+        `Pobrano ceny: ${refreshed} zaktualizowane${mismatchPart}${failedPart}`,
+      );
+    } catch {
+      notify('error', 'Nie udało się pobrać aktualnych cen');
+    }
+  };
+
   const columns: GridColDef<ChannelPriceSchedule>[] = [
     {
       field: 'offerName',
@@ -368,6 +412,43 @@ export const PriceSchedulesPage = () => {
       width: 120,
       valueGetter: (_value, row) =>
         formatPrice(row.originalPrice, row.currency),
+    },
+    {
+      field: 'linkPrice',
+      headerName: 'Cena na kanale',
+      width: 200,
+      renderCell: (params) => {
+        const mismatch = isPriceScheduleChannelMismatch(params.row);
+        return (
+          <Stack
+            direction="row"
+            spacing={0.5}
+            alignItems="center"
+            sx={{ minWidth: 0 }}
+          >
+            <Typography
+              variant="body2"
+              noWrap
+              title="Ostatnia znana cena na ofercie"
+            >
+              {params.row.linkPrice != null
+                ? formatPrice(params.row.linkPrice, params.row.currency)
+                : '—'}
+            </Typography>
+            {mismatch && (
+              <Chip
+                size="small"
+                color="warning"
+                label={
+                  params.row.isApplied
+                    ? 'Inna niż tymczasowa'
+                    : 'Inna niż bazowa'
+                }
+              />
+            )}
+          </Stack>
+        );
+      },
     },
     {
       field: 'windows',
@@ -507,20 +588,34 @@ export const PriceSchedulesPage = () => {
 
       <Tabs
         value={tab}
-        onChange={(_event, value: 'active' | 'inactive') => setTab(value)}
+        onChange={(_event, value: 'active' | 'inactive') => {
+          setTab(value);
+          setSelectedIds([]);
+        }}
         sx={{ borderBottom: 1, borderColor: 'divider' }}
       >
         <Tab value="active" label="Aktywne" />
         <Tab value="inactive" label="Nieaktywne" />
       </Tabs>
 
-      <TextField
-        size="small"
-        label="Szukaj po nazwie, kodzie kreskowym lub ID wewnętrznym"
-        value={searchInput}
-        onChange={(e) => setSearchInput(e.target.value)}
-        sx={{ maxWidth: 480 }}
-      />
+      <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
+        <TextField
+          size="small"
+          label="Szukaj po nazwie, kodzie kreskowym lub ID wewnętrznym"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          sx={{ maxWidth: 480, flex: 1 }}
+        />
+        <LoadingButton
+          variant="outlined"
+          onClick={handleRefreshPrices}
+          loading={isRefreshing}
+          disabled={visibleSchedules.length === 0}
+          sx={{ flexShrink: 0 }}
+        >
+          {'Pobierz aktualne ceny'}
+        </LoadingButton>
+      </Stack>
 
       {(isLoading || isPlaceholderData) && visibleSchedules.length === 0 ? (
         <Box display="flex" justifyContent="center" py={6}>
@@ -541,7 +636,17 @@ export const PriceSchedulesPage = () => {
           columns={columns}
           loading={isLoading}
           autoHeight
+          checkboxSelection
           disableRowSelectionOnClick
+          rowSelectionModel={selectedIds}
+          onRowSelectionModelChange={(ids: GridRowSelectionModel) =>
+            setSelectedIds(ids as number[])
+          }
+          getRowClassName={(params) =>
+            isPriceScheduleChannelMismatch(params.row)
+              ? 'price-schedule-mismatch'
+              : ''
+          }
           pageSizeOptions={[25]}
           initialState={{
             pagination: { paginationModel: { page: 0, pageSize: 25 } },
@@ -550,6 +655,9 @@ export const PriceSchedulesPage = () => {
             '& .MuiDataGrid-cell': {
               display: 'flex',
               alignItems: 'center',
+            },
+            '& .price-schedule-mismatch': {
+              backgroundColor: 'warning.light',
             },
           }}
         />

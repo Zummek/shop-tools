@@ -18,6 +18,7 @@ export * from './useGetErliConnection';
 export * from './useGetErliOffers';
 export * from './useGetErliSyncStatus';
 export * from './useGetPriceSchedules';
+export * from './useRefreshPriceSchedulePrices';
 export * from './useGetProductChannelLinks';
 export * from './useGetWooCommerceConnection';
 export * from './useGetWooCommerceOffers';

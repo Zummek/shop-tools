@@ -44,3 +44,17 @@ export const isPriceScheduleSnoozed = (
   !schedule.isApplied &&
   !!schedule.snoozedUntil &&
   new Date(schedule.snoozedUntil).getTime() > Date.now();
+
+/** Live/cached channel price differs from what the schedule currently expects. */
+export const isPriceScheduleChannelMismatch = (
+  schedule: Pick<
+    ChannelPriceSchedule,
+    'linkPrice' | 'isApplied' | 'temporaryPrice' | 'originalPrice'
+  >,
+) => {
+  if (schedule.linkPrice == null) return false;
+  const expected = schedule.isApplied
+    ? schedule.temporaryPrice
+    : schedule.originalPrice;
+  return Number(schedule.linkPrice) !== Number(expected);
+};

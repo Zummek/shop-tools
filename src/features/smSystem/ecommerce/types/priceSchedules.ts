@@ -87,3 +87,13 @@ export interface DisablePriceSchedulePayload {
   /** skips the channel write — escape hatch for unpatchable offers */
   force?: boolean;
 }
+
+export interface PriceScheduleRefreshPricesError {
+  id: number;
+  error: string;
+}
+
+export interface PriceScheduleRefreshPricesResponse {
+  results: ChannelPriceSchedule[];
+  errors: PriceScheduleRefreshPricesError[];
+}

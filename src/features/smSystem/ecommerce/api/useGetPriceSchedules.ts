@@ -15,7 +15,7 @@ interface Filters {
 }
 
 export const useGetPriceSchedules = (filters: Filters = {}) => {
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading, isFetching, isPlaceholderData, refetch } = useQuery({
     queryKey: [priceSchedulesQueryKeyBase, filters],
     queryFn: async () => {
       const response = await axiosInstance.get<ChannelPriceSchedule[]>(
@@ -24,7 +24,10 @@ export const useGetPriceSchedules = (filters: Filters = {}) => {
           params: {
             product: filters.productId,
             link: filters.linkId,
-            is_enabled: filters.isEnabled,
+            is_enabled:
+              filters.isEnabled === undefined
+                ? undefined
+                : String(filters.isEnabled),
             query: filters.query || undefined,
           },
         },
@@ -40,6 +43,8 @@ export const useGetPriceSchedules = (filters: Filters = {}) => {
   return {
     schedules: data ?? [],
     isLoading,
+    isFetching,
+    isPlaceholderData,
     refetch,
   };
 };

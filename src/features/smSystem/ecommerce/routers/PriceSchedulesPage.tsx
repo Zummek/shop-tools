@@ -15,11 +15,13 @@ import {
   Menu,
   MenuItem,
   Stack,
+  Tab,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
+  Tabs,
   TextField,
   Typography,
 } from '@mui/material';
@@ -187,6 +189,7 @@ export const PriceSchedulesPage = () => {
   const navigate = useNavigate();
   const { user } = useAppSelector((state) => state.smSystemUser);
   const { notify } = useNotify();
+  const [tab, setTab] = useState<'active' | 'inactive'>('active');
   const [searchInput, setSearchInput] = useState('');
   const [query, setQuery] = useState('');
   const [editedSchedule, setEditedSchedule] =
@@ -208,7 +211,14 @@ export const PriceSchedulesPage = () => {
     null,
   );
 
-  const { schedules, isLoading } = useGetPriceSchedules(query ? { query } : {});
+  const isActiveTab = tab === 'active';
+  const { schedules, isLoading, isPlaceholderData } = useGetPriceSchedules({
+    isEnabled: isActiveTab,
+    ...(query ? { query } : {}),
+  });
+  const visibleSchedules = schedules.filter(
+    (schedule) => schedule.isEnabled === isActiveTab,
+  );
   const { disablePriceSchedule, isPending: isDisabling } =
     useDisablePriceSchedule();
   const { enablePriceSchedule, isPending: isEnabling } =
@@ -495,6 +505,15 @@ export const PriceSchedulesPage = () => {
         </Button>
       </Stack>
 
+      <Tabs
+        value={tab}
+        onChange={(_event, value: 'active' | 'inactive') => setTab(value)}
+        sx={{ borderBottom: 1, borderColor: 'divider' }}
+      >
+        <Tab value="active" label="Aktywne" />
+        <Tab value="inactive" label="Nieaktywne" />
+      </Tabs>
+
       <TextField
         size="small"
         label="Szukaj po nazwie, kodzie kreskowym lub ID wewnętrznym"
@@ -503,19 +522,22 @@ export const PriceSchedulesPage = () => {
         sx={{ maxWidth: 480 }}
       />
 
-      {isLoading && schedules.length === 0 ? (
+      {(isLoading || isPlaceholderData) && visibleSchedules.length === 0 ? (
         <Box display="flex" justifyContent="center" py={6}>
           <CircularProgress size={28} />
         </Box>
-      ) : schedules.length === 0 ? (
+      ) : visibleSchedules.length === 0 ? (
         <Typography variant="body2" color="text.secondary">
           {query
             ? 'Brak harmonogramów pasujących do wyszukiwania.'
-            : 'Brak harmonogramów cenowych.'}
+            : isActiveTab
+              ? 'Brak aktywnych harmonogramów cenowych.'
+              : 'Brak nieaktywnych harmonogramów cenowych.'}
         </Typography>
       ) : (
         <DataGrid
-          rows={schedules}
+          key={tab}
+          rows={visibleSchedules}
           columns={columns}
           loading={isLoading}
           autoHeight

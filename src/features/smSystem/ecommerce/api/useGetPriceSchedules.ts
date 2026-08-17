@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
 import { axiosInstance } from '../../../../services';
 import { ChannelPriceSchedule } from '../types/priceSchedules';
@@ -11,6 +11,7 @@ interface Filters {
   productId?: number;
   linkId?: number;
   isEnabled?: boolean;
+  query?: string;
 }
 
 export const useGetPriceSchedules = (filters: Filters = {}) => {
@@ -24,11 +25,13 @@ export const useGetPriceSchedules = (filters: Filters = {}) => {
             product: filters.productId,
             link: filters.linkId,
             is_enabled: filters.isEnabled,
+            query: filters.query || undefined,
           },
         },
       );
       return response.data;
     },
+    placeholderData: keepPreviousData,
     // The engine ticks every minute; keep open pages fresh around window
     // boundaries.
     refetchInterval: 60_000,

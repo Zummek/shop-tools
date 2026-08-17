@@ -20,11 +20,12 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  TextField,
   Typography,
 } from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import dayjs from 'dayjs';
-import { MouseEvent, useState } from 'react';
+import { MouseEvent, useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 
 import { useAppSelector, useNotify } from '../../../../hooks';
@@ -186,14 +187,8 @@ export const PriceSchedulesPage = () => {
   const navigate = useNavigate();
   const { user } = useAppSelector((state) => state.smSystemUser);
   const { notify } = useNotify();
-  const { schedules, isLoading } = useGetPriceSchedules();
-  const { disablePriceSchedule, isPending: isDisabling } =
-    useDisablePriceSchedule();
-  const { enablePriceSchedule, isPending: isEnabling } =
-    useEnablePriceSchedule();
-  const { deletePriceSchedule, isPending: isDeleting } =
-    useDeletePriceSchedule();
-
+  const [searchInput, setSearchInput] = useState('');
+  const [query, setQuery] = useState('');
   const [editedSchedule, setEditedSchedule] =
     useState<ChannelPriceSchedule | null>(null);
   const [createLink, setCreateLink] = useState<ChannelProductLink | null>(null);
@@ -212,6 +207,19 @@ export const PriceSchedulesPage = () => {
   const [deleteTarget, setDeleteTarget] = useState<ChannelPriceSchedule | null>(
     null,
   );
+
+  const { schedules, isLoading } = useGetPriceSchedules(query ? { query } : {});
+  const { disablePriceSchedule, isPending: isDisabling } =
+    useDisablePriceSchedule();
+  const { enablePriceSchedule, isPending: isEnabling } =
+    useEnablePriceSchedule();
+  const { deletePriceSchedule, isPending: isDeleting } =
+    useDeletePriceSchedule();
+
+  useEffect(() => {
+    const timeout = setTimeout(() => setQuery(searchInput.trim()), 300);
+    return () => clearTimeout(timeout);
+  }, [searchInput]);
 
   if (!user?.permissions?.canAccessEcommerce)
     return <Navigate to={Pages.smSystem} replace />;
@@ -487,13 +495,23 @@ export const PriceSchedulesPage = () => {
         </Button>
       </Stack>
 
+      <TextField
+        size="small"
+        label="Szukaj po nazwie, kodzie kreskowym lub ID wewnętrznym"
+        value={searchInput}
+        onChange={(e) => setSearchInput(e.target.value)}
+        sx={{ maxWidth: 480 }}
+      />
+
       {isLoading && schedules.length === 0 ? (
         <Box display="flex" justifyContent="center" py={6}>
           <CircularProgress size={28} />
         </Box>
       ) : schedules.length === 0 ? (
         <Typography variant="body2" color="text.secondary">
-          {'Brak harmonogramów cenowych.'}
+          {query
+            ? 'Brak harmonogramów pasujących do wyszukiwania.'
+            : 'Brak harmonogramów cenowych.'}
         </Typography>
       ) : (
         <DataGrid

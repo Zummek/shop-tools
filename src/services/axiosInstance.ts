@@ -1,8 +1,25 @@
 import { Store } from '@reduxjs/toolkit';
-import axios from 'axios';
+import axios, { AxiosError, AxiosResponse } from 'axios';
 import applyCaseMiddleware from 'axios-case-converter';
 
 import { smApiUrl } from '../utils';
+
+/**
+ * axiosInstance.validateStatus treats 400/404 as resolved. Call this when
+ * those statuses should still reject as AxiosError (so React Query / Sentry
+ * can filter expected client errors by status).
+ */
+export const throwAxiosErrorFromResponse = (response: AxiosResponse): never => {
+  throw new AxiosError(
+    `Request failed with status code ${response.status}`,
+    response.status === 400
+      ? AxiosError.ERR_BAD_REQUEST
+      : AxiosError.ERR_BAD_RESPONSE,
+    response.config,
+    response.request,
+    response,
+  );
+};
 
 let store: Store;
 
@@ -36,5 +53,5 @@ export const axiosInstance = applyCaseMiddleware(
       );
     },
     timeout: 30000, // 30 seconds
-  })
+  }),
 );

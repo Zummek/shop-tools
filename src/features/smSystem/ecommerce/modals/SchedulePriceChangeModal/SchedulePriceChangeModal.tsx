@@ -17,6 +17,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { isAxiosError } from 'axios';
 import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
 
@@ -233,7 +234,9 @@ export const SchedulePriceChangeModal = ({
       }
       onClose();
     } catch (err) {
-      const data = err as Record<string, unknown>;
+      const data = (isAxiosError(err) ? err.response?.data : err) as
+        | Record<string, unknown>
+        | undefined;
       const windowsError = Array.isArray(data?.windows)
         ? data.windows.join(' ')
         : null;

@@ -1,6 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { axiosInstance } from '../../../../services';
+import {
+  axiosInstance,
+  throwAxiosErrorFromResponse,
+} from '../../../../services';
 import { ChannelPriceSchedule } from '../types/priceSchedules';
 
 import { priceSchedulesQueryKeyBase } from './useGetPriceSchedules';
@@ -16,7 +19,7 @@ export const useEnablePriceSchedule = () => {
       const response = await axiosInstance.post<
         ChannelPriceSchedule & { applyPending?: boolean; applyError?: string }
       >(endpoint(id));
-      if (response.status === 400) throw response.data;
+      if (response.status === 400) throwAxiosErrorFromResponse(response);
       return response.data;
     },
     onSuccess: () => {

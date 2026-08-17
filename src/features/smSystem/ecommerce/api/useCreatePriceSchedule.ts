@@ -1,6 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { axiosInstance } from '../../../../services';
+import {
+  axiosInstance,
+  throwAxiosErrorFromResponse,
+} from '../../../../services';
 import {
   ChannelPriceSchedule,
   PriceSchedulePayload,
@@ -19,9 +22,8 @@ export const useCreatePriceSchedule = () => {
         endpoint,
         payload,
       );
-      if (response.status === 400) 
-        throw response.data;
-      
+      if (response.status === 400) throwAxiosErrorFromResponse(response);
+
       return response.data;
     },
     onSuccess: () => {

@@ -3,11 +3,14 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {
   Box,
   Button,
+  Checkbox,
   FormControl,
   FormControlLabel,
   InputLabel,
+  ListItemText,
   MenuItem,
   Select,
+  SelectChangeEvent,
   Stack,
   Switch,
   Tooltip,
@@ -24,6 +27,7 @@ import {
   EcommerceOrderListItem,
   OrderSourceFilter,
   useGetAllegroConnection,
+  useGetDeliveryMethods,
   useGetEcommerceOrders,
   useGetWooCommerceConnection,
 } from '../api';
@@ -45,10 +49,8 @@ const orderSourceLabel = (source: string) => {
 
 const productReviewTooltip = (row: EcommerceOrderListItem) => {
   const parts: string[] = [];
-  if (row.hasUnmatchedItems)
-    parts.push('Zamówienie ma pozycje bez produktu');
-  if (row.hasUncertainMatch)
-    parts.push('Zamówienie ma pozycje z niepewnym dopasowaniem (podobna nazwa)');
+  if (row.hasUnmatchedItems) parts.push('Zamówienie ma pozycje bez produktu');
+  if (row.hasUncertainMatch) parts.push('Zamówienie ma pozycje z niepewnym dopasowaniem (podobna nazwa)');
   return parts.join('. ');
 };
 
@@ -152,10 +154,12 @@ const columns: GridColDef<EcommerceOrderListItem>[] = [
   {
     field: 'deliveryName',
     headerName: 'Metoda dostawy',
-    width: 280,
-    minWidth: 180,
-    flex: 1.2,
-    renderCell: ({ row }) => <EllipsisCell value={row.deliveryName} />,
+    width: 220,
+    minWidth: 140,
+    flex: 1,
+    renderCell: ({ row }) => (
+      <EllipsisCell value={row.deliveryGroupName || row.deliveryName} />
+    ),
   },
   {
     field: 'buyerLogin',
@@ -215,7 +219,11 @@ export const EcommerceOrdersListPage = () => {
     setOrderSource,
     needsProductReview,
     setNeedsProductReview,
+    deliveryGroupIds,
+    deliveryIds,
+    setDeliveryFilters,
   } = useGetEcommerceOrders();
+  const { deliveryMethods } = useGetDeliveryMethods();
   const { allegroConnection } = useGetAllegroConnection();
   const { wooCommerceConnection } = useGetWooCommerceConnection();
 
@@ -246,6 +254,42 @@ export const EcommerceOrdersListPage = () => {
     setIsModalOpen(true);
   };
 
+  const selectedDeliveryOptionIds = [
+    ...deliveryGroupIds.map((id) => `group:${id}`),
+    ...deliveryIds.map((id) => `method:${id}`),
+  ];
+
+  const handleDeliveryFilterChange = (event: SelectChangeEvent<string[]>) => {
+    const values =
+      typeof event.target.value === 'string'
+        ? event.target.value.split(',')
+        : event.target.value;
+    const nextGroupIds: number[] = [];
+    const nextDeliveryIds: string[] = [];
+    values.forEach((value) => {
+      if (value.startsWith('group:')) {
+        const groupId = Number(value.slice('group:'.length));
+        if (Number.isInteger(groupId) && groupId > 0)
+          nextGroupIds.push(groupId);
+      } else if (value.startsWith('method:')) {
+        const deliveryId = value.slice('method:'.length);
+        if (deliveryId) nextDeliveryIds.push(deliveryId);
+      }
+    });
+    setDeliveryFilters(nextGroupIds, nextDeliveryIds);
+  };
+
+  const deliveryFilterLabel = () => {
+    if (selectedDeliveryOptionIds.length === 0) return 'Wszystkie';
+    if (selectedDeliveryOptionIds.length === 1) {
+      const option = deliveryMethods.find(
+        (item) => item.id === selectedDeliveryOptionIds[0],
+      );
+      return option?.name ?? '1 wybrana';
+    }
+    return `${selectedDeliveryOptionIds.length} wybrane`;
+  };
+
   return (
     <Stack spacing={2}>
       <OrdersStatsCards />
@@ -272,6 +316,27 @@ export const EcommerceOrdersListPage = () => {
               <MenuItem value="allegro">{'Allegro'}</MenuItem>
               <MenuItem value="woocommerce">{'WooCommerce'}</MenuItem>
               <MenuItem value="erli">{'Erli'}</MenuItem>
+            </Select>
+          </FormControl>
+          <FormControl size="small" sx={{ minWidth: 240 }}>
+            <InputLabel id="delivery-filter-label">{'Dostawa'}</InputLabel>
+            <Select
+              labelId="delivery-filter-label"
+              label="Dostawa"
+              multiple
+              value={selectedDeliveryOptionIds}
+              onChange={handleDeliveryFilterChange}
+              renderValue={() => deliveryFilterLabel()}
+            >
+              {deliveryMethods.map((option) => (
+                <MenuItem key={option.id} value={option.id}>
+                  <Checkbox
+                    checked={selectedDeliveryOptionIds.includes(option.id)}
+                    size="small"
+                  />
+                  <ListItemText primary={option.name} />
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
           <FormControlLabel

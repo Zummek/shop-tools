@@ -9,6 +9,7 @@ import { Navigate, RouterProvider, createHashRouter } from 'react-router-dom';
 import { BarcodesGeneratorPage } from './features/BarcodesGenerator/routes/BarcodesGeneratorPage/BarcodesGeneratorPage';
 import { InvoiceConverterPage } from './features/invoiceConverter/routers/InvoiceConverterPage/InvoiceConverterPage';
 import { AlertsListPage } from './features/smSystem/alerts/routers/AlertsListPage/AlertsListPage';
+import { DeliveryGroupsPage } from './features/smSystem/ecommerce/routers/DeliveryGroupsPage';
 import { EcommerceOrderDetailsPage } from './features/smSystem/ecommerce/routers/EcommerceOrderDetailsPage';
 import { EcommerceOrdersListPage } from './features/smSystem/ecommerce/routers/EcommerceOrdersListPage';
 import { PriceSchedulesPage } from './features/smSystem/ecommerce/routers/PriceSchedulesPage';
@@ -189,6 +190,10 @@ const router = sentryCreateHashRouter(
             {
               path: 'price-schedules',
               element: <PriceSchedulesPage />,
+            },
+            {
+              path: 'delivery-groups',
+              element: <DeliveryGroupsPage />,
             },
             {
               path: 'integrations',

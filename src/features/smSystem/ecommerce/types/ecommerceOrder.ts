@@ -27,6 +27,8 @@ export interface EcommerceOrderDetails {
   paymentMethod: string;
   invoiceRequired: boolean;
   deliveryName: string;
+  deliveryGroupId: number | null;
+  deliveryGroupName: string | null;
   deliveryCost: number | null;
   deliveryCostCurrency: string | null;
   status: OrderStatus;

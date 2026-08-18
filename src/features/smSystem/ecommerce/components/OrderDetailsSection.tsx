@@ -154,11 +154,26 @@ export const OrderDetailsSection = ({
                 value={ecommerceOrder.paymentMethod}
                 minWidth={FIELD_MIN_WIDTH}
               />
-              <LabelData
-                label="Metoda dostawy"
-                value={ecommerceOrder.deliveryName}
-                minWidth={FIELD_MIN_WIDTH}
-              />
+              {ecommerceOrder.deliveryGroupName ? (
+                <>
+                  <LabelData
+                    label="Dostawa"
+                    value={ecommerceOrder.deliveryGroupName}
+                    minWidth={FIELD_MIN_WIDTH}
+                  />
+                  <LabelData
+                    label="Szczegóły dostawy"
+                    value={ecommerceOrder.deliveryName}
+                    minWidth={FIELD_MIN_WIDTH}
+                  />
+                </>
+              ) : (
+                <LabelData
+                  label="Metoda dostawy"
+                  value={ecommerceOrder.deliveryName}
+                  minWidth={FIELD_MIN_WIDTH}
+                />
+              )}
               <LabelData
                 label="Faktura"
                 value={

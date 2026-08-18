@@ -21,6 +21,8 @@ export interface EcommerceOrderListItem {
   buyerName: string;
   buyerLogin: string;
   deliveryName: string | null;
+  deliveryGroupId: number | null;
+  deliveryGroupName: string | null;
   itemsAmount: number;
   productsAmount: number;
   hasUnmatchedItems: boolean;
@@ -28,6 +30,17 @@ export interface EcommerceOrderListItem {
   needsProductReview: boolean;
 }
 type Response = ListResponse<EcommerceOrderListItem>;
+
+const parseCsv = (value: string | null): string[] =>
+  (value || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+const parseCsvInts = (value: string | null): number[] =>
+  parseCsv(value)
+    .map((item) => Number(item))
+    .filter((item) => Number.isInteger(item) && item > 0);
 
 export const useGetEcommerceOrders = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -43,6 +56,10 @@ export const useGetEcommerceOrders = () => {
       : '';
   const initialNeedsReview =
     needsReviewParam === '1' || needsReviewParam === 'true';
+  const initialDeliveryGroupIds = parseCsvInts(
+    searchParams.get('deliveryGroupIds'),
+  );
+  const initialDeliveryIds = parseCsv(searchParams.get('deliveryIds'));
 
   const [page, setPage] = useState(initialPage);
   const [query, setQuery] = useState<string>('');
@@ -50,6 +67,11 @@ export const useGetEcommerceOrders = () => {
     useState<OrderSourceFilter>(initialSource);
   const [needsProductReview, setNeedsProductReviewState] =
     useState(initialNeedsReview);
+  const [deliveryGroupIds, setDeliveryGroupIdsState] = useState<number[]>(
+    initialDeliveryGroupIds,
+  );
+  const [deliveryIds, setDeliveryIdsState] =
+    useState<string[]>(initialDeliveryIds);
 
   useEffect(() => {
     const pageParam = searchParams.get('page');
@@ -62,8 +84,18 @@ export const useGetEcommerceOrders = () => {
     if (page > 0) params.page = (page + 1).toString();
     if (orderSource) params.orderSource = orderSource;
     if (needsProductReview) params.needsProductReview = '1';
+    if (deliveryGroupIds.length)
+      params.deliveryGroupIds = deliveryGroupIds.join(',');
+    if (deliveryIds.length) params.deliveryIds = deliveryIds.join(',');
     setSearchParams(params, { replace: true });
-  }, [page, orderSource, needsProductReview, setSearchParams]);
+  }, [
+    page,
+    orderSource,
+    needsProductReview,
+    deliveryGroupIds,
+    deliveryIds,
+    setSearchParams,
+  ]);
 
   const setOrderSource = (source: OrderSourceFilter) => {
     setOrderSourceState(source);
@@ -75,6 +107,12 @@ export const useGetEcommerceOrders = () => {
     setPage(0);
   };
 
+  const setDeliveryFilters = (groupIds: number[], methodIds: string[]) => {
+    setDeliveryGroupIdsState(groupIds);
+    setDeliveryIdsState(methodIds);
+    setPage(0);
+  };
+
   const getEcommerceOrdersRequest = async () => {
     const response = await axiosInstance.get<Response>(endpoint, {
       params: {
@@ -83,6 +121,8 @@ export const useGetEcommerceOrders = () => {
         pageSize,
         ...(orderSource ? { orderSource } : {}),
         ...(needsProductReview ? { needsProductReview: true } : {}),
+        ...(deliveryGroupIds.length ? { deliveryGroupIds } : {}),
+        ...(deliveryIds.length ? { deliveryIds } : {}),
       },
     });
     return response.data;
@@ -95,6 +135,8 @@ export const useGetEcommerceOrders = () => {
       page,
       orderSource,
       needsProductReview,
+      deliveryGroupIds,
+      deliveryIds,
     ],
     queryFn: getEcommerceOrdersRequest,
     placeholderData: keepPreviousData,
@@ -118,5 +160,8 @@ export const useGetEcommerceOrders = () => {
     setOrderSource,
     needsProductReview,
     setNeedsProductReview,
+    deliveryGroupIds,
+    deliveryIds,
+    setDeliveryFilters,
   };
 };

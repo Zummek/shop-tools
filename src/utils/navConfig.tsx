@@ -122,6 +122,12 @@ export const navSections: NavSection[] = [
         permission: 'canAccessEcommerce',
       },
       {
+        label: 'Mapowanie dostaw',
+        path: Pages.smSystemEcommerceDeliveryGroups,
+        icon: <LocalShippingOutlinedIcon />,
+        permission: 'canAccessEcommerce',
+      },
+      {
         label: 'Integracje',
         path: Pages.smSystemEcommerceIntegrations,
         icon: <CableOutlinedIcon />,

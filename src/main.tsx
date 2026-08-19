@@ -6,6 +6,7 @@ import ReactDOM from 'react-dom/client';
 import { Provider } from 'react-redux';
 import { Navigate, RouterProvider, createHashRouter } from 'react-router-dom';
 
+import { NewVersionNotifier } from './components/NewVersionNotifier';
 import { BarcodesGeneratorPage } from './features/BarcodesGenerator/routes/BarcodesGeneratorPage/BarcodesGeneratorPage';
 import { InvoiceConverterPage } from './features/invoiceConverter/routers/InvoiceConverterPage/InvoiceConverterPage';
 import { AlertsListPage } from './features/smSystem/alerts/routers/AlertsListPage/AlertsListPage';
@@ -277,6 +278,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <ReactQueryClientProvider>
             <AxiosInterceptorsProvider store={store}>
               <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <NewVersionNotifier />
                 <RouterProvider router={router} />
               </LocalizationProvider>
             </AxiosInterceptorsProvider>

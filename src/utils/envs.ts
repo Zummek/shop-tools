@@ -8,3 +8,5 @@ export const sentryEnvironment =
   import.meta.env.VITE_SENTRY_ENVIRONMENT || import.meta.env.MODE;
 
 export const sentryRelease = import.meta.env.VITE_SENTRY_RELEASE;
+
+export const appVersion = import.meta.env.VITE_APP_VERSION || 'dev';

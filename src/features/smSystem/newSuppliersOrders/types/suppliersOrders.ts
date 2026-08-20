@@ -25,6 +25,7 @@ export interface Order {
   updatedAt: string;
   comment?: string;
   isAutoDraft?: boolean;
+  orderedAmount?: number;
 }
 
 export type OrdersList = Order[];

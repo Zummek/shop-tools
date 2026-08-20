@@ -1,5 +1,5 @@
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import { Stack, Button, Box, Chip } from '@mui/material';
+import { Stack, Button, Box } from '@mui/material';
 import { DataGrid, GridColDef, GridRowParams } from '@mui/x-data-grid';
 import dayjs from 'dayjs';
 import { useState } from 'react';
@@ -31,11 +31,10 @@ const columns: GridColDef<Order>[] = [
       selectedBranches.map((branch) => branch.name).join(', '),
   },
   {
-    field: 'isAutoDraft',
-    headerName: 'Typ',
-    width: 130,
-    renderCell: ({ value }) =>
-      value ? <Chip size="small" color="info" label="Auto-szkic" /> : null,
+    field: 'orderedAmount',
+    headerName: 'Zamawiana ilość',
+    width: 140,
+    type: 'number',
   },
   {
     field: 'createdAt',

@@ -24,7 +24,9 @@ import { useNotify } from '../../../../hooks';
 import { Pages } from '../../../../utils';
 import { useApplyProposals } from '../api/useApplyProposals';
 import { useGetOrderDetails } from '../api/useGetOrderDetails';
+import { useUpdateOrderStatus } from '../api/useUpdateOrderStatus';
 import { DownloadDataModal } from '../components/DownloadDataModal';
+import { OrderStatusChip } from '../components/OrderStatusChip';
 import { StockUrgencyLegend } from '../components/StockUrgencyLegend';
 import { ProductDetailsInBranchesTable } from '../tables/ProductDetailsInBranchesTable';
 import { ProductDetailsInOrderTable } from '../tables/ProductDetailsInOrderTable';
@@ -32,7 +34,9 @@ import {
   ProductsInOrderSortBy,
   ProductsInOrderTable,
 } from '../tables/ProductsInOrderTable';
+import { isSupplierOrderEditable } from '../utils/orderStatusConfig';
 import { resolveStockUrgencyThresholds } from '../utils/stockUrgency';
+import type { SupplierOrderStatus } from '../types';
 
 export const OrderDetailsPage = () => {
   const navigate = useNavigate();
@@ -55,6 +59,8 @@ export const OrderDetailsPage = () => {
 
   const { orderDetails, isLoading } = useGetOrderDetails(orderId);
   const { applyProposals, isApplying } = useApplyProposals();
+  const { updateOrderStatus, isLoading: isUpdatingStatus } =
+    useUpdateOrderStatus();
 
   useEffect(() => {
     if (!isLoading && !orderDetails) {
@@ -82,6 +88,8 @@ export const OrderDetailsPage = () => {
 
   const supplierName = orderDetails?.supplier.name;
   const date = dayjs(orderDetails?.updatedAt).format('DD.MM.YYYY HH:mm');
+  const status = orderDetails?.status;
+  const isEditable = status ? isSupplierOrderEditable(status) : false;
   const differingCount = useMemo(
     () =>
       orderDetails?.productsToOrder.reduce(
@@ -103,6 +111,10 @@ export const OrderDetailsPage = () => {
   const handleConfirmApplyProposals = async () => {
     await applyProposals(orderId);
     setIsApplyConfirmOpen(false);
+  };
+
+  const handleStatusChange = async (nextStatus: SupplierOrderStatus) => {
+    await updateOrderStatus({ orderId, status: nextStatus });
   };
 
   return (
@@ -131,6 +143,13 @@ export const OrderDetailsPage = () => {
             {'Zamówienie: '}
             {supplierName ? `${supplierName} - ${date}` : ''}
           </Typography>
+          {status && (
+            <OrderStatusChip
+              status={status}
+              onStatusChange={handleStatusChange}
+              isUpdating={isUpdatingStatus}
+            />
+          )}
           {orderDetails?.isAutoDraft && (
             <Chip size="small" color="info" label="Auto-szkic" />
           )}
@@ -143,7 +162,7 @@ export const OrderDetailsPage = () => {
             variant="contained"
             size="small"
             onClick={() => setIsApplyConfirmOpen(true)}
-            disabled={differingCount === 0}
+            disabled={!isEditable || differingCount === 0}
           >
             {'Zastosuj wszystkie propozycje'}
           </Button>
@@ -217,6 +236,7 @@ export const OrderDetailsPage = () => {
               selectedProductId={selectedProductId}
               onEditStateChange={handleEditStateChange}
               isLoading={isLoading}
+              readOnly={!isEditable}
             />
           </Box>
           <Box height={300}>

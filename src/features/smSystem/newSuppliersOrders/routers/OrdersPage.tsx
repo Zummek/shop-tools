@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { Pages } from '../../../../utils';
 import { useGetOrders } from '../api';
 import { AddOrderModal } from '../components/AddOrderModal/AddOrderModal';
+import { OrderStatusChip } from '../components/OrderStatusChip';
 import { SuppliersOrdersToolbar } from '../components/SuppliersOrdersToolbar';
 import { Branch, Order, Supplier } from '../types';
 
@@ -29,6 +30,12 @@ const columns: GridColDef<Order>[] = [
     width: 300,
     valueGetter: (selectedBranches: Branch[]) =>
       selectedBranches.map((branch) => branch.name).join(', '),
+  },
+  {
+    field: 'status',
+    headerName: 'Status',
+    width: 140,
+    renderCell: ({ row }) => <OrderStatusChip status={row.status} />,
   },
   {
     field: 'orderedAmount',

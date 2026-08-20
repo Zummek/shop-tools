@@ -67,6 +67,7 @@ const getColumns = (
   orderDetails: OrderDetails | undefined,
   onAcceptProposal: (row: OrdersPerBranch) => void,
   isSaving: boolean,
+  readOnly: boolean,
 ): GridColDef[] => {
   const days =
     orderDetails?.saleStartDate && orderDetails?.saleEndDate
@@ -152,7 +153,7 @@ const getColumns = (
             <Typography variant="body2" flex={1}>
               {value}
             </Typography>
-            {differs && (
+            {differs && !readOnly && (
               <Tooltip title="Zastosuj propozycję">
                 <span>
                   <IconButton
@@ -174,7 +175,7 @@ const getColumns = (
     {
       field: 'toOrderAmount',
       headerName: 'Zamawiana\nilość',
-      editable: true,
+      editable: !readOnly,
       type: 'number',
       renderCell: ({ value, api, row }: GridRenderCellParams) => (
         <Stack
@@ -184,21 +185,23 @@ const getColumns = (
           width="100%"
           justifyContent="space-between"
         >
-          <IconButton
-            size="small"
-            onClick={() =>
-              api.startCellEditMode({ id: row.id, field: 'toOrderAmount' })
-            }
-            sx={{
-              opacity: 0,
-              transition: 'opacity 0.2s',
-              '.MuiDataGrid-row:hover &': {
-                opacity: 0.5,
-              },
-            }}
-          >
-            <EditOutlinedIcon />
-          </IconButton>
+          {!readOnly && (
+            <IconButton
+              size="small"
+              onClick={() =>
+                api.startCellEditMode({ id: row.id, field: 'toOrderAmount' })
+              }
+              sx={{
+                opacity: 0,
+                transition: 'opacity 0.2s',
+                '.MuiDataGrid-row:hover &': {
+                  opacity: 0.5,
+                },
+              }}
+            >
+              <EditOutlinedIcon />
+            </IconButton>
+          )}
           <Typography variant="body2" align="right">
             {value}
           </Typography>
@@ -234,6 +237,7 @@ interface Props {
   selectedProductId: number | null;
   onEditStateChange: (isEditing: boolean) => void;
   isLoading: boolean;
+  readOnly?: boolean;
 }
 
 export const ProductDetailsInOrderTable = ({
@@ -241,6 +245,7 @@ export const ProductDetailsInOrderTable = ({
   selectedProductId,
   onEditStateChange,
   isLoading,
+  readOnly = false,
 }: Props) => {
   const { updateOrderDetails, isLoading: isSaving } = useUpdateOrderDetails();
   const urgencyThresholds = useMemo(
@@ -250,6 +255,7 @@ export const ProductDetailsInOrderTable = ({
 
   const processRowUpdate = useCallback(
     async (updatedOrderPerBranch: OrdersPerBranch) => {
+      if (readOnly) return updatedOrderPerBranch;
       if (!orderDetails) throw new Error('Order details not found');
       if (!selectedProductId) throw new Error('Product ID not found');
 
@@ -268,11 +274,18 @@ export const ProductDetailsInOrderTable = ({
         onEditStateChange(false);
       }
     },
-    [orderDetails, selectedProductId, updateOrderDetails, onEditStateChange],
+    [
+      orderDetails,
+      selectedProductId,
+      updateOrderDetails,
+      onEditStateChange,
+      readOnly,
+    ],
   );
 
   const handleAcceptProposal = useCallback(
     async (row: OrdersPerBranch) => {
+      if (readOnly) return;
       if (!orderDetails || !selectedProductId) return;
       if (row.toOrderAmount === row.toOrderProposalAmount) return;
 
@@ -288,12 +301,18 @@ export const ProductDetailsInOrderTable = ({
         onEditStateChange(false);
       }
     },
-    [orderDetails, selectedProductId, updateOrderDetails, onEditStateChange],
+    [
+      orderDetails,
+      selectedProductId,
+      updateOrderDetails,
+      onEditStateChange,
+      readOnly,
+    ],
   );
 
   const columns = useMemo(
-    () => getColumns(orderDetails, handleAcceptProposal, isSaving),
-    [orderDetails, handleAcceptProposal, isSaving],
+    () => getColumns(orderDetails, handleAcceptProposal, isSaving, readOnly),
+    [orderDetails, handleAcceptProposal, isSaving, readOnly],
   );
 
   const handleEditStart = useCallback(() => {
@@ -321,8 +340,8 @@ export const ProductDetailsInOrderTable = ({
           disableColumnMenu
           disableRowSelectionOnClick
           hideFooter
-          processRowUpdate={processRowUpdate}
-          onCellEditStart={handleEditStart}
+          processRowUpdate={readOnly ? undefined : processRowUpdate}
+          onCellEditStart={readOnly ? undefined : handleEditStart}
           loading={isLoading || isSaving}
           getRowClassName={(params) =>
             getStockUrgencyClassName(params.row.daysOfStock, urgencyThresholds)

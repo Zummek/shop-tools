@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { QueryClient, useQuery } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 
 import { axiosInstance } from '../../../../services';
@@ -13,6 +13,25 @@ export type GetOrdersResponse = ListResponse<Order>;
 
 export const getV2OrdersQueryKeyBase = 'v2-orders';
 const endpoint = '/api/v1/suppliers-orders/v2/orders/';
+
+export const patchV2OrdersListCache = (
+  queryClient: QueryClient,
+  orderId: number,
+  patch: Partial<Order>,
+) => {
+  queryClient.setQueriesData<GetOrdersResponse>(
+    { queryKey: [getV2OrdersQueryKeyBase] },
+    (old) => {
+      if (!old?.results) return old;
+      return {
+        ...old,
+        results: old.results.map((order) =>
+          order.id === orderId ? { ...order, ...patch } : order,
+        ),
+      };
+    },
+  );
+};
 
 export const useGetOrders = () => {
   const [pagination, setPagination] = useState<PaginationState>({

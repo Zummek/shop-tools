@@ -9,4 +9,5 @@ export * from './useGetSuppliers';
 export * from './useProductConditions';
 export * from './useSupplierSettings';
 export * from './useUpdateOrderDetails';
+export * from './useUpdateOrderStatus';
 export * from './useUpdateSupplierDetails';

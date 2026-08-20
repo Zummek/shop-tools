@@ -17,6 +17,12 @@ interface SimpleUser {
   name: string;
 }
 
+export type SupplierOrderStatus =
+  | 'DRAFT'
+  | 'PREPARED'
+  | 'ORDERED'
+  | 'CANCELLED';
+
 export interface Order {
   id: number;
   supplier: SimpleSupplier;
@@ -26,6 +32,7 @@ export interface Order {
   comment?: string;
   isAutoDraft?: boolean;
   orderedAmount?: number;
+  status: SupplierOrderStatus;
 }
 
 export type OrdersList = Order[];
@@ -119,6 +126,7 @@ export interface OrderDetails {
   saleEndDate: string;
   comment?: string;
   isAutoDraft?: boolean;
+  status: SupplierOrderStatus;
   detail?: string;
 }
 

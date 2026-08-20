@@ -5,6 +5,7 @@ import { axiosInstance } from '../../../../services';
 import { OrderDetails } from '../types';
 
 import { getV2OrderDetailsQueryKey } from './useGetOrderDetails';
+import { getV2OrdersQueryKeyBase } from './useGetOrders';
 
 interface Payload {
   orderId: number;
@@ -45,6 +46,7 @@ export const useUpdateOrderDetails = () => {
       queryClient.invalidateQueries({
         queryKey: getV2OrderDetailsQueryKey(variables.orderId),
       });
+      queryClient.removeQueries({ queryKey: [getV2OrdersQueryKeyBase] });
     },
     onError: () => {
       notify('error', 'Błąd podczas aktualizacji zamówienia');

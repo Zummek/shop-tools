@@ -5,6 +5,7 @@ import { axiosInstance } from '../../../../services';
 import { OrderDetails } from '../types';
 
 import { getV2OrderDetailsQueryKey } from './useGetOrderDetails';
+import { getV2OrdersQueryKeyBase } from './useGetOrders';
 
 const getEndpoint = (orderId: number) =>
   `/api/v1/suppliers-orders/v2/orders/${orderId}/apply-proposals/`;
@@ -24,6 +25,7 @@ export const useApplyProposals = () => {
     mutationFn: applyProposalsRequest,
     onSuccess: (response, orderId) => {
       queryClient.setQueryData(getV2OrderDetailsQueryKey(orderId), response);
+      queryClient.removeQueries({ queryKey: [getV2OrdersQueryKeyBase] });
       notify('success', 'Zastosowano proponowane ilości');
     },
     onError: () => {

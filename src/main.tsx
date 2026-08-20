@@ -265,9 +265,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <Sentry.ErrorBoundary
     fallback={({ resetError }) => (
       <div style={{ padding: 24, fontFamily: 'sans-serif' }}>
-        <p>Wystąpił nieoczekiwany błąd. Odśwież stronę.</p>
+        <p>{'Wystąpił nieoczekiwany błąd. Odśwież stronę.'}</p>
         <button type="button" onClick={resetError}>
-          Spróbuj ponownie
+          {'Spróbuj ponownie'}
         </button>
       </div>
     )}

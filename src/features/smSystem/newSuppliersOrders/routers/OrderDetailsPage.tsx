@@ -34,9 +34,9 @@ import {
   ProductsInOrderSortBy,
   ProductsInOrderTable,
 } from '../tables/ProductsInOrderTable';
+import type { SupplierOrderStatus } from '../types';
 import { isSupplierOrderEditable } from '../utils/orderStatusConfig';
 import { resolveStockUrgencyThresholds } from '../utils/stockUrgency';
-import type { SupplierOrderStatus } from '../types';
 
 export const OrderDetailsPage = () => {
   const navigate = useNavigate();

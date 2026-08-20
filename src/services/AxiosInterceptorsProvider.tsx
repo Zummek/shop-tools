@@ -8,10 +8,7 @@ import { useRefreshToken } from '../features/smSystem/user/hooks/useRefreshToken
 import { useAppSelector, useNotify } from '../hooks';
 
 import { axiosInstance } from './axiosInstance';
-import {
-  isTransientQueryError,
-  setQueryErrorNotify,
-} from './ReactQueryClientProvider';
+import { isTransientQueryError, setQueryErrorNotify } from './queryRetry';
 
 interface AxiosInterceptorsProviderProps {
   store: Store;
@@ -90,9 +87,7 @@ export const AxiosInterceptorsProvider = ({
 
       const method = originalRequest?.method?.toLowerCase();
       const isGetRequest = method === 'get' || method === undefined;
-      if (isGetRequest && isTransientQueryError(error)) {
-        throw error;
-      }
+      if (isGetRequest && isTransientQueryError(error)) throw error;
 
       if (httpCode !== 400) {
         const errorMessage = getResponseErrorsMessageMsg(error);

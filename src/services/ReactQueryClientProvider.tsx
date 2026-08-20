@@ -9,43 +9,15 @@ import { ReactNode } from 'react';
 
 import { isDev } from '../utils/envs';
 
+import {
+  isTransientQueryError,
+  notifyTransientQueryError,
+  queryRetryDelay,
+  shouldRetryQuery,
+} from './queryRetry';
 import { captureError } from './sentry';
 
 const IGNORED_HTTP_STATUSES = new Set([400, 401, 403, 404, 422]);
-const TRANSIENT_HTTP_STATUSES = new Set([502, 503, 504]);
-const QUERY_RETRY_COUNT = 3;
-const TRANSIENT_QUERY_ERROR_MESSAGE = 'Błąd połączenia, spróbuj ponownie';
-
-export const queryRetryDelay = (attemptIndex: number) =>
-  Math.min(1000 * 2 ** attemptIndex, 30000);
-
-export const isTransientQueryError = (error: unknown) => {
-  if (!isAxiosError(error)) return false;
-
-  if (
-    error.code === AxiosError.ECONNABORTED ||
-    error.code === AxiosError.ERR_CANCELED
-  )
-    return false;
-
-  const status = error.response?.status;
-  if (status === undefined) return true;
-
-  return TRANSIENT_HTTP_STATUSES.has(status);
-};
-
-const shouldRetryQuery = (failureCount: number, error: unknown) => {
-  if (failureCount >= QUERY_RETRY_COUNT) return false;
-  return isTransientQueryError(error);
-};
-
-let notifyQueryError: ((message: string) => void) | null = null;
-
-export const setQueryErrorNotify = (
-  notify: ((message: string) => void) | null,
-) => {
-  notifyQueryError = notify;
-};
 
 const shouldCaptureQueryError = (error: unknown) => {
   if (!isAxiosError(error)) return true;
@@ -65,9 +37,7 @@ const shouldCaptureQueryError = (error: unknown) => {
 const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error) => {
-      if (isTransientQueryError(error)) {
-        notifyQueryError?.(TRANSIENT_QUERY_ERROR_MESSAGE);
-      }
+      if (isTransientQueryError(error)) notifyTransientQueryError();
       if (shouldCaptureQueryError(error)) captureError(error);
       if (isDev) console.error('React Query error:', error);
     },

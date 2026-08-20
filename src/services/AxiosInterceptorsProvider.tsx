@@ -8,6 +8,10 @@ import { useRefreshToken } from '../features/smSystem/user/hooks/useRefreshToken
 import { useAppSelector, useNotify } from '../hooks';
 
 import { axiosInstance } from './axiosInstance';
+import {
+  isTransientQueryError,
+  setQueryErrorNotify,
+} from './ReactQueryClientProvider';
 
 interface AxiosInterceptorsProviderProps {
   store: Store;
@@ -50,6 +54,11 @@ export const AxiosInterceptorsProvider = ({
   const axiosResponse = axiosInstance.interceptors.response;
 
   useEffect(() => {
+    setQueryErrorNotify((message) => notify('error', message));
+    return () => setQueryErrorNotify(null);
+  }, [notify]);
+
+  useEffect(() => {
     const responseInterceptor = async (response: AxiosResponse) => {
       return response;
     };
@@ -76,6 +85,12 @@ export const AxiosInterceptorsProvider = ({
         throw error;
       } else if (httpCode === 401) {
         logoutUser(isCurrentSessionExist);
+        throw error;
+      }
+
+      const method = originalRequest?.method?.toLowerCase();
+      const isGetRequest = method === 'get' || method === undefined;
+      if (isGetRequest && isTransientQueryError(error)) {
         throw error;
       }
 

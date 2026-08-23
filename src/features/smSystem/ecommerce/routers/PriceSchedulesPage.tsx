@@ -642,11 +642,6 @@ export const PriceSchedulesPage = () => {
           onRowSelectionModelChange={(ids: GridRowSelectionModel) =>
             setSelectedIds(ids as number[])
           }
-          getRowClassName={(params) =>
-            isPriceScheduleChannelMismatch(params.row)
-              ? 'price-schedule-mismatch'
-              : ''
-          }
           pageSizeOptions={[25]}
           initialState={{
             pagination: { paginationModel: { page: 0, pageSize: 25 } },
@@ -655,9 +650,6 @@ export const PriceSchedulesPage = () => {
             '& .MuiDataGrid-cell': {
               display: 'flex',
               alignItems: 'center',
-            },
-            '& .price-schedule-mismatch': {
-              backgroundColor: 'warning.light',
             },
           }}
         />

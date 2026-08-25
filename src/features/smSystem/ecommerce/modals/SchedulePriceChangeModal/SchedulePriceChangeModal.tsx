@@ -506,6 +506,7 @@ export const SchedulePriceChangeModal = ({
                 onChange={(e) =>
                   updateWindow(index, { startTime: e.target.value })
                 }
+                inputProps={{ step: 60 }}
                 sx={{ width: 110 }}
               />
               <Typography color="text.secondary">{'→'}</Typography>
@@ -529,6 +530,7 @@ export const SchedulePriceChangeModal = ({
                 onChange={(e) =>
                   updateWindow(index, { endTime: e.target.value })
                 }
+                inputProps={{ step: 60 }}
                 error={!isWindowValid(window)}
                 helperText={
                   !isWindowValid(window)

@@ -645,6 +645,9 @@ export const PriceSchedulesPage = () => {
           pageSizeOptions={[25]}
           initialState={{
             pagination: { paginationModel: { page: 0, pageSize: 25 } },
+            sorting: {
+              sortModel: [{ field: 'productName', sort: 'asc' }],
+            },
           }}
           sx={{
             '& .MuiDataGrid-cell': {
@@ -780,7 +783,7 @@ export const PriceSchedulesPage = () => {
                   {(historySchedule.events ?? []).map((event) => (
                     <TableRow key={event.id}>
                       <TableCell>
-                        {dayjs(event.createdAt).format('DD.MM.YYYY HH:mm:ss')}
+                        {dayjs(event.createdAt).format('DD.MM.YYYY HH:mm')}
                       </TableCell>
                       <TableCell>
                         {formatPriceScheduleEventLabel(event)}

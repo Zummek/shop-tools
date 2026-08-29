@@ -128,7 +128,7 @@ export const useGetEcommerceOrders = () => {
     return response.data;
   };
 
-  const { data, isLoading, isFetching } = useQuery({
+  const { data, isLoading, isFetching, dataUpdatedAt } = useQuery({
     queryKey: [
       getEcommerceOrdersQueryKeyBase,
       query,
@@ -163,5 +163,6 @@ export const useGetEcommerceOrders = () => {
     deliveryGroupIds,
     deliveryIds,
     setDeliveryFilters,
+    dataUpdatedAt,
   };
 };

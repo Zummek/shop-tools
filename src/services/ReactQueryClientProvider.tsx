@@ -4,7 +4,6 @@ import {
   QueryClient,
   QueryClientProvider,
 } from '@tanstack/react-query';
-import { AxiosError, isAxiosError } from 'axios';
 import { ReactNode } from 'react';
 
 import { isDev } from '../utils/envs';
@@ -16,23 +15,7 @@ import {
   shouldRetryQuery,
 } from './queryRetry';
 import { captureError } from './sentry';
-
-const IGNORED_HTTP_STATUSES = new Set([400, 401, 403, 404, 422]);
-
-const shouldCaptureQueryError = (error: unknown) => {
-  if (!isAxiosError(error)) return true;
-
-  if (
-    error.code === AxiosError.ECONNABORTED ||
-    error.code === AxiosError.ERR_CANCELED
-  )
-    return false;
-
-  const status = error.response?.status;
-  if (status !== undefined && IGNORED_HTTP_STATUSES.has(status)) return false;
-
-  return true;
-};
+import { shouldCaptureQueryError } from './shouldCaptureQueryError';
 
 const queryClient = new QueryClient({
   queryCache: new QueryCache({

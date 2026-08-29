@@ -8,6 +8,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
+import { isAxiosError } from 'axios';
 import { useState } from 'react';
 
 import { modalStyle } from '../../../../components';
@@ -22,15 +23,19 @@ interface Props {
 
 const MAX_VISIBLE_FILES = 8;
 
+const DEFAULT_UPLOAD_ERROR = 'Błąd podczas importowania faktury';
+
 const getErrorMessage = (error: unknown): string => {
-  if (error instanceof Error) return error.message;
+  if (isAxiosError(error)) {
+    const responseError = error.response?.data?.error;
+    if (typeof responseError === 'string' && responseError)
+      return responseError;
+    return DEFAULT_UPLOAD_ERROR;
+  }
 
-  const responseError = (error as { response?: { data?: { error?: string } } })
-    ?.response?.data?.error;
+  if (error instanceof Error && error.message) return error.message;
 
-  if (responseError) return responseError;
-
-  return 'Błąd podczas importowania faktury';
+  return DEFAULT_UPLOAD_ERROR;
 };
 
 export const ImportInvoiceModal = ({ open, onClose }: Props) => {

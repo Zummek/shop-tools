@@ -50,7 +50,11 @@ const orderSourceLabel = (source: string) => {
 const productReviewTooltip = (row: EcommerceOrderListItem) => {
   const parts: string[] = [];
   if (row.hasUnmatchedItems) parts.push('Zamówienie ma pozycje bez produktu');
-  if (row.hasUncertainMatch) parts.push('Zamówienie ma pozycje z niepewnym dopasowaniem (podobna nazwa)');
+  if (row.hasUncertainMatch) {
+    parts.push(
+      'Zamówienie ma pozycje z niepewnym dopasowaniem (podobna nazwa)',
+    );
+  }
   return parts.join('. ');
 };
 
@@ -222,6 +226,7 @@ export const EcommerceOrdersListPage = () => {
     deliveryGroupIds,
     deliveryIds,
     setDeliveryFilters,
+    dataUpdatedAt,
   } = useGetEcommerceOrders();
   const { deliveryMethods } = useGetDeliveryMethods();
   const { allegroConnection } = useGetAllegroConnection();
@@ -229,9 +234,6 @@ export const EcommerceOrdersListPage = () => {
 
   const anyChannelConnected =
     !!allegroConnection?.isConnected || !!wooCommerceConnection?.isConnected;
-
-  const handlePageChange = (_event: unknown, page: number): void =>
-    setPage(page);
 
   const handleRowClick = (params: GridRowParams) => {
     navigate(
@@ -356,6 +358,7 @@ export const EcommerceOrdersListPage = () => {
       </Box>
       <Box height={500} width="100%">
         <DataGrid
+          key={`${orderSource}-${needsProductReview}-${deliveryGroupIds.join(',')}-${deliveryIds.join(',')}-${dataUpdatedAt}`}
           sx={{
             '& .MuiDataGrid-columnHeaderTitle': {
               whiteSpace: 'normal',
@@ -374,6 +377,7 @@ export const EcommerceOrdersListPage = () => {
             },
           }}
           rows={ecommerceOrders}
+          getRowId={(row) => row.id}
           rowCount={totalCount || 0}
           columns={columns}
           pageSizeOptions={[pageSize]}
@@ -382,6 +386,7 @@ export const EcommerceOrdersListPage = () => {
             page,
             pageSize,
           }}
+          onPaginationModelChange={(model) => setPage(model.page)}
           paginationMode="server"
           disableColumnSorting
           disableRowSelectionOnClick
@@ -393,7 +398,6 @@ export const EcommerceOrdersListPage = () => {
           slotProps={{
             pagination: {
               showFirstButton: true,
-              onPageChange: handlePageChange,
             },
           }}
         />

@@ -1,6 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { axiosInstance } from '../../../../services';
+import {
+  axiosInstance,
+  throwAxiosErrorFromResponse,
+} from '../../../../services';
 import { Invoice } from '../types';
 
 import { getInvoicesQueryKeyBase } from './useGetInvoices';
@@ -28,17 +31,8 @@ export const useUploadInvoice = () => {
       },
     );
 
-    if (response.status < 200 || response.status >= 300) {
-      const data = response.data;
-      const message =
-        typeof data === 'object' &&
-        data !== null &&
-        'error' in data &&
-        typeof (data as { error: unknown }).error === 'string'
-          ? (data as { error: string }).error
-          : 'Błąd podczas importowania faktury';
-      throw new Error(message);
-    }
+    if (response.status < 200 || response.status >= 300)
+      throwAxiosErrorFromResponse(response);
 
     return response.data as Invoice;
   };

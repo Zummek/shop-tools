@@ -49,6 +49,7 @@ import {
   setReduxStoreForAxios,
 } from './services';
 import { AxiosInterceptorsProvider } from './services/AxiosInterceptorsProvider';
+import { registerAppNavigate } from './services/appNavigation';
 import { store } from './store/store';
 
 initSentry();
@@ -260,6 +261,9 @@ const router = sentryCreateHashRouter(
 );
 
 setReduxStoreForAxios(store);
+registerAppNavigate((to, options) => {
+  void router.navigate(to, options);
+});
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <Sentry.ErrorBoundary

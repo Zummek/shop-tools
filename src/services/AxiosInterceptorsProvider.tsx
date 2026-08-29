@@ -23,6 +23,9 @@ type APIError = AxiosError & {
 
 const standardErrorMsgKey = 'Wystąpił błąd, spróbuj ponownie';
 
+const isRefreshTokenRequest = (url: string | undefined) =>
+  Boolean(url?.endsWith('auth/token/refresh/'));
+
 const getResponseErrorsMessageMsg = (errorRequest: APIError) => {
   switch (errorRequest.code) {
     case AxiosError.ECONNABORTED:
@@ -44,10 +47,11 @@ export const AxiosInterceptorsProvider = ({
   const { notify } = useNotify();
   const { logoutUser } = useLogoutUser();
   const accessToken = useAppSelector((state) => state.smSystemUser.accessToken);
+  const user = useAppSelector((state) => state.smSystemUser.user);
 
   const { refreshToken } = useRefreshToken();
 
-  const isCurrentSessionExist = accessToken !== null;
+  const isCurrentSessionExist = accessToken !== null && user !== null;
   const axiosResponse = axiosInstance.interceptors.response;
 
   useEffect(() => {
@@ -64,32 +68,37 @@ export const AxiosInterceptorsProvider = ({
       const originalRequest = error.config;
       const httpCode = get(error, 'response.status');
 
+      if (httpCode === 401 && isRefreshTokenRequest(originalRequest?.url)) {
+        logoutUser(isCurrentSessionExist);
+        throw error;
+      }
+
       if (
         httpCode === 401 &&
         !originalRequest._retry &&
         originalRequest.url &&
-        !originalRequest.url.endsWith('auth/token/refresh/')
+        !isRefreshTokenRequest(originalRequest.url)
       ) {
         originalRequest._retry = true;
 
-        const accessToken = await refreshToken();
-        if (accessToken) {
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        const refreshedAccessToken = await refreshToken();
+        if (refreshedAccessToken) {
+          originalRequest.headers.Authorization = `Bearer ${refreshedAccessToken}`;
           return axiosInstance(originalRequest);
         }
 
         logoutUser(isCurrentSessionExist);
         throw error;
-      } else if (httpCode === 401) {
-        logoutUser(isCurrentSessionExist);
-        throw error;
       }
+
+      // Post-retry 401 (e.g. marketplace connection expired) is not an SM
+      // session failure — do not log the user out.
 
       const method = originalRequest?.method?.toLowerCase();
       const isGetRequest = method === 'get' || method === undefined;
       if (isGetRequest && isTransientQueryError(error)) throw error;
 
-      if (httpCode !== 400) {
+      if (httpCode !== 400 && httpCode !== 401) {
         const errorMessage = getResponseErrorsMessageMsg(error);
 
         if (errorMessage !== null) notify('error', errorMessage);

@@ -637,6 +637,7 @@ export const PriceSchedulesPage = () => {
           loading={isLoading}
           autoHeight
           checkboxSelection
+          disableColumnFilter
           disableRowSelectionOnClick
           rowSelectionModel={selectedIds}
           onRowSelectionModelChange={(ids: GridRowSelectionModel) =>

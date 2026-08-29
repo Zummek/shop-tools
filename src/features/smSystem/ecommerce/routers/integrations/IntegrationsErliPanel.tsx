@@ -487,6 +487,7 @@ export const IntegrationsErliPanel = () => {
                 columns={unmatchedColumns}
                 loading={isLoadingUnmatched}
                 autoHeight
+                disableColumnFilter
                 disableRowSelectionOnClick
                 pageSizeOptions={[25]}
                 paginationMode="server"

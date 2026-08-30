@@ -71,15 +71,36 @@ export const isPriceScheduleSnoozed = (
   !!schedule.snoozedUntil &&
   new Date(schedule.snoozedUntil).getTime() > Date.now();
 
+/**
+ * Whether the channel should currently show the temporary price — applied, or
+ * inside an active window that the engine should apply (enabled, not snoozed).
+ */
+export const isPriceScheduleExpectingTemporary = (
+  schedule: Pick<
+    ChannelPriceSchedule,
+    'isApplied' | 'isEnabled' | 'isInsideWindowNow' | 'snoozedUntil'
+  >,
+) => {
+  if (schedule.isApplied) return true;
+  if (!schedule.isEnabled || isPriceScheduleSnoozed(schedule)) return false;
+  return schedule.isInsideWindowNow;
+};
+
 /** Live/cached channel price differs from what the schedule currently expects. */
 export const isPriceScheduleChannelMismatch = (
   schedule: Pick<
     ChannelPriceSchedule,
-    'linkPrice' | 'isApplied' | 'temporaryPrice' | 'originalPrice'
+    | 'linkPrice'
+    | 'isApplied'
+    | 'isEnabled'
+    | 'isInsideWindowNow'
+    | 'snoozedUntil'
+    | 'temporaryPrice'
+    | 'originalPrice'
   >,
 ) => {
   if (schedule.linkPrice == null) return false;
-  const expected = schedule.isApplied
+  const expected = isPriceScheduleExpectingTemporary(schedule)
     ? schedule.temporaryPrice
     : schedule.originalPrice;
   return Number(schedule.linkPrice) !== Number(expected);

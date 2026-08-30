@@ -31,6 +31,32 @@ export const formatPriceScheduleEventLabel = (event: PriceScheduleEvent) =>
   PRICE_SCHEDULE_EVENT_LABELS[event.event] ?? event.event;
 
 /**
+ * Primary + secondary labels for the "next change" column.
+ * While the temporary price is live, the datetime is the window end
+ * (revert to base) — not the start of another temporary window.
+ */
+export const formatPriceScheduleNextChange = (
+  schedule: Pick<
+    ChannelPriceSchedule,
+    'isApplied' | 'currentWindowEndsAt' | 'nextWindowStartsAt'
+  >,
+  formatAt: (iso: string) => string,
+): { primary: string; secondary: string | null } => {
+  if (schedule.isApplied) {
+    if (!schedule.currentWindowEndsAt) return { primary: '—', secondary: null };
+    return {
+      primary: `do ${formatAt(schedule.currentWindowEndsAt)}`,
+      secondary: 'potem cena bazowa',
+    };
+  }
+  if (!schedule.nextWindowStartsAt) return { primary: '—', secondary: null };
+  return {
+    primary: formatAt(schedule.nextWindowStartsAt),
+    secondary: 'cena tymczasowa',
+  };
+};
+
+/**
  * True while a mid-window base-price push keeps the temporary price paused
  * until the current window ends.
  */

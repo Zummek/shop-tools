@@ -39,7 +39,8 @@ import {
   ChannelProductLink,
   PriceScheduleDisableMode,
   PriceScheduleEvent,
-  REFRESH_PRICE_SCHEDULE_MAX_IDS,
+  useBulkDisablePriceSchedules,
+  useBulkEnablePriceSchedules,
   useDeletePriceSchedule,
   useDisablePriceSchedule,
   useEnablePriceSchedule,
@@ -52,6 +53,7 @@ import {
 } from '../modals';
 import {
   formatPriceScheduleEventLabel,
+  formatPriceScheduleNextChange,
   formatPriceScheduleWindows,
   isPriceScheduleChannelMismatch,
   isPriceScheduleSnoozed,
@@ -207,10 +209,14 @@ export const PriceSchedulesPage = () => {
     schedule: ChannelPriceSchedule;
   } | null>(null);
   const [confirmDisable, setConfirmDisable] = useState<{
-    schedule: ChannelPriceSchedule;
+    schedule?: ChannelPriceSchedule;
+    ids?: number[];
     mode: PriceScheduleDisableMode;
     force?: boolean;
   } | null>(null);
+  const [confirmBulkEnable, setConfirmBulkEnable] = useState(false);
+  const [bulkDisableMenuAnchor, setBulkDisableMenuAnchor] =
+    useState<HTMLElement | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ChannelPriceSchedule | null>(
     null,
   );
@@ -224,15 +230,25 @@ export const PriceSchedulesPage = () => {
   const visibleSchedules = schedules.filter(
     (schedule) => schedule.isEnabled === isActiveTab,
   );
+  const selectedSchedules = visibleSchedules.filter((schedule) =>
+    selectedIds.includes(schedule.id),
+  );
+  const anySelectedApplied = selectedSchedules.some(
+    (schedule) => schedule.isApplied,
+  );
   const { disablePriceSchedule, isPending: isDisabling } =
     useDisablePriceSchedule();
   const { enablePriceSchedule, isPending: isEnabling } =
     useEnablePriceSchedule();
+  const { bulkDisablePriceSchedules, isPending: isBulkDisabling } =
+    useBulkDisablePriceSchedules();
+  const { bulkEnablePriceSchedules, isPending: isBulkEnabling } =
+    useBulkEnablePriceSchedules();
   const { deletePriceSchedule, isPending: isDeleting } =
     useDeletePriceSchedule();
   const { refreshPriceSchedulePrices, isPending: isRefreshing } =
     useRefreshPriceSchedulePrices();
-
+  const isBulkBusy = isBulkDisabling || isBulkEnabling || isRefreshing;
   useEffect(() => {
     const timeout = setTimeout(() => setQuery(searchInput.trim()), 300);
     return () => clearTimeout(timeout);
@@ -245,6 +261,35 @@ export const PriceSchedulesPage = () => {
     const target = confirmDisable;
     setConfirmDisable(null);
     if (!target) return;
+
+    if (target.ids && target.ids.length > 0) {
+      try {
+        const result = await bulkDisablePriceSchedules({
+          ids: target.ids,
+          mode: target.mode,
+          force: target.force,
+        });
+        setSelectedIds([]);
+        const total = result.succeeded + result.revertPending + result.failed;
+        if (result.failed === total) {
+          notify('error', `Nie udało się wyłączyć (${result.failed})`);
+          return;
+        }
+        const pendingPart = result.revertPending
+          ? `, ${result.revertPending} z ponawianiem przywrócenia`
+          : '';
+        const failedPart = result.failed ? `, ${result.failed} nieudane` : '';
+        notify(
+          result.failed || result.revertPending ? 'warning' : 'success',
+          `Wyłączono: ${result.succeeded}${pendingPart}${failedPart}`,
+        );
+      } catch {
+        notify('error', 'Nie udało się wyłączyć zaznaczonych harmonogramów');
+      }
+      return;
+    }
+
+    if (!target.schedule) return;
     try {
       const result = await disablePriceSchedule({
         id: target.schedule.id,
@@ -278,7 +323,35 @@ export const PriceSchedulesPage = () => {
 
   const disableConfirmText = () => {
     if (!confirmDisable) return '';
-    const { schedule, mode, force } = confirmDisable;
+    const { schedule, ids, mode, force } = confirmDisable;
+    const count = ids?.length ?? 1;
+
+    if (ids && ids.length > 0) {
+      if (force) {
+        return (
+          `Wyłączyć ${count} ${
+            count === 1 ? 'harmonogram' : 'harmonogramów'
+          } bez zmiany ceny na kanale? ` +
+          'Ceny na ofertach NIE zostaną zmienione — użyj tej opcji tylko, gdy oferty nie odpowiadają (np. zostały usunięte).'
+        );
+      }
+      if (mode === 'revert_now') {
+        return (
+          `Wyłączyć ${count} ${
+            count === 1 ? 'harmonogram' : 'harmonogramów'
+          }? Oferty z aktywną ceną tymczasową ` +
+          'od razu wrócą do ceny bazowej.'
+        );
+      }
+      return (
+        `Wyłączyć ${count} ${
+          count === 1 ? 'harmonogram' : 'harmonogramów'
+        } po zakończeniu bieżącego okna? ` +
+        'Cena tymczasowa będzie obowiązywać do końca okna, potem oferty wrócą do ceny bazowej.'
+      );
+    }
+
+    if (!schedule) return '';
     const offer = schedule.offerName || schedule.externalOfferId;
     if (force) {
       return (
@@ -322,21 +395,34 @@ export const PriceSchedulesPage = () => {
     }
   };
 
-  const handleRefreshPrices = async () => {
-    const ids =
-      selectedIds.length > 0
-        ? selectedIds
-        : visibleSchedules.map((schedule) => schedule.id);
-    if (ids.length === 0) return;
-    if (ids.length > REFRESH_PRICE_SCHEDULE_MAX_IDS) {
-      notify(
-        'error',
-        `Można pobrać maksymalnie ${REFRESH_PRICE_SCHEDULE_MAX_IDS} ofert na raz. Zaznacz mniej wierszy.`,
-      );
-      return;
-    }
+  const handleBulkEnable = async () => {
+    setConfirmBulkEnable(false);
+    if (selectedIds.length === 0) return;
     try {
-      const result = await refreshPriceSchedulePrices(ids);
+      const result = await bulkEnablePriceSchedules(selectedIds);
+      setSelectedIds([]);
+      const total = result.succeeded + result.applyPending + result.failed;
+      if (result.failed === total) {
+        notify('error', `Nie udało się włączyć (${result.failed})`);
+        return;
+      }
+      const pendingPart = result.applyPending
+        ? `, ${result.applyPending} z ponawianiem zmiany ceny`
+        : '';
+      const failedPart = result.failed ? `, ${result.failed} nieudane` : '';
+      notify(
+        result.failed || result.applyPending ? 'warning' : 'success',
+        `Włączono: ${result.succeeded}${pendingPart}${failedPart}`,
+      );
+    } catch {
+      notify('error', 'Nie udało się włączyć zaznaczonych harmonogramów');
+    }
+  };
+
+  const handleRefreshPrices = async () => {
+    if (selectedIds.length === 0) return;
+    try {
+      const result = await refreshPriceSchedulePrices(selectedIds);
       const mismatchCount = result.results.filter(
         isPriceScheduleChannelMismatch,
       ).length;
@@ -494,16 +580,33 @@ export const PriceSchedulesPage = () => {
     },
     {
       field: 'nextWindowStartsAt',
-      headerName: 'Następne okno',
-      width: 150,
-      valueGetter: (_value, row) =>
-        row.isApplied
-          ? row.currentWindowEndsAt
-            ? `do ${dayjs(row.currentWindowEndsAt).format('DD.MM HH:mm')}`
-            : '—'
-          : row.nextWindowStartsAt
-            ? dayjs(row.nextWindowStartsAt).format('DD.MM HH:mm')
-            : '—',
+      headerName: 'Następna zmiana',
+      width: 160,
+      valueGetter: (_value, row) => {
+        const { primary, secondary } = formatPriceScheduleNextChange(
+          row,
+          (iso) => dayjs(iso).format('DD.MM HH:mm'),
+        );
+        return secondary ? `${primary} (${secondary})` : primary;
+      },
+      renderCell: (params) => {
+        const { primary, secondary } = formatPriceScheduleNextChange(
+          params.row,
+          (iso) => dayjs(iso).format('DD.MM HH:mm'),
+        );
+        return (
+          <Stack spacing={0} sx={{ minWidth: 0, justifyContent: 'center' }}>
+            <Typography variant="body2" noWrap>
+              {primary}
+            </Typography>
+            {secondary && (
+              <Typography variant="caption" color="text.secondary" noWrap>
+                {secondary}
+              </Typography>
+            )}
+          </Stack>
+        );
+      },
     },
     {
       field: 'actions',
@@ -610,11 +713,41 @@ export const PriceSchedulesPage = () => {
           variant="outlined"
           onClick={handleRefreshPrices}
           loading={isRefreshing}
-          disabled={visibleSchedules.length === 0}
+          disabled={selectedIds.length === 0 || isBulkBusy}
           sx={{ flexShrink: 0 }}
+          title={
+            selectedIds.length === 0
+              ? 'Zaznacz wiersze, aby pobrać aktualne ceny'
+              : undefined
+          }
         >
-          {'Pobierz aktualne ceny'}
+          {selectedIds.length > 0
+            ? `Pobierz aktualne ceny (${selectedIds.length})`
+            : 'Pobierz aktualne ceny'}
         </LoadingButton>
+        {selectedIds.length > 0 && isActiveTab && (
+          <LoadingButton
+            variant="outlined"
+            color="error"
+            loading={isBulkDisabling}
+            disabled={isBulkBusy}
+            onClick={(e) => setBulkDisableMenuAnchor(e.currentTarget)}
+            sx={{ flexShrink: 0 }}
+          >
+            {`Wyłącz zaznaczone (${selectedIds.length})`}
+          </LoadingButton>
+        )}
+        {selectedIds.length > 0 && !isActiveTab && (
+          <LoadingButton
+            variant="outlined"
+            loading={isBulkEnabling}
+            disabled={isBulkBusy}
+            onClick={() => setConfirmBulkEnable(true)}
+            sx={{ flexShrink: 0 }}
+          >
+            {`Włącz zaznaczone (${selectedIds.length})`}
+          </LoadingButton>
+        )}
       </Stack>
 
       {(isLoading || isPlaceholderData) && visibleSchedules.length === 0 ? (
@@ -703,13 +836,61 @@ export const PriceSchedulesPage = () => {
         </MenuItem>
       </Menu>
 
+      <Menu
+        anchorEl={bulkDisableMenuAnchor}
+        open={!!bulkDisableMenuAnchor}
+        onClose={() => setBulkDisableMenuAnchor(null)}
+      >
+        <MenuItem
+          onClick={() => {
+            setConfirmDisable({
+              ids: selectedIds,
+              mode: 'revert_now',
+            });
+            setBulkDisableMenuAnchor(null);
+          }}
+        >
+          {anySelectedApplied
+            ? 'Wyłącz i przywróć cenę bazową teraz'
+            : 'Wyłącz'}
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            setConfirmDisable({
+              ids: selectedIds,
+              mode: 'revert_at_window_end',
+            });
+            setBulkDisableMenuAnchor(null);
+          }}
+          disabled={!anySelectedApplied}
+        >
+          {'Wyłącz — cena wróci po zakończeniu okna'}
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            setConfirmDisable({
+              ids: selectedIds,
+              mode: 'revert_now',
+              force: true,
+            });
+            setBulkDisableMenuAnchor(null);
+          }}
+        >
+          {'Wyłącz bez zmiany ceny na kanale (wymuszone)'}
+        </MenuItem>
+      </Menu>
+
       <Dialog
         open={!!confirmDisable}
         onClose={() => setConfirmDisable(null)}
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>{'Wyłączenie harmonogramu'}</DialogTitle>
+        <DialogTitle>
+          {confirmDisable?.ids
+            ? 'Wyłączenie zaznaczonych harmonogramów'
+            : 'Wyłączenie harmonogramu'}
+        </DialogTitle>
         <DialogContent>
           <Typography variant="body2">{disableConfirmText()}</Typography>
         </DialogContent>
@@ -718,10 +899,37 @@ export const PriceSchedulesPage = () => {
           <Button
             color="error"
             variant="contained"
-            disabled={isDisabling}
+            disabled={isDisabling || isBulkDisabling}
             onClick={handleDisable}
           >
             {'Wyłącz'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={confirmBulkEnable}
+        onClose={() => setConfirmBulkEnable(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>{'Włączenie zaznaczonych harmonogramów'}</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2">
+            {`Włączyć ${selectedIds.length} zaznaczonych harmonogramów? ` +
+              'Jeśli bieżący czas przypada w oknie, cena tymczasowa zostanie zastosowana od razu.'}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmBulkEnable(false)}>
+            {'Anuluj'}
+          </Button>
+          <Button
+            variant="contained"
+            disabled={isBulkEnabling}
+            onClick={handleBulkEnable}
+          >
+            {'Włącz'}
           </Button>
         </DialogActions>
       </Dialog>

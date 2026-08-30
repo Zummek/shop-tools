@@ -3,6 +3,8 @@ export * from './useConnectErli';
 export * from './useConnectWooCommerce';
 export * from './useDeleteEcommerceOrders';
 export * from './useErliDisconnect';
+export * from './useBulkDisablePriceSchedules';
+export * from './useBulkEnablePriceSchedules';
 export * from './useCreatePriceSchedule';
 export * from './useDeletePriceSchedule';
 export * from './useDisablePriceSchedule';

@@ -327,9 +327,9 @@ const pickPrimarySchedule = (schedules: ChannelPriceSchedule[]) => {
 const scheduleChipLabel = (schedule: ChannelPriceSchedule) => {
   if (!schedule.isEnabled) return 'Harmonogram wyłączony';
   if (schedule.isApplied && schedule.currentWindowEndsAt) {
-    return `Zmiana ceny aktywna do ${dayjs(schedule.currentWindowEndsAt).format(
+    return `Aktywna do ${dayjs(schedule.currentWindowEndsAt).format(
       'DD.MM HH:mm',
-    )}`;
+    )} → cena bazowa`;
   }
   if (schedule.isApplied) return 'Zmiana ceny aktywna';
   if (isPriceScheduleSnoozed(schedule)) {
@@ -338,7 +338,7 @@ const scheduleChipLabel = (schedule: ChannelPriceSchedule) => {
     )}`;
   }
   if (schedule.nextWindowStartsAt) {
-    return `Następne okno: ${dayjs(schedule.nextWindowStartsAt).format(
+    return `Następna zmiana: ${dayjs(schedule.nextWindowStartsAt).format(
       'DD.MM HH:mm',
     )}`;
   }

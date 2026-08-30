@@ -87,17 +87,39 @@ export const ProductMarginSourceModal = ({
       : `${row.productName} · ${channelLabel(row.channel)}`
     : '';
 
+  const salesTableMinWidth = showEcommerceFees
+    ? 880
+    : lens === 'pcmarket'
+      ? 800
+      : 720;
+
   return (
     <Modal open={open} onClose={onClose}>
       <Stack
         sx={{
           ...modalStyle({ width: 1040 }),
-          maxHeight: '90vh',
+          top: { xs: 12, sm: '50%' },
+          transform: {
+            xs: 'translate(-50%, 0)',
+            sm: 'translate(-50%, -50%)',
+          },
+          maxHeight: { xs: 'calc(100dvh - 24px)', sm: '90vh' },
           overflow: 'auto',
+          overscrollBehavior: 'contain',
         }}
         spacing={2}
       >
-        <Typography variant="h6">{title}</Typography>
+        <Typography
+          variant="h6"
+          sx={{
+            fontSize: { xs: '1.05rem', sm: '1.25rem' },
+            lineHeight: 1.35,
+            wordBreak: 'break-word',
+            pr: { xs: 0, sm: 1 },
+          }}
+        >
+          {title}
+        </Typography>
         <Typography variant="body2" color="text.secondary">
           {
             'Źródła kwot z tego wiersza — faktury zakupu i paragony/zamówienia. Ładowane dopiero po otwarciu.'
@@ -138,8 +160,8 @@ export const ProductMarginSourceModal = ({
                 }
               </Typography>
             ) : (
-              <TableContainer>
-                <Table size="small">
+              <TableContainer sx={{ overflowX: 'auto', maxWidth: '100%' }}>
+                <Table size="small" sx={{ minWidth: 640 }}>
                   <TableHead>
                     <TableRow>
                       <TableCell>{'Nr FV'}</TableCell>
@@ -156,7 +178,7 @@ export const ProductMarginSourceModal = ({
                       <TableRow
                         key={`${invoice.invoiceId ?? 'x'}-${invoice.source}-${index}`}
                       >
-                        <TableCell>
+                        <TableCell sx={{ whiteSpace: 'nowrap' }}>
                           {invoice.invoiceId && invoice.invoiceNumber ? (
                             <Link
                               href={invoiceHref(invoice.invoiceId)}
@@ -169,12 +191,14 @@ export const ProductMarginSourceModal = ({
                             (invoice.invoiceNumber ?? 'ostatnia FV KSeF')
                           )}
                         </TableCell>
-                        <TableCell>{formatDay(invoice.invoiceDate)}</TableCell>
+                        <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                          {formatDay(invoice.invoiceDate)}
+                        </TableCell>
                         <TableCell>{invoice.sellerName ?? '—'}</TableCell>
-                        <TableCell>
+                        <TableCell sx={{ whiteSpace: 'nowrap' }}>
                           {marginSourceLabel(invoice.source)}
                         </TableCell>
-                        <TableCell align="right">
+                        <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
                           {invoice.unitGrossCents == null
                             ? '—'
                             : formatPrice(invoice.unitGrossCents, currency)}
@@ -182,7 +206,7 @@ export const ProductMarginSourceModal = ({
                         <TableCell align="right">
                           {invoice.soldUnits.toLocaleString('pl-PL')}
                         </TableCell>
-                        <TableCell align="right">
+                        <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
                           {formatPrice(invoice.cogsCents, currency)}
                         </TableCell>
                       </TableRow>
@@ -202,8 +226,8 @@ export const ProductMarginSourceModal = ({
                 {'Brak pozycji w wybranym okresie.'}
               </Typography>
             ) : (
-              <TableContainer>
-                <Table size="small">
+              <TableContainer sx={{ overflowX: 'auto', maxWidth: '100%' }}>
+                <Table size="small" sx={{ minWidth: salesTableMinWidth }}>
                   <TableHead>
                     <TableRow>
                       <TableCell>{'Data'}</TableCell>
@@ -231,8 +255,10 @@ export const ProductMarginSourceModal = ({
                             : undefined
                         }
                       >
-                        <TableCell>{formatDayTime(line.occurredAt)}</TableCell>
-                        <TableCell>
+                        <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                          {formatDayTime(line.occurredAt)}
+                        </TableCell>
+                        <TableCell sx={{ whiteSpace: 'nowrap' }}>
                           {line.orderId ? (
                             <Link
                               href={orderHref(line.orderId)}
@@ -260,18 +286,21 @@ export const ProductMarginSourceModal = ({
                         <TableCell align="right">
                           {line.quantity.toLocaleString('pl-PL')}
                         </TableCell>
-                        <TableCell align="right">
+                        <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
                           {formatPrice(line.revenueCents, currency)}
                         </TableCell>
-                        <TableCell align="right">
+                        <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
                           {formatPrice(line.cogsCents, currency)}
                         </TableCell>
                         {showEcommerceFees ? (
-                          <TableCell align="right">
+                          <TableCell
+                            align="right"
+                            sx={{ whiteSpace: 'nowrap' }}
+                          >
                             {formatPrice(line.commissionCents, currency)}
                           </TableCell>
                         ) : null}
-                        <TableCell>
+                        <TableCell sx={{ whiteSpace: 'nowrap' }}>
                           {line.invoiceId && line.invoiceNumber ? (
                             <Link
                               href={invoiceHref(line.invoiceId)}
@@ -288,7 +317,7 @@ export const ProductMarginSourceModal = ({
                             '—'
                           )}
                         </TableCell>
-                        <TableCell align="right">
+                        <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
                           {formatPrice(line.marginCents, currency)}
                         </TableCell>
                       </TableRow>
@@ -300,7 +329,7 @@ export const ProductMarginSourceModal = ({
           </>
         ) : null}
 
-        <Button onClick={onClose} sx={{ alignSelf: 'flex-end' }}>
+        <Button onClick={onClose} sx={{ alignSelf: 'flex-end', flexShrink: 0 }}>
           {'Zamknij'}
         </Button>
       </Stack>

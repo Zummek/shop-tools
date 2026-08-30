@@ -24,8 +24,15 @@ export const MarginCalculationBreakdown = ({
   dense = false,
 }: Props) => {
   return (
-    <Stack spacing={dense ? 0.5 : 1}>
-      <Typography variant={dense ? 'caption' : 'body2'} color="text.secondary">
+    <Stack
+      spacing={dense ? 0.5 : 1}
+      sx={{ width: '100%', maxWidth: dense ? 520 : 640 }}
+    >
+      <Typography
+        variant={dense ? 'caption' : 'body2'}
+        color="text.secondary"
+        sx={{ wordBreak: 'break-word' }}
+      >
         {calculation.formula}
       </Typography>
       {calculation.components.map((component) => (
@@ -33,9 +40,13 @@ export const MarginCalculationBreakdown = ({
           key={component.key}
           direction="row"
           justifyContent="space-between"
+          alignItems="flex-start"
           spacing={2}
         >
-          <Typography variant={dense ? 'caption' : 'body2'}>
+          <Typography
+            variant={dense ? 'caption' : 'body2'}
+            sx={{ minWidth: 0, flex: 1 }}
+          >
             {component.label}
             <Typography
               component="span"
@@ -48,13 +59,22 @@ export const MarginCalculationBreakdown = ({
               })`}
             </Typography>
           </Typography>
-          <Typography variant={dense ? 'caption' : 'body2'} fontWeight={600}>
+          <Typography
+            variant={dense ? 'caption' : 'body2'}
+            fontWeight={600}
+            sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}
+          >
             {formatPrice(component.amountCents, currency)}
           </Typography>
         </Stack>
       ))}
       {calculation.notes?.map((note) => (
-        <Typography key={note} variant="caption" color="text.secondary">
+        <Typography
+          key={note}
+          variant="caption"
+          color="text.secondary"
+          sx={{ wordBreak: 'break-word' }}
+        >
           {note}
         </Typography>
       ))}

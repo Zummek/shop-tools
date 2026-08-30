@@ -33,6 +33,7 @@ import { ImportProductsPage } from './features/smSystem/products/routers/ImportP
 import { ProductDetailsPage } from './features/smSystem/products/routers/ProductDetailsPage/ProductDetailsPage';
 import { ProductsListPage } from './features/smSystem/products/routers/ProductsListPage/ProductsListPage';
 import { ProductsDocumentsPage } from './features/smSystem/productsDocuments/routers/ProductsDocumentsPage';
+import { ChannelMarginReportPage } from './features/smSystem/reports/routers/ChannelMarginReportPage';
 import { ReportsPage } from './features/smSystem/reports/routers/ReportsPage';
 import { UnfulfilledOrdersByTransfersReportPage } from './features/smSystem/reports/routers/UnfulfilledOrdersByTransfersReportPage';
 import { SuppliersOrdersPageLayout } from './features/smSystem/suppliersOrders/layout/SuppliersOrdersPageLayout';
@@ -107,6 +108,10 @@ const router = sentryCreateHashRouter(
         {
           path: 'reports',
           element: <ReportsPage />,
+        },
+        {
+          path: 'reports/channel-margin',
+          element: <ChannelMarginReportPage />,
         },
         {
           path: 'unfulfilled-orders-by-transfers',

@@ -11,11 +11,6 @@ export const ReportsPage = () => {
 
   return (
     <Stack spacing={2} direction={{ xs: 'column', md: 'row' }} flexWrap="wrap">
-      <ReportBox
-        title="Raport niezrealizowanych zamówień"
-        description="Raport pokazuje, które produkty zamówione przez sklepy nie zostały w pełni dostarczone w ramach transferów."
-        page={Pages.smSystemUnfulfilledOrdersByTransfersReport}
-      />
       {canViewPurchasePrices ? (
         <ReportBox
           title="Raport marży kanałów"

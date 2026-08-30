@@ -29,15 +29,24 @@ export const ChangeProductsToPriceTagGroupModal = ({
 }: Props) => {
   const { notify } = useNotify();
   const [selectedProductIds, setSelectedProductIds] = useState<number[]>(
-    originallySelectedProductIds
+    originallySelectedProductIds,
   );
 
   useEffect(() => {
     if (open) setSelectedProductIds(originallySelectedProductIds);
   }, [originallySelectedProductIds, open]);
 
-  const { products, isLoading, setQuery, query, setPage, page, totalCount } =
+  const { products, isLoading, setQuery, setPage, page, totalCount } =
     useGetProducts();
+  const [searchInput, setSearchInput] = useState('');
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setQuery(searchInput);
+      setPage(0);
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [searchInput, setQuery, setPage]);
 
   const { updatePriceTagGroup, isPending } = useUpdatePriceTagGroup({
     groupId,
@@ -46,6 +55,7 @@ export const ChangeProductsToPriceTagGroupModal = ({
   const handleCloseModal = () => {
     onClose();
     setSelectedProductIds([]);
+    setSearchInput('');
     setQuery('');
   };
 
@@ -70,8 +80,8 @@ export const ChangeProductsToPriceTagGroupModal = ({
 
         <TextField
           label="Wyszukaj produkty"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
           placeholder="Wpisz nazwę lub kod kreskowy..."
           fullWidth
         />

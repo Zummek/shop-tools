@@ -15,20 +15,19 @@ export const useGetProducts = () => {
   const [page, setPage] = useState(0);
   const [query, setQuery] = useState<string>('');
 
-  const getProductsRequest = async () => {
-    const response = await axiosInstance.get<Response>(endpoint, {
-      params: {
-        query,
-        page: page + 1,
-        pageSize,
-      },
-    });
-    return response.data;
-  };
-
   const { data, isLoading, isFetching } = useQuery({
     queryKey: [getProductsQueryKeyBase, query, page],
-    queryFn: getProductsRequest,
+    queryFn: async ({ signal }) => {
+      const response = await axiosInstance.get<Response>(endpoint, {
+        signal,
+        params: {
+          query,
+          page: page + 1,
+          pageSize,
+        },
+      });
+      return response.data;
+    },
     placeholderData: keepPreviousData,
   });
 

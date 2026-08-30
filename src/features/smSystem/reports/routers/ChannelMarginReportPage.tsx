@@ -15,6 +15,12 @@ import {
   Select,
   Skeleton,
   Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   ToggleButton,
   ToggleButtonGroup,
   Tooltip,
@@ -429,21 +435,63 @@ export const ChannelMarginReportPage = () => {
 
       {data?.byChannel?.length ? (
         <Paper variant="outlined" sx={{ p: 2 }}>
-          <Typography variant="subtitle1" gutterBottom>
-            {'Według kanału'}
-          </Typography>
-          <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
-            {data.byChannel.map((ch) => (
-              <Chip
-                key={ch.channel}
-                label={`${channelLabel(ch.channel)}: ${formatPrice(ch.marginCents, currency)}${
-                  ch.marginPercent != null
-                    ? ` (${ch.marginPercent.toFixed(1)}%)`
-                    : ''
-                }`}
-              />
-            ))}
+          <Stack spacing={0.5} mb={1.5}>
+            <Stack direction="row" spacing={0.5} alignItems="center">
+              <Typography variant="subtitle1">
+                {'Marża według kanału'}
+              </Typography>
+              <Tooltip title="Marża / (przychód + dostawa od kupującego).">
+                <InfoOutlinedIcon sx={{ fontSize: 16 }} color="action" />
+              </Tooltip>
+            </Stack>
+            <Typography variant="caption" color="text.secondary">
+              {
+                'Marża zł oraz marża % = marża / (przychód + dostawa kupującego).'
+              }
+            </Typography>
           </Stack>
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>{'Kanał'}</TableCell>
+                  <TableCell align="right">{'Marża'}</TableCell>
+                  <TableCell align="right">{'Marża %'}</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {data.byChannel.map((ch) => {
+                  const isTotal = ch.channel === 'ecommerce_total';
+                  return (
+                    <TableRow
+                      key={ch.channel}
+                      sx={
+                        isTotal
+                          ? {
+                              '& td': {
+                                borderTop: 1,
+                                borderColor: 'divider',
+                                fontWeight: 600,
+                              },
+                            }
+                          : undefined
+                      }
+                    >
+                      <TableCell>{channelLabel(ch.channel)}</TableCell>
+                      <TableCell align="right">
+                        {formatPrice(ch.marginCents, currency)}
+                      </TableCell>
+                      <TableCell align="right">
+                        {ch.marginPercent == null
+                          ? '—'
+                          : `${ch.marginPercent.toFixed(1)}%`}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
         </Paper>
       ) : null}
 

@@ -2,20 +2,41 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { axiosInstance } from '../../../../services';
 import {
-  ChannelPriceSchedule,
+  PRICE_SCHEDULE_BULK_MAX_IDS,
+  PriceScheduleBulkDisableResponse,
   PriceScheduleDisableMode,
 } from '../types/priceSchedules';
 
 import { priceSchedulesQueryKeyBase } from './useGetPriceSchedules';
 
-const endpoint = (id: number) =>
-  `/api/v1/ecommerce/price-schedules/${id}/disable/`;
+const endpoint = '/api/v1/ecommerce/price-schedules/bulk-disable/';
+const BULK_REQUEST_TIMEOUT_MS = 300_000;
 
 export interface BulkDisablePriceSchedulesResult {
   succeeded: number;
   revertPending: number;
   failed: number;
 }
+
+const disableChunk = async ({
+  ids,
+  mode,
+  force,
+}: {
+  ids: number[];
+  mode: PriceScheduleDisableMode;
+  force?: boolean;
+}) => {
+  const response = await axiosInstance.post<PriceScheduleBulkDisableResponse>(
+    endpoint,
+    { ids, mode, force },
+    { timeout: BULK_REQUEST_TIMEOUT_MS },
+  );
+  if (response.status >= 400) 
+    throw new Error(`Bulk disable failed (${response.status})`);
+  
+  return response.data;
+};
 
 export const useBulkDisablePriceSchedules = () => {
   const queryClient = useQueryClient();
@@ -35,24 +56,30 @@ export const useBulkDisablePriceSchedules = () => {
       let revertPending = 0;
       let failed = 0;
 
-      for (const id of uniqueIds) {
+      for (
+        let i = 0;
+        i < uniqueIds.length;
+        i += PRICE_SCHEDULE_BULK_MAX_IDS
+      ) {
+        const chunk = uniqueIds.slice(
+          i,
+          i + PRICE_SCHEDULE_BULK_MAX_IDS,
+        );
         try {
-          const response = await axiosInstance.post<
-            ChannelPriceSchedule & {
-              revertPending?: boolean;
-              revertError?: string;
-            }
-          >(endpoint(id), { mode, force });
-          if (response.data.revertPending) revertPending += 1;
-          else succeeded += 1;
+          const batch = await disableChunk({ ids: chunk, mode, force });
+          for (const row of batch.results) {
+            if (row.revertPending) revertPending += 1;
+            else succeeded += 1;
+          }
+          failed += batch.errors.length;
         } catch {
-          failed += 1;
+          failed += chunk.length;
         }
       }
 
       return { succeeded, revertPending, failed };
     },
-    onSuccess: () => {
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: [priceSchedulesQueryKeyBase] });
       queryClient.invalidateQueries({ queryKey: ['product-channel-links'] });
     },

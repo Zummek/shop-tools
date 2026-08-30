@@ -97,3 +97,20 @@ export interface PriceScheduleRefreshPricesResponse {
   results: ChannelPriceSchedule[];
   errors: PriceScheduleRefreshPricesError[];
 }
+
+export interface PriceScheduleBulkEnableResponse {
+  results: Array<
+    ChannelPriceSchedule & { applyPending?: boolean; applyError?: string }
+  >;
+  errors: PriceScheduleRefreshPricesError[];
+}
+
+export interface PriceScheduleBulkDisableResponse {
+  results: Array<
+    ChannelPriceSchedule & { revertPending?: boolean; revertError?: string }
+  >;
+  errors: PriceScheduleRefreshPricesError[];
+}
+
+/** Soft cap shared with the backend bulk/refresh endpoints. */
+export const PRICE_SCHEDULE_BULK_MAX_IDS = 500;

@@ -125,6 +125,16 @@ const formatEventPriceChange = (
 const latestEvent = (schedule: ChannelPriceSchedule) =>
   schedule.events?.[0] ?? null;
 
+const scheduleNoun = (count: number) => {
+  if (count === 1) return 'harmonogram';
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) 
+    return 'harmonogramy';
+  
+  return 'harmonogramów';
+};
+
 const NameWithEyeButton = ({
   name,
   ariaLabel,
@@ -214,7 +224,9 @@ export const PriceSchedulesPage = () => {
     mode: PriceScheduleDisableMode;
     force?: boolean;
   } | null>(null);
-  const [confirmBulkEnable, setConfirmBulkEnable] = useState(false);
+  const [confirmBulkEnableIds, setConfirmBulkEnableIds] = useState<
+    number[] | null
+  >(null);
   const [bulkDisableMenuAnchor, setBulkDisableMenuAnchor] =
     useState<HTMLElement | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ChannelPriceSchedule | null>(
@@ -236,6 +248,9 @@ export const PriceSchedulesPage = () => {
   const anySelectedApplied = selectedSchedules.some(
     (schedule) => schedule.isApplied,
   );
+  const allVisibleSelected =
+    visibleSchedules.length > 0 &&
+    visibleSchedules.every((schedule) => selectedIds.includes(schedule.id));
   const { disablePriceSchedule, isPending: isDisabling } =
     useDisablePriceSchedule();
   const { enablePriceSchedule, isPending: isEnabling } =
@@ -248,7 +263,13 @@ export const PriceSchedulesPage = () => {
     useDeletePriceSchedule();
   const { refreshPriceSchedulePrices, isPending: isRefreshing } =
     useRefreshPriceSchedulePrices();
-  const isBulkBusy = isBulkDisabling || isBulkEnabling || isRefreshing;
+  const isMutationBusy =
+    isBulkDisabling ||
+    isBulkEnabling ||
+    isRefreshing ||
+    isDisabling ||
+    isEnabling ||
+    isDeleting;
   useEffect(() => {
     const timeout = setTimeout(() => setQuery(searchInput.trim()), 300);
     return () => clearTimeout(timeout);
@@ -270,18 +291,19 @@ export const PriceSchedulesPage = () => {
           force: target.force,
         });
         setSelectedIds([]);
-        const total = result.succeeded + result.revertPending + result.failed;
-        if (result.failed === total) {
+        const completed = result.succeeded + result.revertPending;
+        const total = completed + result.failed;
+        if (completed === 0) {
           notify('error', `Nie udało się wyłączyć (${result.failed})`);
           return;
         }
         const pendingPart = result.revertPending
-          ? `, ${result.revertPending} z ponawianiem przywrócenia`
+          ? ` (w tym ${result.revertPending} z ponawianiem przywrócenia)`
           : '';
         const failedPart = result.failed ? `, ${result.failed} nieudane` : '';
         notify(
           result.failed || result.revertPending ? 'warning' : 'success',
-          `Wyłączono: ${result.succeeded}${pendingPart}${failedPart}`,
+          `Wyłączono ${completed} z ${total}${pendingPart}${failedPart}`,
         );
       } catch {
         notify('error', 'Nie udało się wyłączyć zaznaczonych harmonogramów');
@@ -329,24 +351,18 @@ export const PriceSchedulesPage = () => {
     if (ids && ids.length > 0) {
       if (force) {
         return (
-          `Wyłączyć ${count} ${
-            count === 1 ? 'harmonogram' : 'harmonogramów'
-          } bez zmiany ceny na kanale? ` +
+          `Wyłączyć ${count} ${scheduleNoun(count)} bez zmiany ceny na kanale? ` +
           'Ceny na ofertach NIE zostaną zmienione — użyj tej opcji tylko, gdy oferty nie odpowiadają (np. zostały usunięte).'
         );
       }
       if (mode === 'revert_now') {
         return (
-          `Wyłączyć ${count} ${
-            count === 1 ? 'harmonogram' : 'harmonogramów'
-          }? Oferty z aktywną ceną tymczasową ` +
+          `Wyłączyć ${count} ${scheduleNoun(count)}? Oferty z aktywną ceną tymczasową ` +
           'od razu wrócą do ceny bazowej.'
         );
       }
       return (
-        `Wyłączyć ${count} ${
-          count === 1 ? 'harmonogram' : 'harmonogramów'
-        } po zakończeniu bieżącego okna? ` +
+        `Wyłączyć ${count} ${scheduleNoun(count)} po zakończeniu bieżącego okna? ` +
         'Cena tymczasowa będzie obowiązywać do końca okna, potem oferty wrócą do ceny bazowej.'
       );
     }
@@ -396,23 +412,25 @@ export const PriceSchedulesPage = () => {
   };
 
   const handleBulkEnable = async () => {
-    setConfirmBulkEnable(false);
-    if (selectedIds.length === 0) return;
+    const ids = confirmBulkEnableIds ?? [];
+    setConfirmBulkEnableIds(null);
+    if (ids.length === 0) return;
     try {
-      const result = await bulkEnablePriceSchedules(selectedIds);
+      const result = await bulkEnablePriceSchedules(ids);
       setSelectedIds([]);
-      const total = result.succeeded + result.applyPending + result.failed;
-      if (result.failed === total) {
+      const completed = result.succeeded + result.applyPending;
+      const total = completed + result.failed;
+      if (completed === 0) {
         notify('error', `Nie udało się włączyć (${result.failed})`);
         return;
       }
       const pendingPart = result.applyPending
-        ? `, ${result.applyPending} z ponawianiem zmiany ceny`
+        ? ` (w tym ${result.applyPending} z ponawianiem zmiany ceny)`
         : '';
       const failedPart = result.failed ? `, ${result.failed} nieudane` : '';
       notify(
         result.failed || result.applyPending ? 'warning' : 'success',
-        `Włączono: ${result.succeeded}${pendingPart}${failedPart}`,
+        `Włączono ${completed} z ${total}${pendingPart}${failedPart}`,
       );
     } catch {
       notify('error', 'Nie udało się włączyć zaznaczonych harmonogramów');
@@ -620,18 +638,23 @@ export const PriceSchedulesPage = () => {
             <IconButton
               size="small"
               aria-label="Historia zmian ceny"
+              disabled={isMutationBusy}
               onClick={() => setHistorySchedule(schedule)}
             >
               <HistoryOutlinedIcon fontSize="small" />
             </IconButton>
-            <Button size="small" onClick={() => setEditedSchedule(schedule)}>
+            <Button
+              size="small"
+              disabled={isMutationBusy}
+              onClick={() => setEditedSchedule(schedule)}
+            >
               {'Edytuj'}
             </Button>
             {schedule.isEnabled ? (
               <Button
                 size="small"
                 color="error"
-                disabled={isDisabling}
+                disabled={isMutationBusy}
                 onClick={(e) =>
                   setMenuState({ anchor: e.currentTarget, schedule })
                 }
@@ -642,7 +665,7 @@ export const PriceSchedulesPage = () => {
               <>
                 <Button
                   size="small"
-                  disabled={isEnabling}
+                  disabled={isMutationBusy}
                   onClick={() => handleEnable(schedule)}
                 >
                   {'Włącz'}
@@ -650,7 +673,7 @@ export const PriceSchedulesPage = () => {
                 <IconButton
                   size="small"
                   aria-label="Usuń harmonogram"
-                  disabled={isDeleting}
+                  disabled={isMutationBusy}
                   onClick={() => setDeleteTarget(schedule)}
                 >
                   <DeleteOutlineIcon fontSize="small" />
@@ -709,15 +732,33 @@ export const PriceSchedulesPage = () => {
           onChange={(e) => setSearchInput(e.target.value)}
           sx={{ maxWidth: 480, flex: 1 }}
         />
+        {visibleSchedules.length > 0 && (
+          <Button
+            size="small"
+            disabled={isMutationBusy}
+            onClick={() =>
+              setSelectedIds(
+                allVisibleSelected
+                  ? []
+                  : visibleSchedules.map((schedule) => schedule.id),
+              )
+            }
+            sx={{ flexShrink: 0 }}
+          >
+            {allVisibleSelected
+              ? 'Odznacz wszystkie'
+              : `Zaznacz wszystkie (${visibleSchedules.length})`}
+          </Button>
+        )}
         <LoadingButton
           variant="outlined"
           onClick={handleRefreshPrices}
           loading={isRefreshing}
-          disabled={selectedIds.length === 0 || isBulkBusy}
+          disabled={selectedIds.length === 0 || isMutationBusy}
           sx={{ flexShrink: 0 }}
           title={
             selectedIds.length === 0
-              ? 'Zaznacz wiersze, aby pobrać aktualne ceny'
+              ? 'Zaznacz wiersze (lub „Zaznacz wszystkie”), aby pobrać aktualne ceny'
               : undefined
           }
         >
@@ -730,7 +771,7 @@ export const PriceSchedulesPage = () => {
             variant="outlined"
             color="error"
             loading={isBulkDisabling}
-            disabled={isBulkBusy}
+            disabled={isMutationBusy}
             onClick={(e) => setBulkDisableMenuAnchor(e.currentTarget)}
             sx={{ flexShrink: 0 }}
           >
@@ -741,8 +782,8 @@ export const PriceSchedulesPage = () => {
           <LoadingButton
             variant="outlined"
             loading={isBulkEnabling}
-            disabled={isBulkBusy}
-            onClick={() => setConfirmBulkEnable(true)}
+            disabled={isMutationBusy}
+            onClick={() => setConfirmBulkEnableIds([...selectedIds])}
             sx={{ flexShrink: 0 }}
           >
             {`Włącz zaznaczone (${selectedIds.length})`}
@@ -908,20 +949,21 @@ export const PriceSchedulesPage = () => {
       </Dialog>
 
       <Dialog
-        open={confirmBulkEnable}
-        onClose={() => setConfirmBulkEnable(false)}
+        open={confirmBulkEnableIds != null}
+        onClose={() => setConfirmBulkEnableIds(null)}
         maxWidth="sm"
         fullWidth
       >
         <DialogTitle>{'Włączenie zaznaczonych harmonogramów'}</DialogTitle>
         <DialogContent>
           <Typography variant="body2">
-            {`Włączyć ${selectedIds.length} zaznaczonych harmonogramów? ` +
-              'Jeśli bieżący czas przypada w oknie, cena tymczasowa zostanie zastosowana od razu.'}
+            {`Włączyć ${confirmBulkEnableIds?.length ?? 0} ${scheduleNoun(
+              confirmBulkEnableIds?.length ?? 0,
+            )}? Jeśli bieżący czas przypada w oknie, cena tymczasowa zostanie zastosowana od razu.`}
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setConfirmBulkEnable(false)}>
+          <Button onClick={() => setConfirmBulkEnableIds(null)}>
             {'Anuluj'}
           </Button>
           <Button

@@ -1,21 +1,33 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { axiosInstance } from '../../../../services';
 import {
-  axiosInstance,
-  throwAxiosErrorFromResponse,
-} from '../../../../services';
-import { ChannelPriceSchedule } from '../types/priceSchedules';
+  PRICE_SCHEDULE_BULK_MAX_IDS,
+  PriceScheduleBulkEnableResponse,
+} from '../types/priceSchedules';
 
 import { priceSchedulesQueryKeyBase } from './useGetPriceSchedules';
 
-const endpoint = (id: number) =>
-  `/api/v1/ecommerce/price-schedules/${id}/enable/`;
+const endpoint = '/api/v1/ecommerce/price-schedules/bulk-enable/';
+const BULK_REQUEST_TIMEOUT_MS = 300_000;
 
 export interface BulkEnablePriceSchedulesResult {
   succeeded: number;
   applyPending: number;
   failed: number;
 }
+
+const enableChunk = async (ids: number[]) => {
+  const response = await axiosInstance.post<PriceScheduleBulkEnableResponse>(
+    endpoint,
+    { ids },
+    { timeout: BULK_REQUEST_TIMEOUT_MS },
+  );
+  if (response.status >= 400) 
+    throw new Error(`Bulk enable failed (${response.status})`);
+  
+  return response.data;
+};
 
 export const useBulkEnablePriceSchedules = () => {
   const queryClient = useQueryClient();
@@ -29,25 +41,30 @@ export const useBulkEnablePriceSchedules = () => {
       let applyPending = 0;
       let failed = 0;
 
-      for (const id of uniqueIds) {
+      for (
+        let i = 0;
+        i < uniqueIds.length;
+        i += PRICE_SCHEDULE_BULK_MAX_IDS
+      ) {
+        const chunk = uniqueIds.slice(
+          i,
+          i + PRICE_SCHEDULE_BULK_MAX_IDS,
+        );
         try {
-          const response = await axiosInstance.post<
-            ChannelPriceSchedule & {
-              applyPending?: boolean;
-              applyError?: string;
-            }
-          >(endpoint(id));
-          if (response.status === 400) throwAxiosErrorFromResponse(response);
-          if (response.data.applyPending) applyPending += 1;
-          else succeeded += 1;
+          const batch = await enableChunk(chunk);
+          for (const row of batch.results) {
+            if (row.applyPending) applyPending += 1;
+            else succeeded += 1;
+          }
+          failed += batch.errors.length;
         } catch {
-          failed += 1;
+          failed += chunk.length;
         }
       }
 
       return { succeeded, applyPending, failed };
     },
-    onSuccess: () => {
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: [priceSchedulesQueryKeyBase] });
       queryClient.invalidateQueries({ queryKey: ['product-channel-links'] });
     },

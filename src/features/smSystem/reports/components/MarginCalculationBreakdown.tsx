@@ -68,16 +68,53 @@ export const MarginCalculationBreakdown = ({
           </Typography>
         </Stack>
       ))}
-      {calculation.notes?.map((note) => (
-        <Typography
-          key={note}
-          variant="caption"
-          color="text.secondary"
-          sx={{ wordBreak: 'break-word' }}
-        >
-          {note}
-        </Typography>
-      ))}
+      {calculation.notes && calculation.notes.length > 0 ? (
+        dense ? (
+          <Accordion
+            disableGutters
+            elevation={0}
+            sx={{ bgcolor: 'transparent' }}
+          >
+            <AccordionSummary
+              expandIcon={<ExpandMoreIcon />}
+              sx={{
+                minHeight: 32,
+                px: 0,
+                '& .MuiAccordionSummary-content': { my: 0.5 },
+              }}
+            >
+              <Typography variant="caption" color="text.secondary">
+                {'Uwagi do wyliczenia'}
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails sx={{ px: 0, pt: 0 }}>
+              <Stack spacing={0.5}>
+                {calculation.notes.map((note) => (
+                  <Typography
+                    key={note}
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ wordBreak: 'break-word' }}
+                  >
+                    {note}
+                  </Typography>
+                ))}
+              </Stack>
+            </AccordionDetails>
+          </Accordion>
+        ) : (
+          calculation.notes.map((note) => (
+            <Typography
+              key={note}
+              variant="caption"
+              color="text.secondary"
+              sx={{ wordBreak: 'break-word' }}
+            >
+              {note}
+            </Typography>
+          ))
+        )
+      ) : null}
     </Stack>
   );
 };

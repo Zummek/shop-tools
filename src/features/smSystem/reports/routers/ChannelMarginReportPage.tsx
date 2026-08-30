@@ -319,7 +319,7 @@ export const ChannelMarginReportPage = () => {
             title="COGS"
             value={formatPrice(overview.cogsCents, currency)}
             previous={formatPrice(overview.previous.cogsCents, currency)}
-            tooltip="Koszt zakupu brutto (FV na dzień sprzedaży lub ostatnia KSeF)."
+            tooltip="Koszt zakupu brutto: ostatnia FV na dzień sprzedaży (linie tego samego produktu na FV uśrednione ilością) lub ostatnia KSeF."
           />
           <KpiCard
             title="Prowizja / opłaty"

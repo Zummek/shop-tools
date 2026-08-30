@@ -1,11 +1,6 @@
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
   Alert,
-  Box,
   Button,
   Chip,
   FormControl,
@@ -41,10 +36,8 @@ import {
   ChannelMarginRow,
   useGetChannelMarginReport,
 } from '../api/useGetChannelMarginReport';
-import {
-  HowWeCalculateAccordion,
-  MarginCalculationBreakdown,
-} from '../components/MarginCalculationBreakdown';
+import { HowWeCalculateAccordion } from '../components/MarginCalculationBreakdown';
+import { ProductMarginSourceModal } from '../components/ProductMarginSourceModal';
 
 const channelLabel = (channel: string) => {
   if (channel === 'pcmarket') return 'PC-Market';
@@ -112,7 +105,7 @@ export const ChannelMarginReportPage = () => {
     'margin',
   );
   const [rowMode, setRowMode] = useState<'product' | 'offer'>('product');
-  const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
+  const [selectedRow, setSelectedRow] = useState<ChannelMarginRow | null>(null);
 
   const currency = data?.currency ?? 'PLN';
 
@@ -273,7 +266,10 @@ export const ChannelMarginReportPage = () => {
               labelId="lens-label"
               label="Soczewka"
               value={lens}
-              onChange={(e) => setLens(e.target.value as ChannelMarginLens)}
+              onChange={(e) => {
+                setLens(e.target.value as ChannelMarginLens);
+                setSelectedRow(null);
+              }}
             >
               <MenuItem value="ecommerce">{'Kanały e-commerce'}</MenuItem>
               <MenuItem value="pcmarket">{'Paragony PC-Market'}</MenuItem>
@@ -282,13 +278,19 @@ export const ChannelMarginReportPage = () => {
           <DatePicker
             label="Od"
             value={startDate ? dayjs(startDate) : null}
-            onChange={(v) => setStartDate(v ? v.toDate() : null)}
+            onChange={(v) => {
+              setStartDate(v ? v.toDate() : null);
+              setSelectedRow(null);
+            }}
             slotProps={{ textField: { size: 'small' } }}
           />
           <DatePicker
             label="Do"
             value={endDate ? dayjs(endDate) : null}
-            onChange={(v) => setEndDate(v ? v.toDate() : null)}
+            onChange={(v) => {
+              setEndDate(v ? v.toDate() : null);
+              setSelectedRow(null);
+            }}
             slotProps={{ textField: { size: 'small' } }}
           />
         </Stack>
@@ -548,11 +550,16 @@ export const ChannelMarginReportPage = () => {
           alignItems="center"
           sx={{ px: 2, pt: 1.5, pb: 1 }}
         >
-          <Typography variant="subtitle1">
-            {rowMode === 'offer' && lens === 'ecommerce'
-              ? 'Marża według oferty'
-              : 'Marża według produktu'}
-          </Typography>
+          <Stack spacing={0.25}>
+            <Typography variant="subtitle1">
+              {rowMode === 'offer' && lens === 'ecommerce'
+                ? 'Marża według oferty'
+                : 'Marża według produktu'}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {'Kliknij wiersz, aby zobaczyć faktury i paragony/zamówienia.'}
+            </Typography>
+          </Stack>
           {lens === 'ecommerce' ? (
             <ToggleButtonGroup
               size="small"
@@ -564,7 +571,7 @@ export const ChannelMarginReportPage = () => {
               ) => {
                 if (value) {
                   setRowMode(value);
-                  setExpandedRowId(null);
+                  setSelectedRow(null);
                 }
               }}
             >
@@ -588,51 +595,27 @@ export const ChannelMarginReportPage = () => {
           initialState={{
             pagination: { paginationModel: { pageSize: 25 } },
           }}
-          onRowClick={(params: GridRowParams) => {
-            const id = String(params.id);
-            setExpandedRowId((prev) => (prev === id ? null : id));
+          onRowClick={(params: GridRowParams<ChannelMarginRow>) => {
+            setSelectedRow(params.row);
           }}
-          getRowClassName={(params) =>
-            expandedRowId === String(params.id) ? 'Mui-selected' : ''
-          }
-          sx={{ border: 0, height: 'calc(100% - 52px)' }}
+          sx={{
+            border: 0,
+            height: 'calc(100% - 64px)',
+            '& .MuiDataGrid-row': { cursor: 'pointer' },
+          }}
         />
       </Paper>
 
-      {expandedRowId && tableRows.length ? (
-        <Accordion expanded>
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography variant="subtitle2">
-              {'Szczegóły wyliczenia zaznaczonego wiersza'}
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            {(() => {
-              const row = tableRows.find((r, index) => {
-                const id =
-                  rowMode === 'offer'
-                    ? `offer-${r.channel}-${r.offerId ?? 'x'}-${index}`
-                    : `${r.channel}-${r.productId ?? 'x'}-${index}`;
-                return id === expandedRowId;
-              });
-              if (!row) return null;
-              return (
-                <Box>
-                  <Typography variant="body2" gutterBottom>
-                    {rowMode === 'offer' && row.offerId
-                      ? `${row.productName} · oferta ${row.offerId} · ${channelLabel(row.channel)}`
-                      : `${row.productName} · ${channelLabel(row.channel)}`}
-                  </Typography>
-                  <MarginCalculationBreakdown
-                    calculation={row.calculation}
-                    currency={currency}
-                  />
-                </Box>
-              );
-            })()}
-          </AccordionDetails>
-        </Accordion>
-      ) : null}
+      <ProductMarginSourceModal
+        open={selectedRow != null}
+        onClose={() => setSelectedRow(null)}
+        row={selectedRow}
+        rowKind={rowMode}
+        lens={lens}
+        startDate={startDate ? dayjs(startDate).format('YYYY-MM-DD') : ''}
+        endDate={endDate ? dayjs(endDate).format('YYYY-MM-DD') : ''}
+        currency={currency}
+      />
     </Stack>
   );
 };

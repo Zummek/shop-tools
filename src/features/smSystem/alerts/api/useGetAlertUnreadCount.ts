@@ -15,9 +15,11 @@ export const useGetAlertUnreadCount = (enabled = true) => {
     },
     enabled,
     refetchInterval: enabled ? 60000 : false,
+    refetchIntervalInBackground: false,
     // App-wide default disables this; unread alerts should stay fresh when
     // the user returns to the tab.
     refetchOnWindowFocus: true,
+    meta: { suppressTransientErrorNotify: true },
   });
 
   return {

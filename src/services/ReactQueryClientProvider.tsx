@@ -8,6 +8,7 @@ import { ReactNode } from 'react';
 
 import { isDev } from '../utils/envs';
 
+import { isTransientErrorNotifySuppressed } from './queryMeta';
 import {
   isTransientQueryError,
   notifyTransientQueryError,
@@ -19,8 +20,12 @@ import { shouldCaptureQueryError } from './shouldCaptureQueryError';
 
 const queryClient = new QueryClient({
   queryCache: new QueryCache({
-    onError: (error) => {
-      if (isTransientQueryError(error)) notifyTransientQueryError();
+    onError: (error, query) => {
+      if (
+        isTransientQueryError(error) &&
+        !isTransientErrorNotifySuppressed(query.meta)
+      )
+        notifyTransientQueryError();
       if (shouldCaptureQueryError(error)) captureError(error);
       if (isDev) console.error('React Query error:', error);
     },

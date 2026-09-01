@@ -15,7 +15,7 @@ import { OrderDetails, SimpleBranch, OrdersPerBranch } from '../types';
 const getColumns = (orderDetails?: OrderDetails): GridColDef[] => {
   const days =
     orderDetails?.saleStartDate && orderDetails?.saleEndDate
-      ? `${dayjs(orderDetails.saleEndDate).diff(orderDetails.saleStartDate, 'days')} dni`
+      ? `${dayjs(orderDetails.saleEndDate).diff(orderDetails.saleStartDate, 'days') + 1} dni`
       : '';
 
   return [
@@ -144,7 +144,7 @@ export const ProductDetailsInOrderTable = ({
         onEditStateChange(false);
       }
     },
-    [orderDetails, selectedProductId, updateOrderDetails, onEditStateChange]
+    [orderDetails, selectedProductId, updateOrderDetails, onEditStateChange],
   );
 
   const handleEditStart = useCallback(() => {
@@ -152,7 +152,7 @@ export const ProductDetailsInOrderTable = ({
   }, [onEditStateChange]);
 
   const product = orderDetails?.productsToOrder.find(
-    (productInOrder) => productInOrder.id === selectedProductId
+    (productInOrder) => productInOrder.id === selectedProductId,
   );
 
   return (

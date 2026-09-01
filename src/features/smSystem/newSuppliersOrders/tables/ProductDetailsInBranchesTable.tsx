@@ -7,7 +7,7 @@ import { OrderDetails, SimpleBranch } from '../types';
 const getColumns = (orderDetails?: OrderDetails): GridColDef[] => {
   const days =
     orderDetails?.saleStartDate && orderDetails?.saleEndDate
-      ? `${dayjs(orderDetails.saleEndDate).diff(orderDetails.saleStartDate, 'days')} dni`
+      ? `${dayjs(orderDetails.saleEndDate).diff(orderDetails.saleStartDate, 'days') + 1} dni`
       : '';
 
   return [

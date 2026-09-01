@@ -71,7 +71,7 @@ const getColumns = (
 ): GridColDef[] => {
   const days =
     orderDetails?.saleStartDate && orderDetails?.saleEndDate
-      ? `${dayjs(orderDetails.saleEndDate).diff(orderDetails.saleStartDate, 'days')} dni`
+      ? `${dayjs(orderDetails.saleEndDate).diff(orderDetails.saleStartDate, 'days') + 1} dni`
       : '';
 
   return [

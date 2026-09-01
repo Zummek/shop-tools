@@ -7,7 +7,7 @@ import { OrderDetails, SimpleBranch } from '../types';
 const getColumns = (orderDetails?: OrderDetails): GridColDef[] => {
   const days =
     orderDetails?.saleStartDate && orderDetails?.saleEndDate
-      ? `${dayjs(orderDetails.saleEndDate).diff(orderDetails.saleStartDate, 'days')} dni`
+      ? `${dayjs(orderDetails.saleEndDate).diff(orderDetails.saleStartDate, 'days') + 1} dni`
       : '';
 
   return [
@@ -51,9 +51,9 @@ export const ProductDetailsInBranchesTable = ({
   const selectedProduct = useMemo(
     () =>
       orderDetails?.productsToOrder.find(
-        (product) => product.id === selectedProductId
+        (product) => product.id === selectedProductId,
       ),
-    [orderDetails, selectedProductId]
+    [orderDetails, selectedProductId],
   );
 
   return (

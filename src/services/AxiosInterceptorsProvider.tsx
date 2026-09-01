@@ -7,6 +7,7 @@ import { useLogoutUser } from '../features/smSystem/user/hooks';
 import { useRefreshToken } from '../features/smSystem/user/hooks/useRefreshToken';
 import { useAppSelector, useNotify } from '../hooks';
 
+import { isMarketplaceIntegrationRequest } from './authRequestUtils';
 import { axiosInstance } from './axiosInstance';
 import { isTransientQueryError, setQueryErrorNotify } from './queryRetry';
 
@@ -91,8 +92,17 @@ export const AxiosInterceptorsProvider = ({
         throw error;
       }
 
-      // Post-retry 401 (e.g. marketplace connection expired) is not an SM
-      // session failure — do not log the user out.
+      if (
+        httpCode === 401 &&
+        originalRequest._retry &&
+        !isMarketplaceIntegrationRequest(originalRequest.url)
+      ) {
+        logoutUser(isCurrentSessionExist);
+        throw error;
+      }
+
+      // Post-retry 401 on marketplace integration endpoints (e.g. Allegro
+      // connection expired) is not an SM session failure — do not log out.
 
       const method = originalRequest?.method?.toLowerCase();
       const isGetRequest = method === 'get' || method === undefined;

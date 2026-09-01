@@ -1,3 +1,4 @@
+import { Box, CircularProgress } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import * as Sentry from '@sentry/react';
@@ -5,6 +6,7 @@ import { SnackbarProvider } from 'notistack';
 import ReactDOM from 'react-dom/client';
 import { Provider } from 'react-redux';
 import { Navigate, RouterProvider, createHashRouter } from 'react-router-dom';
+import { PersistGate } from 'redux-persist/integration/react';
 
 import { NewVersionNotifier } from './components/NewVersionNotifier';
 import { BarcodesGeneratorPage } from './features/BarcodesGenerator/routes/BarcodesGeneratorPage/BarcodesGeneratorPage';
@@ -50,7 +52,7 @@ import {
 } from './services';
 import { AxiosInterceptorsProvider } from './services/AxiosInterceptorsProvider';
 import { registerAppNavigate } from './services/appNavigation';
-import { store } from './store/store';
+import { persistor, store } from './store/store';
 
 initSentry();
 
@@ -278,16 +280,30 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   >
     <SnackbarProvider>
       <Provider store={store}>
-        <SentryContext>
-          <ReactQueryClientProvider>
-            <AxiosInterceptorsProvider store={store}>
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <NewVersionNotifier />
-                <RouterProvider router={router} />
-              </LocalizationProvider>
-            </AxiosInterceptorsProvider>
-          </ReactQueryClientProvider>
-        </SentryContext>
+        <PersistGate
+          persistor={persistor}
+          loading={
+            <Box
+              minHeight="100vh"
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+            >
+              <CircularProgress />
+            </Box>
+          }
+        >
+          <SentryContext>
+            <ReactQueryClientProvider>
+              <AxiosInterceptorsProvider store={store}>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <NewVersionNotifier />
+                  <RouterProvider router={router} />
+                </LocalizationProvider>
+              </AxiosInterceptorsProvider>
+            </ReactQueryClientProvider>
+          </SentryContext>
+        </PersistGate>
       </Provider>
     </SnackbarProvider>
   </Sentry.ErrorBoundary>,

@@ -77,16 +77,6 @@ export const navSections: NavSection[] = [
     items: [
       {
         label: 'Zamówienia u dostawców',
-        path: Pages.smSystemOrders,
-        icon: <LocalShippingOutlinedIcon />,
-        activePaths: [
-          Pages.smSystemSuppliers,
-          Pages.smSystemSupplierDetails,
-          Pages.smSystemOrderDetails,
-        ],
-      },
-      {
-        label: 'Nowe zamówienia u dostawców',
         path: Pages.smSystemOrdersV2,
         icon: <LocalShippingOutlinedIcon />,
         activePaths: [

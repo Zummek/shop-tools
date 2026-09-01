@@ -25,6 +25,10 @@ import { InvoicesListPage } from './features/smSystem/invoices/routers/InvoicesL
 import { SmSystemPageLayout } from './features/smSystem/layouts/SmSystemPageLayout';
 import { NewSuppliersOrdersPageLayout } from './features/smSystem/newSuppliersOrders/layout/SuppliersOrdersPageLayout';
 import { ConditionsPage as V2ConditionsPage } from './features/smSystem/newSuppliersOrders/routers/ConditionsPage';
+import {
+  LegacySupplierDetailsRedirect,
+  LegacySupplierOrderDetailsRedirect,
+} from './features/smSystem/newSuppliersOrders/routers/LegacySuppliersOrdersRedirects';
 import { OrderDetailsPage as V2OrderDetailsPage } from './features/smSystem/newSuppliersOrders/routers/OrderDetailsPage';
 import { OrdersPage as V2OrdersPage } from './features/smSystem/newSuppliersOrders/routers/OrdersPage';
 import { SupplierDetailsPage as V2SupplierDetailsPage } from './features/smSystem/newSuppliersOrders/routers/SupplierDetailsPage';
@@ -37,11 +41,6 @@ import { ProductsListPage } from './features/smSystem/products/routers/ProductsL
 import { ProductsDocumentsPage } from './features/smSystem/productsDocuments/routers/ProductsDocumentsPage';
 import { ChannelMarginReportPage } from './features/smSystem/reports/routers/ChannelMarginReportPage';
 import { ReportsPage } from './features/smSystem/reports/routers/ReportsPage';
-import { SuppliersOrdersPageLayout } from './features/smSystem/suppliersOrders/layout/SuppliersOrdersPageLayout';
-import { OrderDetailsPage } from './features/smSystem/suppliersOrders/routers/OrderDetailsPage';
-import { OrdersPage } from './features/smSystem/suppliersOrders/routers/OrdersPage';
-import { SupplierDetailsPage } from './features/smSystem/suppliersOrders/routers/SupplierDetailsPage';
-import { SuppliersPage } from './features/smSystem/suppliersOrders/routers/SuppliersPage';
 import { TransfersPage } from './features/smSystem/transfers/routers/TransfersPage';
 import { LoginPage } from './features/smSystem/user/routes/LoginPage';
 import {
@@ -116,24 +115,35 @@ const router = sentryCreateHashRouter(
         },
         {
           path: 'suppliers-orders',
-          element: <SuppliersOrdersPageLayout />,
           children: [
             {
-              path: 'suppliers',
-              element: <SuppliersPage />,
-            },
-            {
-              path: 'suppliers/:supplierId',
-              element: <SupplierDetailsPage />,
+              index: true,
+              element: (
+                <Navigate to="/sm-system/suppliers-orders-v2/orders" replace />
+              ),
             },
             {
               path: 'orders',
-              index: true,
-              element: <OrdersPage />,
+              element: (
+                <Navigate to="/sm-system/suppliers-orders-v2/orders" replace />
+              ),
             },
             {
               path: 'orders/:orderId',
-              element: <OrderDetailsPage />,
+              element: <LegacySupplierOrderDetailsRedirect />,
+            },
+            {
+              path: 'suppliers',
+              element: (
+                <Navigate
+                  to="/sm-system/suppliers-orders-v2/suppliers"
+                  replace
+                />
+              ),
+            },
+            {
+              path: 'suppliers/:supplierId',
+              element: <LegacySupplierDetailsRedirect />,
             },
           ],
         },

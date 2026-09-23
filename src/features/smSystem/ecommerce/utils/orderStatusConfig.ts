@@ -7,6 +7,14 @@ interface OrderStatusConfigEntry {
   color: ChipProps['color'];
 }
 
+export const ORDER_STATUSES: OrderStatus[] = [
+  'new',
+  'receipt_prepared',
+  'packed',
+  'shipped',
+  'canceled',
+];
+
 // Single source of truth for how an order status looks everywhere (list + details).
 export const orderStatusConfig: Record<OrderStatus, OrderStatusConfigEntry> = {
   new: { label: 'Nowe', color: 'default' },
@@ -15,6 +23,14 @@ export const orderStatusConfig: Record<OrderStatus, OrderStatusConfigEntry> = {
   shipped: { label: 'Wysłane', color: 'success' },
   canceled: { label: 'Anulowane', color: 'error' },
 };
+
+export const getSelectableOrderStatuses = (
+  currentStatus?: OrderStatus,
+): OrderStatus[] => ORDER_STATUSES.filter((status) => status !== currentStatus);
+
+export const isOrderStatus = (
+  status: string | null | undefined,
+): status is OrderStatus => ORDER_STATUSES.includes(status as OrderStatus);
 
 export const NEXT_ORDER_STATUS: Partial<Record<OrderStatus, OrderStatus>> = {
   new: 'receipt_prepared',
@@ -73,12 +89,7 @@ export const isWooStatusInSync = (
   );
 };
 
-const WOO_TERMINAL = new Set([
-  'completed',
-  'cancelled',
-  'refunded',
-  'failed',
-]);
+const WOO_TERMINAL = new Set(['completed', 'cancelled', 'refunded', 'failed']);
 const ALLEGRO_TERMINAL = new Set(['sent', 'picked_up', 'cancelled']);
 const ERLI_TERMINAL = new Set([
   'sent',
@@ -127,8 +138,7 @@ export const externalStatusLabel = (
   if (!status) return '—';
   const normalized = status.toLowerCase().trim();
   if (source === 'woocommerce') return wooStatusLabel(normalized);
-  if (source === 'allegro')
-    return ALLEGRO_STATUS_LABELS[normalized] || status;
+  if (source === 'allegro') return ALLEGRO_STATUS_LABELS[normalized] || status;
   if (source === 'erli') return ERLI_STATUS_LABELS[normalized] || status;
   return status;
 };

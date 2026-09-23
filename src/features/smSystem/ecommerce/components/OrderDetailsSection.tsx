@@ -78,7 +78,7 @@ export const OrderDetailsSection = ({
     );
 
   const nextStatus = NEXT_ORDER_STATUS[status];
-  const canCancel = status !== 'shipped' && status !== 'canceled';
+  const canCancel = status !== 'canceled';
 
   const [selectedWooStatus, setSelectedWooStatus] = useState<WooStatusValue>(
     (ecommerceOrder.externalStatus as WooStatusValue) || 'processing',
@@ -195,7 +195,11 @@ export const OrderDetailsSection = ({
                 >
                   {'Status SM'}
                 </Typography>
-                <OrderStatusChip status={status} />
+                <OrderStatusChip
+                  status={status}
+                  onStatusChange={onSmStatusChange}
+                  isUpdating={isUpdatingStatus}
+                />
               </Stack>
               {isWooOrder ? (
                 <Stack spacing={0.5} sx={{ minWidth: FIELD_MIN_WIDTH }}>

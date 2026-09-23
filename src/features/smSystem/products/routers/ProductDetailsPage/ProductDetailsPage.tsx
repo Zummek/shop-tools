@@ -15,11 +15,8 @@ import {
   MenuItem,
   Paper,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
+  Tab,
+  Tabs,
   Typography,
 } from '@mui/material';
 import dayjs from 'dayjs';
@@ -41,6 +38,8 @@ import { SchedulePriceChangeModal } from '../../../ecommerce/modals';
 import { isPriceScheduleSnoozed } from '../../../ecommerce/utils';
 import { useGetProductDetails } from '../../api';
 import { formatPrice } from '../../utils';
+
+import { ProductWarehouseTab } from './ProductWarehouseTab';
 
 const allegroOfferUrl = (offerId: string, marketplace?: string | null) => {
   if (marketplace?.includes('cz'))
@@ -98,6 +97,7 @@ export const ProductDetailsPage = () => {
   const { channelLinks, isLoading: isLoadingLinks } =
     useGetProductChannelLinks(productId);
   const { schedules } = useGetPriceSchedules({ productId });
+  const [tab, setTab] = useState<'warehouse' | 'channels'>('warehouse');
 
   const schedulesByLinkId = useMemo(() => {
     const map = new Map<number, ChannelPriceSchedule[]>();
@@ -197,106 +197,76 @@ export const ProductDetailsPage = () => {
         </Stack>
       </Paper>
 
-      <Stack spacing={2}>
-        <Typography variant="h6">{'Stany i ceny (oddziały)'}</Typography>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell>{'Oddział'}</TableCell>
-              <TableCell align="right">{'Stan'}</TableCell>
-              <TableCell align="right">{'Cena netto'}</TableCell>
-              <TableCell align="right">{'Cena brutto'}</TableCell>
-              <TableCell>{'Aktualizacja stanu'}</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {(product.branches || []).map((branch) => (
-              <TableRow key={branch.branch.id}>
-                <TableCell>{branch.branch.name}</TableCell>
-                <TableCell align="right">{branch.stock}</TableCell>
-                <TableCell align="right">
-                  {formatPrice(branch.netPrice, 'PLN')}
-                </TableCell>
-                <TableCell align="right">
-                  {formatPrice(branch.grossPrice, 'PLN')}
-                </TableCell>
-                <TableCell>
-                  {branch.stockUpdatedAt
-                    ? dayjs(branch.stockUpdatedAt).format('DD.MM.YYYY HH:mm')
-                    : '—'}
-                </TableCell>
-              </TableRow>
-            ))}
-            {(!product.branches || product.branches.length === 0) && (
-              <TableRow>
-                <TableCell colSpan={5}>
-                  <Typography color="text.secondary">
-                    {'Brak danych oddziałowych'}
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </Stack>
+      <Tabs
+        value={tab}
+        onChange={(_event, value: 'warehouse' | 'channels') => setTab(value)}
+        sx={{ borderBottom: 1, borderColor: 'divider' }}
+      >
+        <Tab value="warehouse" label="Magazyn" />
+        <Tab value="channels" label="Kanały" />
+      </Tabs>
 
-      <Stack spacing={2}>
-        <Typography variant="h6">{'Kanały e-commerce'}</Typography>
+      {tab === 'warehouse' && <ProductWarehouseTab product={product} />}
 
-        {isLoadingLinks ? (
-          <CircularProgress size={28} />
-        ) : channelLinks.length === 0 ? (
-          <Typography color="text.secondary">
-            {
-              'Brak powiązanych ofert. Uzupełnij SKU/EAN w Allegro, WooCommerce lub Erli i uruchom synchronizację.'
-            }
-          </Typography>
-        ) : (
-          <Stack spacing={2}>
-            {activeLinks.length === 0 && endedLinks.length > 0 && (
-              <Typography color="text.secondary">
-                {'Brak aktywnych ofert — zakończone poniżej.'}
-              </Typography>
-            )}
-            {activeLinks.map((link) => (
-              <ChannelOfferCard
-                key={link.id}
-                link={link}
-                schedules={schedulesByLinkId.get(link.id) ?? []}
-              />
-            ))}
-            {endedLinks.length > 0 && (
-              <Accordion
-                disableGutters
-                elevation={0}
-                sx={{
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  borderRadius: 2,
-                  '&:before': { display: 'none' },
-                }}
-              >
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                  <Typography fontWeight={600}>
-                    {`${endedChannelsLabel} (${endedLinks.length})`}
-                  </Typography>
-                </AccordionSummary>
-                <AccordionDetails>
-                  <Stack spacing={2}>
-                    {endedLinks.map((link) => (
-                      <ChannelOfferCard
-                        key={link.id}
-                        link={link}
-                        schedules={schedulesByLinkId.get(link.id) ?? []}
-                      />
-                    ))}
-                  </Stack>
-                </AccordionDetails>
-              </Accordion>
-            )}
-          </Stack>
-        )}
-      </Stack>
+      {tab === 'channels' && (
+        <Stack spacing={2}>
+          <Typography variant="h6">{'Kanały e-commerce'}</Typography>
+
+          {isLoadingLinks ? (
+            <CircularProgress size={28} />
+          ) : channelLinks.length === 0 ? (
+            <Typography color="text.secondary">
+              {
+                'Brak powiązanych ofert. Uzupełnij SKU/EAN w Allegro, WooCommerce lub Erli i uruchom synchronizację.'
+              }
+            </Typography>
+          ) : (
+            <Stack spacing={2}>
+              {activeLinks.length === 0 && endedLinks.length > 0 && (
+                <Typography color="text.secondary">
+                  {'Brak aktywnych ofert — zakończone poniżej.'}
+                </Typography>
+              )}
+              {activeLinks.map((link) => (
+                <ChannelOfferCard
+                  key={link.id}
+                  link={link}
+                  schedules={schedulesByLinkId.get(link.id) ?? []}
+                />
+              ))}
+              {endedLinks.length > 0 && (
+                <Accordion
+                  disableGutters
+                  elevation={0}
+                  sx={{
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 2,
+                    '&:before': { display: 'none' },
+                  }}
+                >
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography fontWeight={600}>
+                      {`${endedChannelsLabel} (${endedLinks.length})`}
+                    </Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Stack spacing={2}>
+                      {endedLinks.map((link) => (
+                        <ChannelOfferCard
+                          key={link.id}
+                          link={link}
+                          schedules={schedulesByLinkId.get(link.id) ?? []}
+                        />
+                      ))}
+                    </Stack>
+                  </AccordionDetails>
+                </Accordion>
+              )}
+            </Stack>
+          )}
+        </Stack>
+      )}
     </Stack>
   );
 };

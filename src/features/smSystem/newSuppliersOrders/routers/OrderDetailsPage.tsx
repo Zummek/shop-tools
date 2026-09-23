@@ -1,4 +1,5 @@
 import ClearOutlinedIcon from '@mui/icons-material/ClearOutlined';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import {
   Box,
   Button,
@@ -9,6 +10,7 @@ import {
   DialogContentText,
   DialogTitle,
   FormLabel,
+  IconButton,
   InputAdornment,
   Stack,
   TextField,
@@ -106,6 +108,14 @@ export const OrderDetailsPage = () => {
   const urgencyThresholds = useMemo(
     () => resolveStockUrgencyThresholds(orderDetails?.supplier),
     [orderDetails?.supplier],
+  );
+
+  const selectedProduct = useMemo(
+    () =>
+      orderDetails?.productsToOrder.find(
+        (product) => product.id === selectedProductId,
+      ),
+    [orderDetails, selectedProductId],
   );
 
   const handleConfirmApplyProposals = async () => {
@@ -230,6 +240,31 @@ export const OrderDetailsPage = () => {
         </Stack>
 
         <Stack spacing={2} flex={1}>
+          {selectedProduct && (
+            <Stack
+              direction="row"
+              alignItems="center"
+              spacing={0.5}
+              minWidth={0}
+            >
+              <Typography variant="subtitle1" fontWeight={600} noWrap>
+                {selectedProduct.name}
+              </Typography>
+              <IconButton
+                size="small"
+                component="a"
+                href={`#${Pages.smSystemProductDetails.replace(
+                  ':productId',
+                  String(selectedProduct.id),
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Otwórz produkt w nowym oknie"
+              >
+                <VisibilityOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Stack>
+          )}
           <Box height={300}>
             <ProductDetailsInOrderTable
               orderDetails={orderDetails}

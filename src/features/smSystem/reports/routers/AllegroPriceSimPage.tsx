@@ -397,17 +397,17 @@ export const AllegroPriceSimPage = () => {
       },
       {
         field: 'purchaseNetCents',
-        headerName: 'Zakup netto',
+        headerName: 'Zakup netto (PLN)',
         description:
           'Ostatnia faktura zakupu na dziś — nie średnia z kilku faktur. Jeśli na jednej FV jest kilka pozycji tego SKU, średnia ważona ilością tylko z tej faktury. Gdy brak FV, ostatni zakup z karty produktu.',
         type: 'number',
-        width: 130,
+        width: 155,
         renderCell: (params) => {
           const value = params.row.purchaseNetCents;
           return (
             <Tooltip title={marginSourceLabel(params.row.cogsSource)}>
               <span>
-                {value == null ? '—' : formatPrice(Number(value), currency)}
+                {value == null ? '—' : formatPrice(Number(value))}
               </span>
             </Tooltip>
           );
@@ -415,17 +415,17 @@ export const AllegroPriceSimPage = () => {
       },
       {
         field: 'offerGrossCents',
-        headerName: 'Cena oferty',
+        headerName: 'Cena oferty (PLN)',
         type: 'number',
-        width: 130,
+        width: 155,
         valueFormatter: (value) =>
-          value == null ? '—' : formatPrice(Number(value), currency),
+          value == null ? '—' : formatPrice(Number(value)),
       },
       {
         field: 'simulatedGrossCents',
-        headerName: 'Symulowana cena',
+        headerName: 'Symulowana cena (PLN)',
         type: 'number',
-        width: 160,
+        width: 180,
         editable: true,
         valueGetter: (_value, row) =>
           row.simulatedGrossCents == null
@@ -445,7 +445,7 @@ export const AllegroPriceSimPage = () => {
         renderCell: (params) =>
           params.row.simulatedGrossCents == null
             ? '—'
-            : formatPrice(params.row.simulatedGrossCents, currency),
+            : formatPrice(params.row.simulatedGrossCents),
       },
       {
         field: 'simulatedAt',
@@ -483,11 +483,11 @@ export const AllegroPriceSimPage = () => {
       },
       {
         field: 'marginCents',
-        headerName: 'Marża',
+        headerName: 'Marża (PLN)',
         type: 'number',
-        width: 120,
+        width: 140,
         valueFormatter: (value) =>
-          value == null ? '—' : formatPrice(Number(value), currency),
+          value == null ? '—' : formatPrice(Number(value)),
       },
       {
         field: 'marginPercent',
@@ -499,13 +499,13 @@ export const AllegroPriceSimPage = () => {
       },
       {
         field: 'minPriceGrossCents',
-        headerName: 'Cena min',
+        headerName: 'Cena min (PLN)',
         description:
           'Najniższe brutto, przy którym marża % dochodzi do celu z paska. Zaokrąglone w górę do końcówek Allegro (.90 / .99). Puste, gdy cel jest nieosiągalny.',
         type: 'number',
-        width: 120,
+        width: 145,
         valueFormatter: (value) =>
-          value == null ? '—' : formatPrice(Number(value), currency),
+          value == null ? '—' : formatPrice(Number(value)),
       },
       {
         field: 'commissionRateNet',
@@ -541,7 +541,7 @@ export const AllegroPriceSimPage = () => {
         },
       },
     ],
-    [currency],
+    [],
   );
 
   if (canView === false) return <Navigate to={Pages.smSystemReports} replace />;

@@ -174,56 +174,56 @@ export const ChannelMarginReportPage = () => {
       },
       {
         field: 'revenueCents',
-        headerName: 'Przychód',
+        headerName: 'Przychód (PLN)',
         type: 'number',
-        width: 110,
-        valueFormatter: (value) => formatPrice(Number(value), currency),
+        width: 130,
+        valueFormatter: (value) => formatPrice(Number(value)),
       },
       {
         field: 'cogsCents',
-        headerName: 'COGS',
+        headerName: 'COGS (PLN)',
         type: 'number',
-        width: 100,
-        valueFormatter: (value) => formatPrice(Number(value), currency),
+        width: 120,
+        valueFormatter: (value) => formatPrice(Number(value)),
       },
       {
         field: 'commissionCents',
-        headerName: 'Prowizja',
+        headerName: 'Prowizja (PLN)',
         type: 'number',
-        width: 100,
-        valueFormatter: (value) => formatPrice(Number(value), currency),
+        width: 130,
+        valueFormatter: (value) => formatPrice(Number(value)),
       },
       {
         field: 'buyerDeliveryCents',
-        headerName: 'Dostawa od klienta',
+        headerName: 'Dostawa od klienta (PLN)',
         description:
           'Kwota, którą kupujący zapłacił za przesyłkę. To wpływ — dodawany do marży.',
         type: 'number',
-        width: 160,
-        valueFormatter: (value) => formatPrice(Number(value), currency),
+        width: 190,
+        valueFormatter: (value) => formatPrice(Number(value)),
       },
       {
         field: 'sellerDeliveryCents',
-        headerName: 'Koszt dostawy',
+        headerName: 'Koszt dostawy (PLN)',
         description:
           'Twój koszt wysyłki (kurier / Allegro Smart / grupa dostawy). To wydatek — odejmowany od marży.',
         type: 'number',
-        width: 140,
-        valueFormatter: (value) => formatPrice(Number(value), currency),
+        width: 170,
+        valueFormatter: (value) => formatPrice(Number(value)),
       },
       {
         field: 'otherFeesCents',
-        headerName: 'Inne',
+        headerName: 'Inne (PLN)',
         type: 'number',
-        width: 90,
-        valueFormatter: (value) => formatPrice(Number(value), currency),
+        width: 110,
+        valueFormatter: (value) => formatPrice(Number(value)),
       },
       {
         field: 'marginCents',
-        headerName: 'Marża',
+        headerName: 'Marża (PLN)',
         type: 'number',
-        width: 110,
-        valueFormatter: (value) => formatPrice(Number(value), currency),
+        width: 130,
+        valueFormatter: (value) => formatPrice(Number(value)),
       },
       {
         field: 'marginPercent',
@@ -234,7 +234,7 @@ export const ChannelMarginReportPage = () => {
           value == null ? '—' : `${Number(value).toFixed(1)}%`,
       },
     ];
-  }, [currency, lens, rowMode]);
+  }, [lens, rowMode]);
 
   if (canView === false) return <Navigate to={Pages.smSystemReports} replace />;
 

@@ -1,5 +1,6 @@
-import { axiosInstance } from '../../../../services';
+import { axiosInstance, throwAxiosErrorFromResponse } from '../../../../services';
 import {
+  Product,
   ProductUnit,
   ProductUnitScale,
   ProductUnitVolumeScale,
@@ -11,6 +12,7 @@ interface Payload {
   unit?: ProductUnit;
   unitScale?: ProductUnitScale | null;
   unitScaleValue?: number | null;
+  manualPurchaseNetPrice?: number | null;
 }
 
 interface Params {
@@ -20,11 +22,17 @@ interface Params {
 const getEndpoint = ({ productId }: Params) => `/api/v1/products/${productId}/`;
 
 export const useUpdateProduct = () => {
-  const request = async (productId: number, payload: Payload) => {
-    const response = await axiosInstance.patch(
+  const request = async (
+    productId: number,
+    payload: Payload,
+    { throwOn400 = false }: { throwOn400?: boolean } = {},
+  ) => {
+    const response = await axiosInstance.patch<Product>(
       getEndpoint({ productId }),
       payload
     );
+    if (throwOn400 && response.status === 400)
+      throwAxiosErrorFromResponse(response);
     return response.data;
   };
 
@@ -78,10 +86,22 @@ export const useUpdateProduct = () => {
     return response;
   };
 
+  const updateManualPurchaseNetPrice = async (
+    productId: number,
+    manualPurchaseNetPrice: number | null
+  ) => {
+    return request(
+      productId,
+      { manualPurchaseNetPrice },
+      { throwOn400: true },
+    );
+  };
+
   return {
     updatePriceTagName,
     updateUnit,
     updateUnitScale,
     updateUnitScaleValue,
+    updateManualPurchaseNetPrice,
   };
 };

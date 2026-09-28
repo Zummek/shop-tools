@@ -3,6 +3,7 @@ export const marginSourceLabel = (source: string) => {
     order_line: 'cena z zamówienia',
     pcmarket_line: 'cena z paragonu PC-Market (PozDok.Cena)',
     ksef_last_purchase: 'ostatnia przyjęta FV KSeF',
+    manual_buy: 'ręczna cena zakupu',
     invoice_as_of: 'FV przyjęta na dzień sprzedaży',
     invoice_line: 'FV (data faktury, pozycja nieprzyjęta)',
     allegro_billing_suc: 'billing Allegro (prowizja SUC)',

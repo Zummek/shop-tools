@@ -11,12 +11,24 @@ const getProductsQueryKeyBase = 'products';
 
 type Response = ListResponse<Product>;
 
-export const useGetProducts = () => {
+export const useGetProducts = ({
+  missingPurchaseCost = false,
+  manualUnset = false,
+}: {
+  missingPurchaseCost?: boolean;
+  manualUnset?: boolean;
+} = {}) => {
   const [page, setPage] = useState(0);
   const [query, setQuery] = useState<string>('');
 
   const { data, isLoading, isFetching } = useQuery({
-    queryKey: [getProductsQueryKeyBase, query, page],
+    queryKey: [
+      getProductsQueryKeyBase,
+      query,
+      page,
+      missingPurchaseCost,
+      manualUnset,
+    ],
     queryFn: async ({ signal }) => {
       const response = await axiosInstance.get<Response>(endpoint, {
         signal,
@@ -24,6 +36,8 @@ export const useGetProducts = () => {
           query,
           page: page + 1,
           pageSize,
+          missingPurchaseCost: missingPurchaseCost ? 1 : undefined,
+          manualUnset: missingPurchaseCost && manualUnset ? 1 : undefined,
         },
       });
       return response.data;

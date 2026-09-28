@@ -38,13 +38,19 @@ export interface Product {
   priceTagName: string;
   internalId: string;
   barcodes: string[];
-  vat: number;
+  vat: number | null;
   branches: ProductBranch[];
   unit: ProductUnit;
   unitScale: ProductUnitScale;
   unitScaleValue: number | null;
   createdAt: string;
   updatedAt: string;
+  lastPurchaseNetPrice?: number | null;
+  lastPurchaseAt?: string | null;
+  manualPurchaseNetPrice?: number | null;
+  manualPurchaseSetAt?: string | null;
+  hasRealPurchase?: boolean;
+  canEditManualPurchase?: boolean;
 }
 
 export interface ProductBranch {

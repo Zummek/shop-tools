@@ -1,7 +1,14 @@
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import { Box, CircularProgress, Stack, TextField } from '@mui/material';
+import {
+  Box,
+  CircularProgress,
+  FormControlLabel,
+  Stack,
+  Switch,
+  TextField,
+} from '@mui/material';
 import { DataGrid, GridColDef, GridRowParams } from '@mui/x-data-grid';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 
 import { useAppSelector } from '../../../../../hooks';
@@ -9,7 +16,7 @@ import { Pages } from '../../../../../utils';
 import { useGetProducts } from '../../api';
 import { Product } from '../../types';
 
-const columns: GridColDef<Product>[] = [
+const baseColumns: GridColDef<Product>[] = [
   {
     field: 'internalId',
     headerName: 'SKU / ID wewnętrzne',
@@ -34,31 +41,38 @@ const columns: GridColDef<Product>[] = [
     width: 80,
     valueFormatter: (value: number) => (value != null ? `${value}%` : '—'),
   },
-  {
-    field: 'action',
-    headerName: '',
-    width: 50,
-    sortable: false,
-    renderCell: () => (
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'flex-end',
-          height: '100%',
-        }}
-      >
-        <ChevronRightIcon style={{ fontSize: 30 }} />
-      </Box>
-    ),
-  },
 ];
+
+const actionColumn: GridColDef<Product> = {
+  field: 'action',
+  headerName: '',
+  width: 50,
+  sortable: false,
+  renderCell: () => (
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        height: '100%',
+      }}
+    >
+      <ChevronRightIcon style={{ fontSize: 30 }} />
+    </Box>
+  ),
+};
 
 export const ProductsListPage = () => {
   const navigate = useNavigate();
   const { user } = useAppSelector((state) => state.smSystemUser);
+  const canViewPurchases = !!user?.permissions?.canViewPurchasePrices;
+  const [missingPurchaseCost, setMissingPurchaseCost] = useState(false);
+  const [manualUnset, setManualUnset] = useState(false);
   const { products, totalCount, isLoading, page, setPage, query, setQuery } =
-    useGetProducts();
+    useGetProducts({
+      missingPurchaseCost: canViewPurchases && missingPurchaseCost,
+      manualUnset: canViewPurchases && missingPurchaseCost && manualUnset,
+    });
 
   const [searchInput, setSearchInput] = useState(query);
 
@@ -66,6 +80,19 @@ export const ProductsListPage = () => {
     const timeout = setTimeout(() => setQuery(searchInput), 300);
     return () => clearTimeout(timeout);
   }, [searchInput, setQuery]);
+
+  const columns = useMemo(() => {
+    if (!canViewPurchases || !missingPurchaseCost)
+      return [...baseColumns, actionColumn];
+    const manualColumn: GridColDef<Product> = {
+      field: 'manualPurchaseNetPrice',
+      headerName: 'Ręczna cena',
+      width: 140,
+      valueGetter: (_value, row) =>
+        row.manualPurchaseNetPrice != null ? 'Tak' : 'Nie',
+    };
+    return [...baseColumns, manualColumn, actionColumn];
+  }, [canViewPurchases, missingPurchaseCost]);
 
   if (!user?.permissions?.canAccessEcommerce)
     return <Navigate to={Pages.smSystem} replace />;
@@ -78,13 +105,48 @@ export const ProductsListPage = () => {
 
   return (
     <Stack spacing={2}>
-      <TextField
-        size="small"
-        label="Szukaj po nazwie lub EAN"
-        value={searchInput}
-        onChange={(e) => setSearchInput(e.target.value)}
-        sx={{ maxWidth: 400 }}
-      />
+      <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
+        <TextField
+          size="small"
+          label="Szukaj po nazwie lub EAN"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          sx={{ maxWidth: 400 }}
+        />
+        {canViewPurchases ? (
+          <>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={missingPurchaseCost}
+                  onChange={(event) => {
+                    setMissingPurchaseCost(event.target.checked);
+                    if (!event.target.checked) setManualUnset(false);
+                    setPage(0);
+                  }}
+                  size="small"
+                />
+              }
+              label="Brak historii zakupu"
+            />
+            {missingPurchaseCost ? (
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={manualUnset}
+                    onChange={(event) => {
+                      setManualUnset(event.target.checked);
+                      setPage(0);
+                    }}
+                    size="small"
+                  />
+                }
+                label="Jeszcze bez ręcznej ceny"
+              />
+            ) : null}
+          </>
+        ) : null}
+      </Stack>
 
       {isLoading && products.length === 0 ? (
         <Box display="flex" justifyContent="center" py={4}>

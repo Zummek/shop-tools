@@ -24,6 +24,10 @@ import type {
   ChannelMarginLens,
   ChannelMarginRow,
 } from '../api/useGetChannelMarginReport';
+import {
+  formatSharePercent,
+  shareOfMarginBasePercent,
+} from '../utils/marginSharePercent';
 import { marginSourceLabel } from '../utils/marginSourceLabel';
 
 import { MarginCalculationBreakdown } from './MarginCalculationBreakdown';
@@ -46,6 +50,31 @@ const channelLabel = (channel: string) => {
   if (channel === 'woocommerce') return 'WooCommerce';
   return channel;
 };
+
+const AmountWithPercent = ({
+  amountCents,
+  revenueCents,
+  buyerDeliveryCents,
+}: {
+  amountCents: number;
+  revenueCents: number;
+  buyerDeliveryCents: number;
+}) => (
+  <Stack spacing={0} alignItems="flex-end" sx={{ lineHeight: 1.2 }}>
+    <Typography variant="body2" component="span" sx={{ whiteSpace: 'nowrap' }}>
+      {formatPrice(amountCents)}
+    </Typography>
+    <Typography variant="caption" color="text.secondary" component="span">
+      {formatSharePercent(
+        shareOfMarginBasePercent(
+          amountCents,
+          revenueCents,
+          buyerDeliveryCents,
+        ),
+      )}
+    </Typography>
+  </Stack>
+);
 
 const formatDay = (value: string | null | undefined) =>
   value ? dayjs(value).format('DD.MM.YYYY') : '—';
@@ -333,18 +362,20 @@ export const ProductMarginSourceModal = ({
                             >
                               {formatPrice(line.revenueCents)}
                             </TableCell>
-                            <TableCell
-                              align="right"
-                              sx={{ whiteSpace: 'nowrap' }}
-                            >
-                              {formatPrice(line.cogsCents)}
+                            <TableCell align="right">
+                              <AmountWithPercent
+                                amountCents={line.cogsCents}
+                                revenueCents={line.revenueCents}
+                                buyerDeliveryCents={line.buyerDeliveryCents}
+                              />
                             </TableCell>
                             {showEcommerceFees ? (
-                              <TableCell
-                                align="right"
-                                sx={{ whiteSpace: 'nowrap' }}
-                              >
-                                {formatPrice(line.commissionCents)}
+                              <TableCell align="right">
+                                <AmountWithPercent
+                                  amountCents={line.commissionCents}
+                                  revenueCents={line.revenueCents}
+                                  buyerDeliveryCents={line.buyerDeliveryCents}
+                                />
                               </TableCell>
                             ) : null}
                             <TableCell sx={{ whiteSpace: 'nowrap' }}>
@@ -364,11 +395,12 @@ export const ProductMarginSourceModal = ({
                                 '—'
                               )}
                             </TableCell>
-                            <TableCell
-                              align="right"
-                              sx={{ whiteSpace: 'nowrap' }}
-                            >
-                              {formatPrice(line.marginCents)}
+                            <TableCell align="right">
+                              <AmountWithPercent
+                                amountCents={line.marginCents}
+                                revenueCents={line.revenueCents}
+                                buyerDeliveryCents={line.buyerDeliveryCents}
+                              />
                             </TableCell>
                           </TableRow>
                         ))}

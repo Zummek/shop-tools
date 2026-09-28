@@ -38,6 +38,11 @@ import {
 } from '../api/useGetChannelMarginReport';
 import { HowWeCalculateAccordion } from '../components/MarginCalculationBreakdown';
 import { ProductMarginSourceModal } from '../components/ProductMarginSourceModal';
+import {
+  formatSharePercent,
+  SHARE_PERCENT_DESCRIPTION,
+  shareOfMarginBasePercent,
+} from '../utils/marginSharePercent';
 
 const channelLabel = (channel: string) => {
   if (channel === 'pcmarket') return 'PC-Market';
@@ -47,6 +52,28 @@ const channelLabel = (channel: string) => {
   if (channel === 'ecommerce_total') return 'Razem e-commerce';
   return channel;
 };
+
+const AmountWithPercentCell = ({
+  amountCents,
+  percent,
+}: {
+  amountCents: number;
+  percent: number | null;
+}) => (
+  <Stack
+    spacing={0}
+    alignItems="flex-end"
+    justifyContent="center"
+    sx={{ width: '100%', height: '100%', lineHeight: 1.2 }}
+  >
+    <Typography variant="body2" component="span">
+      {formatPrice(amountCents)}
+    </Typography>
+    <Typography variant="caption" color="text.secondary" component="span">
+      {formatSharePercent(percent)}
+    </Typography>
+  </Stack>
+);
 
 const KpiCard = ({
   title,
@@ -176,64 +203,122 @@ export const ChannelMarginReportPage = () => {
       },
       {
         field: 'revenueCents',
-        headerName: 'Przychód (PLN)',
+        headerName: 'Przychód łączny (PLN)',
+        description: 'Suma przychodu ze sprzedaży w okresie.',
         type: 'number',
-        width: 130,
+        width: 150,
         valueFormatter: (value) => formatPrice(Number(value)),
       },
       {
         field: 'cogsCents',
-        headerName: 'COGS (PLN)',
+        headerName: 'COGS łączny (PLN)',
+        description: `Suma kosztu zakupu w okresie. ${SHARE_PERCENT_DESCRIPTION}`,
         type: 'number',
-        width: 120,
+        width: 140,
         valueFormatter: (value) => formatPrice(Number(value)),
+        renderCell: (params) => (
+          <AmountWithPercentCell
+            amountCents={params.row.cogsCents}
+            percent={shareOfMarginBasePercent(
+              params.row.cogsCents,
+              params.row.revenueCents,
+              params.row.buyerDeliveryCents,
+            )}
+          />
+        ),
       },
       {
         field: 'commissionCents',
-        headerName: 'Prowizja (PLN)',
+        headerName: 'Prowizja łączna (PLN)',
+        description: `Suma prowizji / opłat kanału w okresie. ${SHARE_PERCENT_DESCRIPTION}`,
         type: 'number',
-        width: 130,
+        width: 150,
         valueFormatter: (value) => formatPrice(Number(value)),
+        renderCell: (params) => (
+          <AmountWithPercentCell
+            amountCents={params.row.commissionCents}
+            percent={shareOfMarginBasePercent(
+              params.row.commissionCents,
+              params.row.revenueCents,
+              params.row.buyerDeliveryCents,
+            )}
+          />
+        ),
       },
       {
         field: 'buyerDeliveryCents',
-        headerName: 'Dostawa od klienta (PLN)',
-        description:
-          'Kwota, którą kupujący zapłacił za przesyłkę. To wpływ — dodawany do marży.',
+        headerName: 'Dostawa od klienta łączna (PLN)',
+        description: `Kwota, którą kupujący zapłacił za przesyłkę. To wpływ — dodawany do marży. ${SHARE_PERCENT_DESCRIPTION}`,
         type: 'number',
-        width: 190,
+        width: 210,
         valueFormatter: (value) => formatPrice(Number(value)),
+        renderCell: (params) => (
+          <AmountWithPercentCell
+            amountCents={params.row.buyerDeliveryCents}
+            percent={shareOfMarginBasePercent(
+              params.row.buyerDeliveryCents,
+              params.row.revenueCents,
+              params.row.buyerDeliveryCents,
+            )}
+          />
+        ),
       },
       {
         field: 'sellerDeliveryCents',
-        headerName: 'Koszt dostawy (PLN)',
-        description:
-          'Twój koszt wysyłki (kurier / Allegro Smart / grupa dostawy). To wydatek — odejmowany od marży.',
+        headerName: 'Koszt dostawy łączny (PLN)',
+        description: `Twój koszt wysyłki (kurier / Allegro Smart / grupa dostawy). To wydatek — odejmowany od marży. ${SHARE_PERCENT_DESCRIPTION}`,
         type: 'number',
-        width: 170,
+        width: 190,
         valueFormatter: (value) => formatPrice(Number(value)),
+        renderCell: (params) => (
+          <AmountWithPercentCell
+            amountCents={params.row.sellerDeliveryCents}
+            percent={shareOfMarginBasePercent(
+              params.row.sellerDeliveryCents,
+              params.row.revenueCents,
+              params.row.buyerDeliveryCents,
+            )}
+          />
+        ),
       },
       {
         field: 'otherFeesCents',
-        headerName: 'Inne (PLN)',
-        type: 'number',
-        width: 110,
-        valueFormatter: (value) => formatPrice(Number(value)),
-      },
-      {
-        field: 'marginCents',
-        headerName: 'Marża (PLN)',
+        headerName: 'Inne łączne (PLN)',
+        description: `Suma pozostałych opłat w okresie. ${SHARE_PERCENT_DESCRIPTION}`,
         type: 'number',
         width: 130,
         valueFormatter: (value) => formatPrice(Number(value)),
+        renderCell: (params) => (
+          <AmountWithPercentCell
+            amountCents={params.row.otherFeesCents}
+            percent={shareOfMarginBasePercent(
+              params.row.otherFeesCents,
+              params.row.revenueCents,
+              params.row.buyerDeliveryCents,
+            )}
+          />
+        ),
       },
       {
-        field: 'marginPercent',
-        headerName: 'Marża %',
+        field: 'marginCents',
+        headerName: 'Marża łączna (PLN)',
+        description: `Suma marży w okresie. ${SHARE_PERCENT_DESCRIPTION}`,
         type: 'number',
-        width: 90,
-        valueFormatter: (value) =>
-          value == null ? '—' : `${Number(value).toFixed(1)}%`,
+        width: 140,
+        valueFormatter: (value) => formatPrice(Number(value)),
+        renderCell: (params) => (
+          <AmountWithPercentCell
+            amountCents={params.row.marginCents}
+            percent={
+              params.row.marginPercent ??
+              shareOfMarginBasePercent(
+                params.row.marginCents,
+                params.row.revenueCents,
+                params.row.buyerDeliveryCents,
+              )
+            }
+          />
+        ),
       },
     ];
   }, [lens, rowMode]);
@@ -459,8 +544,7 @@ export const ChannelMarginReportPage = () => {
               <TableHead>
                 <TableRow>
                   <TableCell>{'Kanał'}</TableCell>
-                  <TableCell align="right">{'Marża (PLN)'}</TableCell>
-                  <TableCell align="right">{'Marża %'}</TableCell>
+                  <TableCell align="right">{'Marża łączna (PLN)'}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -483,12 +567,22 @@ export const ChannelMarginReportPage = () => {
                     >
                       <TableCell>{channelLabel(ch.channel)}</TableCell>
                       <TableCell align="right">
-                        {formatPrice(ch.marginCents)}
-                      </TableCell>
-                      <TableCell align="right">
-                        {ch.marginPercent == null
-                          ? '—'
-                          : `${ch.marginPercent.toFixed(1)}%`}
+                        <Stack spacing={0} alignItems="flex-end">
+                          <Typography
+                            variant="body2"
+                            component="span"
+                            fontWeight={isTotal ? 600 : undefined}
+                          >
+                            {formatPrice(ch.marginCents)}
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            component="span"
+                          >
+                            {formatSharePercent(ch.marginPercent)}
+                          </Typography>
+                        </Stack>
                       </TableCell>
                     </TableRow>
                   );
@@ -594,6 +688,7 @@ export const ChannelMarginReportPage = () => {
           loading={isLoading}
           disableColumnMenu
           disableRowSelectionOnClick
+          rowHeight={56}
           pageSizeOptions={[25, 50, 100]}
           initialState={{
             pagination: { paginationModel: { pageSize: 25 } },
@@ -605,6 +700,10 @@ export const ChannelMarginReportPage = () => {
             border: 0,
             height: 'calc(100% - 64px)',
             '& .MuiDataGrid-row': { cursor: 'pointer' },
+            '& .MuiDataGrid-cell': {
+              display: 'flex',
+              alignItems: 'center',
+            },
           }}
         />
       </Paper>

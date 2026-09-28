@@ -139,8 +139,7 @@ type GapFilter = 'all' | 'buyer' | 'shipping';
 const usesShippingPercent = (source: string) =>
   source === 'rate_fallback' || source === 'group_no_cost';
 
-const usesBuyerGap = (source: string) =>
-  source === 'fallback' || source === 'org_avg';
+const usesBuyerGap = (source: string) => source === 'fallback';
 
 const showGapOffersLabel = (active: boolean) => (active ? 'Cofnij' : 'Pokaż');
 
@@ -811,7 +810,7 @@ export const AllegroPriceSimPage = () => {
                   {showBuyerGap ? (
                     <GapFallbackField
                       label="Dostawa w prowizji, gdy brak zamówień (zł)"
-                      tooltip="Allegro liczy prowizję od ceny plus ta kwota. Oferty ze sprzedażą z 180 dni biorą średnią z zamówień. Gdy zamówień nie ma — mediana ze wszystkich zamówień Allegro sklepu. To pole nadpisuje tylko tę medianę."
+                      tooltip="Allegro liczy prowizję od ceny plus ta kwota. Oferty ze sprzedażą z 180 dni biorą średnią z zamówień. Gdy zamówień nie ma — mediana ze sklepu. To pole widać tylko gdy sklep nie ma tej mediany."
                       value={buyerDraft}
                       onChange={setBuyerDraft}
                       onBlur={() =>

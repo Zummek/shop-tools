@@ -132,9 +132,13 @@ export const useGetAllegroPriceSim = (options?: {
     const parsed = raw ? Number(raw) : 0;
     return Number.isFinite(parsed) ? parsed : 0;
   });
-  const [buyerTouched, setBuyerTouched] = useState(() =>
-    searchParams.has('buyerDeliveryGross'),
-  );
+  const [buyerTouched, setBuyerTouched] = useState(() => {
+    const raw = searchParams.get('buyerDeliveryGross');
+    if (raw == null || raw === '') return false;
+    const parsed = Number(raw);
+    // Older builds always wrote 0 into the URL; that is not a user override.
+    return Number.isFinite(parsed) && parsed !== 0;
+  });
   const [shippingRatePercent, setShippingRatePercent] = useState(() => {
     const raw = searchParams.get('shippingRate');
     const parsed = raw ? Number(raw) : 4.6;

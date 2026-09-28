@@ -16,6 +16,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TextField,
   ToggleButton,
   ToggleButtonGroup,
   Tooltip,
@@ -147,6 +148,7 @@ export const ChannelMarginReportPage = () => {
   );
   const [rowMode, setRowMode] = useState<'product' | 'offer'>('product');
   const [selectedRow, setSelectedRow] = useState<ChannelMarginRow | null>(null);
+  const [search, setSearch] = useState('');
 
   const currency = data?.currency ?? 'PLN';
 
@@ -156,6 +158,20 @@ export const ChannelMarginReportPage = () => {
       return data.offerRows ?? [];
     return data.rows ?? [];
   }, [data, lens, rowMode]);
+
+  const filteredTableRows = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return tableRows;
+    return tableRows.filter((row) => {
+      if (row.productName.toLowerCase().includes(query)) return true;
+      if (
+        row.offerId != null &&
+        String(row.offerId).toLowerCase().includes(query)
+      )
+        return true;
+      return false;
+    });
+  }, [tableRows, search]);
 
   const chartData = useMemo(() => {
     if (!data?.daily?.length) return null;
@@ -658,9 +674,10 @@ export const ChannelMarginReportPage = () => {
 
       <Paper variant="outlined" sx={{ height: 520 }}>
         <Stack
-          direction="row"
+          direction={{ xs: 'column', sm: 'row' }}
           justifyContent="space-between"
-          alignItems="center"
+          alignItems={{ xs: 'stretch', sm: 'center' }}
+          spacing={1.5}
           sx={{ px: 2, pt: 1.5, pb: 1 }}
         >
           <Stack spacing={0.25}>
@@ -673,28 +690,47 @@ export const ChannelMarginReportPage = () => {
               {'Kliknij wiersz, aby zobaczyć faktury i paragony/zamówienia.'}
             </Typography>
           </Stack>
-          {lens === 'ecommerce' ? (
-            <ToggleButtonGroup
+          <Stack
+            direction="row"
+            spacing={1.5}
+            flexWrap="wrap"
+            useFlexGap
+            alignItems="center"
+          >
+            <TextField
               size="small"
-              exclusive
-              value={rowMode}
-              onChange={(
-                _e: MouseEvent<HTMLElement>,
-                value: 'product' | 'offer' | null,
-              ) => {
-                if (value) {
-                  setRowMode(value);
-                  setSelectedRow(null);
-                }
-              }}
-            >
-              <ToggleButton value="product">{'Produkt'}</ToggleButton>
-              <ToggleButton value="offer">{'Oferta'}</ToggleButton>
-            </ToggleButtonGroup>
-          ) : null}
+              label={
+                rowMode === 'offer' && lens === 'ecommerce'
+                  ? 'Szukaj oferty'
+                  : 'Szukaj produktu'
+              }
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              sx={{ minWidth: 180, flex: '1 1 180px' }}
+            />
+            {lens === 'ecommerce' ? (
+              <ToggleButtonGroup
+                size="small"
+                exclusive
+                value={rowMode}
+                onChange={(
+                  _e: MouseEvent<HTMLElement>,
+                  value: 'product' | 'offer' | null,
+                ) => {
+                  if (value) {
+                    setRowMode(value);
+                    setSelectedRow(null);
+                  }
+                }}
+              >
+                <ToggleButton value="product">{'Produkt'}</ToggleButton>
+                <ToggleButton value="offer">{'Oferta'}</ToggleButton>
+              </ToggleButtonGroup>
+            ) : null}
+          </Stack>
         </Stack>
         <DataGrid
-          rows={tableRows.map((row, index) => ({
+          rows={filteredTableRows.map((row, index) => ({
             ...row,
             id:
               rowMode === 'offer'
@@ -715,7 +751,7 @@ export const ChannelMarginReportPage = () => {
           }}
           sx={{
             border: 0,
-            height: 'calc(100% - 64px)',
+            height: 'calc(100% - 72px)',
             '& .MuiDataGrid-row': { cursor: 'pointer' },
             '& .MuiDataGrid-cell': {
               display: 'flex',

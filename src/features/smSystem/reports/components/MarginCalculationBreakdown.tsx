@@ -147,6 +147,11 @@ export const HowWeCalculateAccordion = ({
               'Marża = przychód + dostawa od kupującego − koszt zakupu − prowizja − koszt dostawy sprzedawcy − inne opłaty. Anulowane zamówienia e-commerce są wykluczone. Sumy są w PLN: pozycje CZK/HUF/EUR przeliczamy kursem średnim NBP (tabela A) z dnia zamówienia. To szacunek ± — rzeczywista wypłata Allegro Finance idzie po EBC + marża, nie po NBP. Allegro bez Smart (HB*): koszt dostawy z grupy dostawy, jeśli ustawiony.'
             }
           </Typography>
+          <Typography variant="body2">
+            {
+              'Chip „Cena sprzedaży” to % linii z ceną z paragonu/zamówienia. Chip „Cena zakupu (COGS)” to % linii z kosztem zakupu (KSeF albo ręczna cena zakupu) — nie cena z karty produktu.'
+            }
+          </Typography>
           {calculation ? (
             <MarginCalculationBreakdown
               calculation={calculation}

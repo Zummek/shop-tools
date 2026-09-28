@@ -75,6 +75,20 @@ const AmountWithPercentCell = ({
   </Stack>
 );
 
+const CoverageChip = ({
+  label,
+  tooltip,
+  color,
+}: {
+  label: string;
+  tooltip: string;
+  color?: 'warning' | 'error';
+}) => (
+  <Tooltip title={tooltip}>
+    <Chip size="small" label={label} color={color} />
+  </Tooltip>
+);
+
 const KpiCard = ({
   title,
   value,
@@ -454,61 +468,64 @@ export const ChannelMarginReportPage = () => {
       {data?.coverage ? (
         <Stack spacing={1}>
           <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-            <Chip
-              size="small"
-              label={`Linie z ceną: ${data.coverage.linesWithSellingPricePercent ?? '—'}%`}
+            <CoverageChip
+              label={`Cena sprzedaży: ${data.coverage.linesWithSellingPricePercent ?? '—'}%`}
+              tooltip="Udział linii sprzedaży z ceną z paragonu lub zamówienia (przychód). To nie jest cena zakupu z karty produktu."
             />
-            <Chip
-              size="small"
-              label={`Linie z COGS: ${data.coverage.linesWithCogsPercent ?? '—'}%`}
+            <CoverageChip
+              label={`Cena zakupu (COGS): ${data.coverage.linesWithCogsPercent ?? '—'}%`}
+              tooltip="Udział linii z kosztem zakupu: faktura KSeF, last purchase albo ręczna cena zakupu netto. Bez tego COGS = 0 i marża jest zawyżona."
             />
             {data.coverage.allegroBillingMatchedPercent != null ? (
-              <Chip
-                size="small"
+              <CoverageChip
                 label={`Allegro billing: ${data.coverage.allegroBillingMatchedPercent}%`}
+                tooltip="Udział opłat Allegro dopasowanych do billing SUC / HB*."
               />
             ) : null}
             {data.coverage.fxLinesConverted ? (
-              <Chip
-                size="small"
+              <CoverageChip
                 color="warning"
                 label={`FX→PLN (NBP): ${data.coverage.fxLinesConverted} linii`}
+                tooltip="Linie w walucie obcej przeliczone kursem średnim NBP (tabela A) z dnia zamówienia."
               />
             ) : null}
             {data.coverage.fxLinesMissingRate ? (
-              <Chip
-                size="small"
+              <CoverageChip
                 color="error"
                 label={`Brak kursu NBP: ${data.coverage.fxLinesMissingRate} linii`}
+                tooltip="Linie w walucie obcej bez kursu NBP — nie weszły do przychodu w PLN."
               />
             ) : null}
             {data.coverage.fxFeePartsMissing ? (
-              <Chip
-                size="small"
+              <CoverageChip
                 color="error"
                 label={`Opłaty bez FX: ${data.coverage.fxFeePartsMissing} zam.`}
+                tooltip="Zamówienia, w których części opłat nie dało się przeliczyć na PLN."
               />
             ) : null}
             {data.coverage.fxBuyerDeliveryMissing ? (
-              <Chip
-                size="small"
+              <CoverageChip
                 color="error"
                 label={`Dostawa bez FX: ${data.coverage.fxBuyerDeliveryMissing} zam.`}
+                tooltip="Zamówienia bez kursu dla dostawy od kupującego."
               />
             ) : null}
             {data.coverage.erliCommissionPercent != null ? (
-              <Chip
-                size="small"
+              <CoverageChip
                 label={`Erli prowizja: ${data.coverage.erliCommissionPercent}%`}
+                tooltip="Prowizja Erli z konfiguracji organizacji — nie z billingu."
               />
             ) : null}
             {data.coverage.wooCommissionPercent != null ? (
-              <Chip
-                size="small"
+              <CoverageChip
                 label={`Woo prowizja: ${data.coverage.wooCommissionPercent}%`}
+                tooltip="Prowizja WooCommerce z konfiguracji organizacji."
               />
             ) : null}
-            <Chip size="small" label={`Linii: ${data.coverage.linesTotal}`} />
+            <CoverageChip
+              label={`Linii: ${data.coverage.linesTotal}`}
+              tooltip="Liczba linii sprzedaży w wybranym okresie i soczewce."
+            />
           </Stack>
           {coverageNotes.length > 0 ? (
             <Stack spacing={0.5}>

@@ -764,39 +764,57 @@ export const AllegroPriceSimPage = () => {
                 sx={{ width: { xs: '100%', sm: 140 } }}
               />
             </Tooltip>
-            <GapFallbackField
-              label="Dostawa w prowizji, gdy brak zamówień (zł)"
-              tooltip="Allegro liczy prowizję od ceny plus ta kwota. Oferty ze sprzedażą z 180 dni biorą średnią z zamówień. To nie jest Twój koszt wysyłki — domyślna kwota wchodzi tylko wtedy, gdy nie ma zamówień z ostatnich 180 dni."
-              value={buyerDraft}
-              onChange={setBuyerDraft}
-              onBlur={() =>
-                setBuyerDeliveryGross(
-                  commitDecimal(buyerDraft, buyerDeliveryGross),
-                )
-              }
-              count={gapCounts.buyer}
-              total={gapCounts.total}
-              countsReady={!isLoading && data != null}
-              active={gapFilter === 'buyer'}
-              onToggle={() => toggleGapFilter('buyer')}
-            />
-            <GapFallbackField
-              label="Koszt Twojej wysyłki, gdy brak grupy (%)"
-              tooltip="Procent od przychodu netto, gdy oferta nie ma grupy dostawy. Gdy grupa jest, bierzemy zł z grupy, nie ten procent."
-              value={shippingDraft}
-              onChange={setShippingDraft}
-              onBlur={() =>
-                setShippingRatePercent(
-                  commitDecimal(shippingDraft, shippingRatePercent),
-                )
-              }
-              count={gapCounts.shipping}
-              total={gapCounts.total}
-              countsReady={!isLoading && data != null}
-              active={gapFilter === 'shipping'}
-              onToggle={() => toggleGapFilter('shipping')}
-            />
+            <Typography variant="caption" color="text.secondary">
+              {'Dotyczy każdej oferty — Plus, Granica i cena min.'}
+            </Typography>
           </Stack>
+          <Paper variant="outlined" sx={{ p: 1.25, bgcolor: 'action.hover' }}>
+            <Stack spacing={0.75}>
+              <Typography variant="overline" color="text.secondary">
+                {'Gdy brakuje danych'}
+              </Typography>
+              <Stack
+                direction="row"
+                spacing={1.5}
+                flexWrap="wrap"
+                useFlexGap
+                alignItems="center"
+              >
+                <GapFallbackField
+                  label="Dostawa w prowizji, gdy brak zamówień (zł)"
+                  tooltip="Allegro liczy prowizję od ceny plus ta kwota. Oferty ze sprzedażą z 180 dni biorą średnią z zamówień. To nie jest Twój koszt wysyłki — domyślna kwota wchodzi tylko wtedy, gdy nie ma zamówień z ostatnich 180 dni."
+                  value={buyerDraft}
+                  onChange={setBuyerDraft}
+                  onBlur={() =>
+                    setBuyerDeliveryGross(
+                      commitDecimal(buyerDraft, buyerDeliveryGross),
+                    )
+                  }
+                  count={gapCounts.buyer}
+                  total={gapCounts.total}
+                  countsReady={!isLoading && data != null}
+                  active={gapFilter === 'buyer'}
+                  onToggle={() => toggleGapFilter('buyer')}
+                />
+                <GapFallbackField
+                  label="Koszt Twojej wysyłki, gdy brak grupy (%)"
+                  tooltip="Procent od przychodu netto, gdy oferta nie ma grupy dostawy. Gdy grupa jest, bierzemy zł z grupy, nie ten procent."
+                  value={shippingDraft}
+                  onChange={setShippingDraft}
+                  onBlur={() =>
+                    setShippingRatePercent(
+                      commitDecimal(shippingDraft, shippingRatePercent),
+                    )
+                  }
+                  count={gapCounts.shipping}
+                  total={gapCounts.total}
+                  countsReady={!isLoading && data != null}
+                  active={gapFilter === 'shipping'}
+                  onToggle={() => toggleGapFilter('shipping')}
+                />
+              </Stack>
+            </Stack>
+          </Paper>
           <Stack spacing={0.75}>
             <Typography variant="overline" color="text.secondary">
               {'Filtry'}

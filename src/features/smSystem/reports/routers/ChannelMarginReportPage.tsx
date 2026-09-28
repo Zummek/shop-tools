@@ -457,7 +457,7 @@ export const ChannelMarginReportPage = () => {
               <TableHead>
                 <TableRow>
                   <TableCell>{'Kanał'}</TableCell>
-                  <TableCell align="right">{'Marża'}</TableCell>
+                  <TableCell align="right">{'Marża (PLN)'}</TableCell>
                   <TableCell align="right">{'Marża %'}</TableCell>
                 </TableRow>
               </TableHead>
@@ -481,7 +481,7 @@ export const ChannelMarginReportPage = () => {
                     >
                       <TableCell>{channelLabel(ch.channel)}</TableCell>
                       <TableCell align="right">
-                        {formatPrice(ch.marginCents, currency)}
+                        {formatPrice(ch.marginCents)}
                       </TableCell>
                       <TableCell align="right">
                         {ch.marginPercent == null

@@ -89,10 +89,10 @@ export const ProductMarginSourceModal = ({
     : '';
 
   const salesTableMinWidth = showEcommerceFees
-    ? 880
+    ? 980
     : lens === 'pcmarket'
-      ? 800
-      : 720;
+      ? 880
+      : 800;
 
   return (
     <Modal open={open} onClose={onClose}>
@@ -180,7 +180,7 @@ export const ProductMarginSourceModal = ({
                       maxWidth: '100%',
                     }}
                   >
-                    <Table size="small" sx={{ minWidth: 640 }}>
+                    <Table size="small" sx={{ minWidth: 720 }}>
                       <TableHead>
                         <TableRow>
                           <TableCell>{'Nr FV'}</TableCell>
@@ -188,12 +188,12 @@ export const ProductMarginSourceModal = ({
                           <TableCell>{'Dostawca'}</TableCell>
                           <TableCell>{'Źródło'}</TableCell>
                           <TableCell align="right">
-                            {'Cena zak. brutto'}
+                            {'Cena zak. brutto (PLN)'}
                           </TableCell>
                           <TableCell align="right">
                             {'Sprzedane szt.'}
                           </TableCell>
-                          <TableCell align="right">{'COGS'}</TableCell>
+                          <TableCell align="right">{'COGS (PLN)'}</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -227,7 +227,7 @@ export const ProductMarginSourceModal = ({
                             >
                               {invoice.unitGrossCents == null
                                 ? '—'
-                                : formatPrice(invoice.unitGrossCents, currency)}
+                                : formatPrice(invoice.unitGrossCents)}
                             </TableCell>
                             <TableCell align="right">
                               {invoice.soldUnits.toLocaleString('pl-PL')}
@@ -236,7 +236,7 @@ export const ProductMarginSourceModal = ({
                               align="right"
                               sx={{ whiteSpace: 'nowrap' }}
                             >
-                              {formatPrice(invoice.cogsCents, currency)}
+                              {formatPrice(invoice.cogsCents)}
                             </TableCell>
                           </TableRow>
                         ))}
@@ -271,13 +271,13 @@ export const ProductMarginSourceModal = ({
                             <TableCell>{'Oddział'}</TableCell>
                           ) : null}
                           <TableCell align="right">{'Ilość'}</TableCell>
-                          <TableCell align="right">{'Przychód'}</TableCell>
-                          <TableCell align="right">{'COGS'}</TableCell>
+                          <TableCell align="right">{'Przychód (PLN)'}</TableCell>
+                          <TableCell align="right">{'COGS (PLN)'}</TableCell>
                           {showEcommerceFees ? (
-                            <TableCell align="right">{'Prowizja'}</TableCell>
+                            <TableCell align="right">{'Prowizja (PLN)'}</TableCell>
                           ) : null}
                           <TableCell>{'FV zakupu'}</TableCell>
-                          <TableCell align="right">{'Marża'}</TableCell>
+                          <TableCell align="right">{'Marża (PLN)'}</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -325,20 +325,20 @@ export const ProductMarginSourceModal = ({
                               align="right"
                               sx={{ whiteSpace: 'nowrap' }}
                             >
-                              {formatPrice(line.revenueCents, currency)}
+                              {formatPrice(line.revenueCents)}
                             </TableCell>
                             <TableCell
                               align="right"
                               sx={{ whiteSpace: 'nowrap' }}
                             >
-                              {formatPrice(line.cogsCents, currency)}
+                              {formatPrice(line.cogsCents)}
                             </TableCell>
                             {showEcommerceFees ? (
                               <TableCell
                                 align="right"
                                 sx={{ whiteSpace: 'nowrap' }}
                               >
-                                {formatPrice(line.commissionCents, currency)}
+                                {formatPrice(line.commissionCents)}
                               </TableCell>
                             ) : null}
                             <TableCell sx={{ whiteSpace: 'nowrap' }}>
@@ -362,7 +362,7 @@ export const ProductMarginSourceModal = ({
                               align="right"
                               sx={{ whiteSpace: 'nowrap' }}
                             >
-                              {formatPrice(line.marginCents, currency)}
+                              {formatPrice(line.marginCents)}
                             </TableCell>
                           </TableRow>
                         ))}

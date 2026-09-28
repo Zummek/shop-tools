@@ -270,11 +270,17 @@ export const ProductMarginSourceModal = ({
                           {lens === 'pcmarket' ? (
                             <TableCell>{'Oddział'}</TableCell>
                           ) : null}
-                          <TableCell align="right">{'Ilość'}</TableCell>
-                          <TableCell align="right">{'Przychód (PLN)'}</TableCell>
+                          <TableCell align="right">
+                            {'Sprzedane szt.'}
+                          </TableCell>
+                          <TableCell align="right">
+                            {'Przychód (PLN)'}
+                          </TableCell>
                           <TableCell align="right">{'COGS (PLN)'}</TableCell>
                           {showEcommerceFees ? (
-                            <TableCell align="right">{'Prowizja (PLN)'}</TableCell>
+                            <TableCell align="right">
+                              {'Prowizja (PLN)'}
+                            </TableCell>
                           ) : null}
                           <TableCell>{'FV zakupu'}</TableCell>
                           <TableCell align="right">{'Marża (PLN)'}</TableCell>

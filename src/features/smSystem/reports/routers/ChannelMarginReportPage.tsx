@@ -168,9 +168,11 @@ export const ChannelMarginReportPage = () => {
       },
       {
         field: 'units',
-        headerName: 'Ilość',
+        headerName: 'Sprzedane szt.',
+        description:
+          'Suma sprzedanych sztuk produktu (lub oferty) w wybranym okresie i kanale.',
         type: 'number',
-        width: 80,
+        width: 120,
       },
       {
         field: 'revenueCents',

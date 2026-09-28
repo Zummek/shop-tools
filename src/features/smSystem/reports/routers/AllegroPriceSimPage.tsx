@@ -103,7 +103,111 @@ const KpiCard = ({
   </Paper>
 );
 
-type DisplayRow = AllegroPriceSimRow & { id: string };
+type DisplayRow = AllegroPriceSimRow & {
+  id: string;
+  /** Marża przy aktualnej cenie oferty Allegro (gdy tabela liczy z symulacji). */
+  offerMarginCents: number | null;
+  offerMarginPercent: number | null;
+};
+
+const MarginDeltaCell = ({
+  value,
+  previous,
+}: {
+  value: string;
+  previous: string | null;
+}) => (
+  <Stack
+    spacing={0}
+    alignItems="flex-end"
+    justifyContent="center"
+    sx={{ width: '100%', lineHeight: 1.2 }}
+  >
+    <Typography variant="body2" component="span">
+      {value}
+    </Typography>
+    {previous != null ? (
+      <Typography variant="caption" color="text.secondary" component="span">
+        {previous}
+      </Typography>
+    ) : null}
+  </Stack>
+);
+
+type GapFilter = 'all' | 'buyer' | 'shipping';
+
+const showGapOffersLabel = (active: boolean) => (active ? 'Cofnij' : 'Pokaż');
+
+const GapFallbackField = ({
+  label,
+  tooltip,
+  value,
+  onChange,
+  onBlur,
+  count,
+  total,
+  countsReady,
+  active,
+  onToggle,
+}: {
+  label: string;
+  tooltip: string;
+  value: string;
+  onChange: (value: string) => void;
+  onBlur: () => void;
+  count: number;
+  total: number;
+  countsReady: boolean;
+  active: boolean;
+  onToggle: () => void;
+}) => (
+  <Stack
+    direction="row"
+    spacing={0.75}
+    alignItems="center"
+    flexWrap="wrap"
+    useFlexGap
+    sx={{ flex: '0 1 auto', maxWidth: '100%' }}
+  >
+    <Tooltip title={tooltip}>
+      <TextField
+        size="small"
+        label={label}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        onBlur={onBlur}
+        sx={{ width: { xs: '100%', sm: 340 } }}
+      />
+    </Tooltip>
+    {countsReady ? (
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{ whiteSpace: 'nowrap' }}
+      >
+        {`${count} z ${total}`}
+      </Typography>
+    ) : null}
+    {countsReady && count > 0 ? (
+      <Tooltip
+        title={
+          active
+            ? 'Cofnij filtr'
+            : `Pokaż ${count === 1 ? 'ofertę, której' : 'oferty, których'} dotyczy to pole`
+        }
+      >
+        <Button
+          size="small"
+          color={active ? 'primary' : 'inherit'}
+          onClick={onToggle}
+          sx={{ py: 0, minHeight: 32, whiteSpace: 'nowrap' }}
+        >
+          {showGapOffersLabel(active)}
+        </Button>
+      </Tooltip>
+    ) : null}
+  </Stack>
+);
 
 export const AllegroPriceSimPage = () => {
   const user = useAppSelector((state) => state.smSystemUser.user);
@@ -139,6 +243,7 @@ export const AllegroPriceSimPage = () => {
     Record<string, number | null>
   >({});
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [gapFilter, setGapFilter] = useState<GapFilter>('all');
   const [vatFilter, setVatFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
   const [howWeCalculateOpen, setHowWeCalculateOpen] = useState(false);
@@ -200,20 +305,37 @@ export const AllegroPriceSimPage = () => {
       const offerGrossCents = row.offerGrossCents;
       const effective =
         simulatedGrossCents ?? offerGrossCents ?? row.priceGrossCents;
-      const base = {
+      const simOptions = {
+        buyerDeliveryCents: row.buyerDeliveryCents ?? buyerDeliveryCents,
+        shippingRate,
+        targetMargin,
+      };
+      const showOfferBaseline =
+        simulatedGrossCents != null &&
+        offerGrossCents != null &&
+        simulatedGrossCents !== offerGrossCents;
+      const offerSim = showOfferBaseline
+        ? simulateAllegroOffer(row, offerGrossCents, simOptions)
+        : null;
+      const offerMarginCents =
+        offerSim && offerSim.status !== 'missing' ? offerSim.marginCents : null;
+      const offerMarginPercent =
+        offerSim && offerSim.status !== 'missing'
+          ? offerSim.marginPercent
+          : null;
+
+      const base: DisplayRow = {
         ...row,
         id: row.offerId,
         offerGrossCents,
         simulatedGrossCents,
         priceGrossCents: effective,
+        offerMarginCents,
+        offerMarginPercent,
       };
       if (effective == null || effective === row.priceGrossCents) return base;
 
-      const sim = simulateAllegroOffer(row, effective, {
-        buyerDeliveryCents: row.buyerDeliveryCents ?? buyerDeliveryCents,
-        shippingRate,
-        targetMargin,
-      });
+      const sim = simulateAllegroOffer(row, effective, simOptions);
       if (!sim) return base;
       return {
         ...base,
@@ -253,16 +375,33 @@ export const AllegroPriceSimPage = () => {
     return Array.from(values).sort((a, b) => a - b);
   }, [displayRows]);
 
+  const gapCounts = useMemo(() => {
+    let buyer = 0;
+    let shipping = 0;
+    displayRows.forEach((row) => {
+      if (row.buyerDeliverySource === 'fallback') buyer += 1;
+      if (row.costShippingSource === 'rate_fallback') shipping += 1;
+    });
+    return { buyer, shipping, total: displayRows.length };
+  }, [displayRows]);
+
   const filteredRows = useMemo(() => {
     const query = search.trim().toLowerCase();
     return displayRows.filter((row) => {
       if (statusFilter !== 'all' && row.status !== statusFilter) return false;
+      if (gapFilter === 'buyer' && row.buyerDeliverySource !== 'fallback')
+        return false;
+      if (
+        gapFilter === 'shipping' &&
+        row.costShippingSource !== 'rate_fallback'
+      )
+        return false;
       if (vatFilter !== 'all' && String(row.vatRate) !== vatFilter)
         return false;
       if (query && !row.name.toLowerCase().includes(query)) return false;
       return true;
     });
-  }, [displayRows, statusFilter, vatFilter, search]);
+  }, [displayRows, statusFilter, gapFilter, vatFilter, search]);
 
   const displayKpis = useMemo(() => {
     const counts = {
@@ -290,6 +429,10 @@ export const AllegroPriceSimPage = () => {
   const commitDecimal = (raw: string, fallback: number) => {
     const parsed = Number(raw.replace(',', '.').trim());
     return Number.isFinite(parsed) ? parsed : fallback;
+  };
+
+  const toggleGapFilter = (next: GapFilter) => {
+    setGapFilter((current) => (current === next ? 'all' : next));
   };
 
   const columns: GridColDef<DisplayRow>[] = useMemo(
@@ -406,9 +549,7 @@ export const AllegroPriceSimPage = () => {
           const value = params.row.purchaseNetCents;
           return (
             <Tooltip title={marginSourceLabel(params.row.cogsSource)}>
-              <span>
-                {value == null ? '—' : formatPrice(Number(value))}
-              </span>
+              <span>{value == null ? '—' : formatPrice(Number(value))}</span>
             </Tooltip>
           );
         },
@@ -484,18 +625,46 @@ export const AllegroPriceSimPage = () => {
       {
         field: 'marginCents',
         headerName: 'Marża (PLN)',
+        description:
+          'Marża przy cenie z tabeli (symulacja lub oferta). Szara wartość pod spodem to marża przy aktualnej cenie oferty Allegro.',
         type: 'number',
         width: 140,
         valueFormatter: (value) =>
           value == null ? '—' : formatPrice(Number(value)),
+        renderCell: (params) => {
+          const current =
+            params.row.marginCents == null
+              ? '—'
+              : formatPrice(params.row.marginCents);
+          const previous =
+            params.row.offerMarginCents == null ||
+            params.row.offerMarginCents === params.row.marginCents
+              ? null
+              : formatPrice(params.row.offerMarginCents);
+          return <MarginDeltaCell value={current} previous={previous} />;
+        },
       },
       {
         field: 'marginPercent',
         headerName: 'Marża %',
+        description:
+          'Marża % przy cenie z tabeli. Szara wartość pod spodem to marża % przy aktualnej cenie oferty Allegro.',
         type: 'number',
-        width: 100,
+        width: 110,
         valueFormatter: (value) =>
           value == null ? '—' : `${Number(value).toFixed(1)}%`,
+        renderCell: (params) => {
+          const current =
+            params.row.marginPercent == null
+              ? '—'
+              : `${params.row.marginPercent.toFixed(1)}%`;
+          const previous =
+            params.row.offerMarginPercent == null ||
+            params.row.offerMarginPercent === params.row.marginPercent
+              ? null
+              : `${params.row.offerMarginPercent.toFixed(1)}%`;
+          return <MarginDeltaCell value={current} previous={previous} />;
+        },
       },
       {
         field: 'minPriceGrossCents',
@@ -574,60 +743,59 @@ export const AllegroPriceSimPage = () => {
 
       <Paper variant="outlined" sx={{ p: 1.5 }}>
         <Stack spacing={1.5}>
-          <Stack spacing={0.75}>
-            <Typography variant="overline" color="text.secondary">
-              {'Założenia wyliczeń'}
-            </Typography>
-            <Stack
-              direction="row"
-              spacing={1.5}
-              flexWrap="wrap"
-              useFlexGap
-              alignItems="center"
-            >
-              <Tooltip title="Gdy oferta ma zamówienia Allegro z 180 dni, bierzemy średnią dostawy zapłaconej przez kupującego. To pole używamy tylko gdy takich zamówień nie ma. Allegro liczy prowizję od ceny brutto plus ta kwota — to nie jest Twój koszt wysyłki.">
-                <TextField
-                  size="small"
-                  label="Domyślna dostawa kupującego (zł)"
-                  value={buyerDraft}
-                  onChange={(event) => setBuyerDraft(event.target.value)}
-                  onBlur={() =>
-                    setBuyerDeliveryGross(
-                      commitDecimal(buyerDraft, buyerDeliveryGross),
-                    )
-                  }
-                  sx={{ width: 200 }}
-                />
-              </Tooltip>
-              <Tooltip title="Twój koszt wysyłki, gdy oferta nie ma grupy dostawy. Liczony jako procent od przychodu netto oferty. Gdy grupa jest, bierzemy zł z grupy, nie ten procent.">
-                <TextField
-                  size="small"
-                  label="Wysyłka bez grupy dostawy %"
-                  value={shippingDraft}
-                  onChange={(event) => setShippingDraft(event.target.value)}
-                  onBlur={() =>
-                    setShippingRatePercent(
-                      commitDecimal(shippingDraft, shippingRatePercent),
-                    )
-                  }
-                  sx={{ width: 230 }}
-                />
-              </Tooltip>
-              <Tooltip title="Próg marży od sprzedaży. Plus = marża % ≥ ten cel. Granica = zysk, ale poniżej celu. Cena min to najniższe brutto, które ten cel jeszcze spełnia.">
-                <TextField
-                  size="small"
-                  label="Cel marży %"
-                  value={targetDraft}
-                  onChange={(event) => setTargetDraft(event.target.value)}
-                  onBlur={() =>
-                    setTargetMarginPercent(
-                      commitDecimal(targetDraft, targetMarginPercent),
-                    )
-                  }
-                  sx={{ width: 140 }}
-                />
-              </Tooltip>
-            </Stack>
+          <Stack
+            direction="row"
+            spacing={1.5}
+            flexWrap="wrap"
+            useFlexGap
+            alignItems="center"
+          >
+            <Tooltip title="Dotyczy każdej oferty. Plus = marża % ≥ ten cel. Granica = zysk, ale poniżej celu. Cena min to najniższe brutto, które ten cel jeszcze spełnia.">
+              <TextField
+                size="small"
+                label="Cel marży %"
+                value={targetDraft}
+                onChange={(event) => setTargetDraft(event.target.value)}
+                onBlur={() =>
+                  setTargetMarginPercent(
+                    commitDecimal(targetDraft, targetMarginPercent),
+                  )
+                }
+                sx={{ width: { xs: '100%', sm: 140 } }}
+              />
+            </Tooltip>
+            <GapFallbackField
+              label="Dostawa w prowizji, gdy brak zamówień (zł)"
+              tooltip="Allegro liczy prowizję od ceny plus ta kwota. Oferty ze sprzedażą z 180 dni biorą średnią z zamówień. To nie jest Twój koszt wysyłki — domyślna kwota wchodzi tylko wtedy, gdy nie ma zamówień z ostatnich 180 dni."
+              value={buyerDraft}
+              onChange={setBuyerDraft}
+              onBlur={() =>
+                setBuyerDeliveryGross(
+                  commitDecimal(buyerDraft, buyerDeliveryGross),
+                )
+              }
+              count={gapCounts.buyer}
+              total={gapCounts.total}
+              countsReady={!isLoading && data != null}
+              active={gapFilter === 'buyer'}
+              onToggle={() => toggleGapFilter('buyer')}
+            />
+            <GapFallbackField
+              label="Koszt Twojej wysyłki, gdy brak grupy (%)"
+              tooltip="Procent od przychodu netto, gdy oferta nie ma grupy dostawy. Gdy grupa jest, bierzemy zł z grupy, nie ten procent."
+              value={shippingDraft}
+              onChange={setShippingDraft}
+              onBlur={() =>
+                setShippingRatePercent(
+                  commitDecimal(shippingDraft, shippingRatePercent),
+                )
+              }
+              count={gapCounts.shipping}
+              total={gapCounts.total}
+              countsReady={!isLoading && data != null}
+              active={gapFilter === 'shipping'}
+              onToggle={() => toggleGapFilter('shipping')}
+            />
           </Stack>
           <Stack spacing={0.75}>
             <Typography variant="overline" color="text.secondary">
@@ -699,6 +867,20 @@ export const AllegroPriceSimPage = () => {
                   ))}
                 </Select>
               </FormControl>
+              {gapFilter === 'buyer' ? (
+                <Chip
+                  size="small"
+                  label="Oferty bez zamówień"
+                  onDelete={() => setGapFilter('all')}
+                />
+              ) : null}
+              {gapFilter === 'shipping' ? (
+                <Chip
+                  size="small"
+                  label="Oferty bez grupy dostawy"
+                  onDelete={() => setGapFilter('all')}
+                />
+              ) : null}
             </Stack>
           </Stack>
         </Stack>
@@ -762,6 +944,7 @@ export const AllegroPriceSimPage = () => {
           rows={filteredRows}
           columns={columns}
           loading={isLoading}
+          disableColumnMenu
           disableRowSelectionOnClick
           pageSizeOptions={[25, 50, 100]}
           initialState={{
@@ -830,7 +1013,7 @@ export const AllegroPriceSimPage = () => {
           <Typography variant="h6">{'Jak liczymy'}</Typography>
           <Typography variant="body2">
             {
-              'Marża = przychód netto − prowizja z kategorii − wysyłka sprzedawcy − zakup. Prowizja = stawka netto × (cena brutto + dostawa kupującego). Dostawa kupującego: średnia z zamówień oferty (180 dni), a jeśli brak — wartość z paska. Wysyłka sprzedawcy: zł z grupy dostawy, a jeśli brak grupy — procent z paska od przychodu netto. CIT nie jest odejmowany. Kolumna Symulowana cena zapisuje się u nas i nie zmienia oferty na Allegro. Cena min to najniższe brutto przy celu z paska.'
+              'Marża = przychód netto − prowizja z kategorii − wysyłka sprzedawcy − zakup. Prowizja = stawka netto × (cena brutto + dostawa kupującego). Dostawa kupującego: średnia z zamówień oferty (180 dni), a jeśli brak zamówień — kwota z sekcji „Gdy brakuje danych”. Wysyłka sprzedawcy: zł z grupy dostawy, a jeśli brak grupy — procent z tej sekcji, od przychodu netto. CIT nie jest odejmowany. Kolumna Symulowana cena zapisuje się u nas i nie zmienia oferty na Allegro. Cena min to najniższe brutto przy celu marży.'
             }
           </Typography>
           {data?.calculation ? (

@@ -20,11 +20,11 @@ export const marginSourceLabel = (source: string) => {
     unclassified_17: 'Pozostałe / 17% (brak stawki w drzewie)',
     override: 'nadpisanie stawki',
     delivery_group: 'grupa dostawy',
-    rate_fallback: 'szacunek % gdy brak grupy dostawy',
+    rate_fallback: 'szacunek %, gdy brak grupy dostawy',
     offer: 'cena oferty',
     org_default: 'założenie organizacji',
     order_avg: 'średnia z zamówień oferty (180 dni)',
-    fallback: 'wartość z założeń',
+    fallback: 'uzupełnienie, gdy brak zamówień',
     product: 'karta produktu',
     promo: 'akcja promocyjna',
   };

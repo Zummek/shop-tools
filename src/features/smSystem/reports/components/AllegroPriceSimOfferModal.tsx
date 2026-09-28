@@ -39,9 +39,12 @@ export const AllegroPriceSimOfferModal = ({
   const rowBuyerCents = row?.buyerDeliveryCents ?? buyerDeliveryCents;
 
   useEffect(() => {
-    setWhatIf('');
+    if (!open) return;
+    if (row?.simulatedGrossCents != null)
+      setWhatIf((row.simulatedGrossCents / 100).toFixed(2));
+    else setWhatIf('');
     setIsApplying(false);
-  }, [row?.offerId]);
+  }, [open, row?.offerId, row?.simulatedGrossCents]);
 
   const offerCents = row?.offerGrossCents ?? null;
 
@@ -96,13 +99,6 @@ export const AllegroPriceSimOfferModal = ({
           <Typography variant="body2" color="text.secondary">
             {`${categoryLabel} · ${(row.commissionRateNet * 100).toFixed(2)}% netto`}
           </Typography>
-          {row.simulatedGrossCents != null ? (
-            <Typography variant="body2" color="text.secondary">
-              {`W tabeli liczymy z symulacji ${formatPrice(row.simulatedGrossCents, currency)}${
-                simulatedAtLabel ? ` (wprowadzona ${simulatedAtLabel})` : ''
-              }.`}
-            </Typography>
-          ) : null}
         </Stack>
 
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={3}>
@@ -127,13 +123,16 @@ export const AllegroPriceSimOfferModal = ({
           </Stack>
 
           <Stack spacing={1} flex={1}>
-            <Typography variant="subtitle2">{'A gdybym dał'}</Typography>
+            <Typography variant="subtitle2">{'Cena symulowana'}</Typography>
             <TextField
               size="small"
               label="Cena brutto"
               value={whatIf}
               onChange={(event) => setWhatIf(event.target.value)}
               placeholder="np. 89.90"
+              helperText={
+                simulatedAtLabel ? `Wprowadzona ${simulatedAtLabel}` : undefined
+              }
             />
             {whatIfCalc && whatIfSim ? (
               <>

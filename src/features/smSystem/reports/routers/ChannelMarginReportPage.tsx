@@ -590,6 +590,7 @@ export const ChannelMarginReportPage = () => {
           }))}
           columns={columns}
           loading={isLoading}
+          disableColumnMenu
           disableRowSelectionOnClick
           pageSizeOptions={[25, 50, 100]}
           initialState={{

@@ -159,6 +159,7 @@ export const ProductsListPage = () => {
           loading={isLoading}
           autoHeight
           disableColumnFilter
+          disableColumnMenu
           disableRowSelectionOnClick
           onRowClick={handleRowClick}
           pageSizeOptions={[25]}

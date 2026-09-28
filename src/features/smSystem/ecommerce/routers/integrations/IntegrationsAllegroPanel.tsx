@@ -465,6 +465,7 @@ export const IntegrationsAllegroPanel = () => {
                 loading={isLoadingUnmatched}
                 autoHeight
                 disableColumnFilter
+                disableColumnMenu
                 disableRowSelectionOnClick
                 pageSizeOptions={[25]}
                 paginationMode="server"

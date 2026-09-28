@@ -520,6 +520,7 @@ export const IntegrationsWooCommercePanel = () => {
                 loading={isLoadingUnmatched}
                 autoHeight
                 disableColumnFilter
+                disableColumnMenu
                 disableRowSelectionOnClick
                 pageSizeOptions={[25]}
                 paginationMode="server"

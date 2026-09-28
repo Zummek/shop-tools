@@ -39,6 +39,7 @@ import { ImportProductsPage } from './features/smSystem/products/routers/ImportP
 import { ProductDetailsPage } from './features/smSystem/products/routers/ProductDetailsPage/ProductDetailsPage';
 import { ProductsListPage } from './features/smSystem/products/routers/ProductsListPage/ProductsListPage';
 import { ProductsDocumentsPage } from './features/smSystem/productsDocuments/routers/ProductsDocumentsPage';
+import { AllegroPriceSimPage } from './features/smSystem/reports/routers/AllegroPriceSimPage';
 import { ChannelMarginReportPage } from './features/smSystem/reports/routers/ChannelMarginReportPage';
 import { ReportsPage } from './features/smSystem/reports/routers/ReportsPage';
 import { TransfersPage } from './features/smSystem/transfers/routers/TransfersPage';
@@ -112,6 +113,10 @@ const router = sentryCreateHashRouter(
         {
           path: 'reports/channel-margin',
           element: <ChannelMarginReportPage />,
+        },
+        {
+          path: 'reports/allegro-price-sim',
+          element: <AllegroPriceSimPage />,
         },
         {
           path: 'suppliers-orders',

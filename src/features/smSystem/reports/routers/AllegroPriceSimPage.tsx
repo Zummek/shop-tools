@@ -1,0 +1,930 @@
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import OpenInNewOutlinedIcon from '@mui/icons-material/OpenInNewOutlined';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import {
+  Alert,
+  Button,
+  Chip,
+  FormControl,
+  IconButton,
+  InputLabel,
+  MenuItem,
+  Modal,
+  Paper,
+  Select,
+  Skeleton,
+  Stack,
+  TextField,
+  Tooltip,
+  Typography,
+} from '@mui/material';
+import { DataGrid, GridColDef, GridRowParams } from '@mui/x-data-grid';
+import dayjs from 'dayjs';
+import { useEffect, useMemo, useState } from 'react';
+import { Navigate } from 'react-router-dom';
+
+import { modalStyle } from '../../../../components';
+import { useAppSelector, useNotify } from '../../../../hooks';
+import { Pages } from '../../../../utils';
+import { useGetBranches } from '../../branches/api';
+import { formatPrice } from '../../products/utils';
+import {
+  AllegroPriceSimApplyResult,
+  useApplyAllegroPriceSim,
+} from '../api/useApplyAllegroPriceSim';
+import {
+  AllegroPriceSimRow,
+  useGetAllegroPriceSim,
+} from '../api/useGetAllegroPriceSim';
+import { useSaveAllegroPriceSimOverride } from '../api/useSaveAllegroPriceSimOverride';
+import {
+  AllegroPriceSimApplyConfirmDialog,
+  AllegroPriceSimApplyStaleDialog,
+} from '../components/AllegroPriceSimApplyDialogs';
+import { AllegroPriceSimOfferModal } from '../components/AllegroPriceSimOfferModal';
+import { MarginCalculationBreakdown } from '../components/MarginCalculationBreakdown';
+import { allegroOfferHref } from '../utils/allegroOfferUrl';
+import { marginSourceLabel } from '../utils/marginSourceLabel';
+import { simulateAllegroOffer } from '../utils/simulateAllegroOffer';
+
+const statusLabel: Record<AllegroPriceSimRow['status'], string> = {
+  ok: 'Plus',
+  thin: 'Granica',
+  loss: 'Strata',
+  missing: 'Brak danych',
+  unreachable: 'Cel nieosiągalny',
+};
+
+const offerStatusLabel: Record<string, string> = {
+  ACTIVE: 'Aktywna',
+  INACTIVE: 'Nieopublikowana',
+  ENDED: 'Zakończona',
+  ACTIVATING: 'Włączana',
+};
+
+const offerStatusColor = (
+  status: string | null,
+): 'success' | 'warning' | 'default' => {
+  if (status === 'ACTIVE') return 'success';
+  if (status === 'ENDED') return 'warning';
+  return 'default';
+};
+
+const statusColor: Record<
+  AllegroPriceSimRow['status'],
+  'success' | 'warning' | 'error' | 'default'
+> = {
+  ok: 'success',
+  thin: 'warning',
+  loss: 'error',
+  missing: 'default',
+  unreachable: 'error',
+};
+
+const KpiCard = ({
+  title,
+  value,
+  tooltip,
+}: {
+  title: string;
+  value: string;
+  tooltip: string;
+}) => (
+  <Paper variant="outlined" sx={{ p: 1.5, minWidth: 120, flex: '1 1 140px' }}>
+    <Stack spacing={0.5}>
+      <Tooltip title={tooltip}>
+        <Typography variant="caption" color="text.secondary">
+          {title}
+        </Typography>
+      </Tooltip>
+      <Typography variant="h6">{value}</Typography>
+    </Stack>
+  </Paper>
+);
+
+type DisplayRow = AllegroPriceSimRow & { id: string };
+
+export const AllegroPriceSimPage = () => {
+  const user = useAppSelector((state) => state.smSystemUser.user);
+  const canView = user?.permissions?.canViewPurchasePrices;
+  const { notify } = useNotify();
+  const { saveOverride, deleteOverride } = useSaveAllegroPriceSimOverride();
+  const { applyPrice, isApplying } = useApplyAllegroPriceSim();
+  const { branches } = useGetBranches({ defaultPageSize: 100 });
+
+  const {
+    data,
+    isLoading,
+    isError,
+    errorMessage,
+    targetMarginPercent,
+    setTargetMarginPercent,
+    buyerDeliveryGross,
+    setBuyerDeliveryGross,
+    shippingRatePercent,
+    setShippingRatePercent,
+    branchId,
+    setBranchId,
+    refetch,
+  } = useGetAllegroPriceSim({
+    enabled: canView === true,
+    defaultBranchId: user?.defaultBranch?.id ?? null,
+  });
+
+  const [selectedRow, setSelectedRow] = useState<AllegroPriceSimRow | null>(
+    null,
+  );
+  const [priceOverrides, setPriceOverrides] = useState<
+    Record<string, number | null>
+  >({});
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [vatFilter, setVatFilter] = useState<string>('all');
+  const [search, setSearch] = useState('');
+  const [howWeCalculateOpen, setHowWeCalculateOpen] = useState(false);
+  const [applyRow, setApplyRow] = useState<AllegroPriceSimRow | null>(null);
+  const [staleResult, setStaleResult] =
+    useState<AllegroPriceSimApplyResult | null>(null);
+  const [buyerDraft, setBuyerDraft] = useState(String(buyerDeliveryGross));
+  const [shippingDraft, setShippingDraft] = useState(
+    String(shippingRatePercent),
+  );
+  const [targetDraft, setTargetDraft] = useState(String(targetMarginPercent));
+
+  useEffect(() => {
+    setBuyerDraft(String(buyerDeliveryGross));
+  }, [buyerDeliveryGross]);
+  useEffect(() => {
+    setShippingDraft(String(shippingRatePercent));
+  }, [shippingRatePercent]);
+  useEffect(() => {
+    setTargetDraft(String(targetMarginPercent));
+  }, [targetMarginPercent]);
+  useEffect(() => {
+    if (branchId != null) return;
+    const first = branches?.results?.[0]?.id;
+    if (first != null) setBranchId(first);
+  }, [branchId, branches, setBranchId]);
+
+  const currency = data?.currency ?? 'PLN';
+  const assumptions = data?.assumptions;
+  const buyerDeliveryCents = assumptions?.buyerDeliveryCents ?? 0;
+  const shippingRate = assumptions?.shippingRate ?? shippingRatePercent / 100;
+  const targetMargin = assumptions?.targetMargin ?? targetMarginPercent / 100;
+
+  useEffect(() => {
+    if (!data?.rows) return;
+    setPriceOverrides((current) => {
+      const next = { ...current };
+      let changed = false;
+      data.rows?.forEach((row) => {
+        if (!Object.prototype.hasOwnProperty.call(next, row.offerId)) return;
+        if (next[row.offerId] === row.simulatedGrossCents) {
+          delete next[row.offerId];
+          changed = true;
+        }
+      });
+      return changed ? next : current;
+    });
+  }, [data?.rows]);
+
+  const displayRows = useMemo<DisplayRow[]>(() => {
+    return (data?.rows ?? []).map((row) => {
+      const hasLocal = Object.prototype.hasOwnProperty.call(
+        priceOverrides,
+        row.offerId,
+      );
+      const simulatedGrossCents = hasLocal
+        ? priceOverrides[row.offerId]
+        : row.simulatedGrossCents;
+      const offerGrossCents = row.offerGrossCents;
+      const effective =
+        simulatedGrossCents ?? offerGrossCents ?? row.priceGrossCents;
+      const base = {
+        ...row,
+        id: row.offerId,
+        offerGrossCents,
+        simulatedGrossCents,
+        priceGrossCents: effective,
+      };
+      if (effective == null || effective === row.priceGrossCents) return base;
+
+      const sim = simulateAllegroOffer(row, effective, {
+        buyerDeliveryCents: row.buyerDeliveryCents ?? buyerDeliveryCents,
+        shippingRate,
+        targetMargin,
+      });
+      if (!sim) return base;
+      return {
+        ...base,
+        priceNetCents: sim.priceNetCents,
+        costCommissionCents: sim.costCommissionCents,
+        costShippingCents: sim.costShippingCents,
+        costPromoCents: sim.costPromoCents,
+        marginCents: sim.marginCents,
+        marginPercent: sim.marginPercent,
+        markupOnCost: sim.markupOnCost,
+        status: row.status === 'unreachable' ? 'unreachable' : sim.status,
+      };
+    });
+  }, [
+    data?.rows,
+    priceOverrides,
+    buyerDeliveryCents,
+    shippingRate,
+    targetMargin,
+  ]);
+
+  useEffect(() => {
+    if (selectedRow == null) return;
+    const next = displayRows.find((row) => row.offerId === selectedRow.offerId);
+    if (next == null) {
+      setSelectedRow(null);
+      return;
+    }
+    if (next !== selectedRow) setSelectedRow(next);
+  }, [displayRows, selectedRow]);
+
+  const vatOptions = useMemo(() => {
+    const values = new Set<number>();
+    displayRows.forEach((row) => {
+      if (row.vatRate != null) values.add(row.vatRate);
+    });
+    return Array.from(values).sort((a, b) => a - b);
+  }, [displayRows]);
+
+  const filteredRows = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return displayRows.filter((row) => {
+      if (statusFilter !== 'all' && row.status !== statusFilter) return false;
+      if (vatFilter !== 'all' && String(row.vatRate) !== vatFilter)
+        return false;
+      if (query && !row.name.toLowerCase().includes(query)) return false;
+      return true;
+    });
+  }, [displayRows, statusFilter, vatFilter, search]);
+
+  const displayKpis = useMemo(() => {
+    const counts = {
+      ok: 0,
+      thin: 0,
+      loss: 0,
+      missing: 0,
+      unreachable: 0,
+    };
+    const percents: number[] = [];
+    displayRows.forEach((row) => {
+      counts[row.status] += 1;
+      if (row.marginPercent != null && row.status !== 'missing')
+        percents.push(row.marginPercent);
+    });
+    return {
+      ...counts,
+      avgMarginPercent:
+        percents.length > 0
+          ? percents.reduce((sum, value) => sum + value, 0) / percents.length
+          : null,
+    };
+  }, [displayRows]);
+
+  const commitDecimal = (raw: string, fallback: number) => {
+    const parsed = Number(raw.replace(',', '.').trim());
+    return Number.isFinite(parsed) ? parsed : fallback;
+  };
+
+  const columns: GridColDef<DisplayRow>[] = useMemo(
+    () => [
+      {
+        field: 'name',
+        headerName: 'Oferta',
+        flex: 1,
+        minWidth: 240,
+        renderCell: (params) => (
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={0.5}
+            sx={{ height: '100%', width: '100%', minWidth: 0 }}
+          >
+            <Stack
+              justifyContent="center"
+              sx={{ flex: 1, minWidth: 0, height: '100%' }}
+            >
+              <Typography variant="body2" noWrap>
+                {params.row.name}
+              </Typography>
+            </Stack>
+            {params.row.externalUrl || params.row.offerId ? (
+              <Tooltip title="Otwórz ofertę na Allegro">
+                <IconButton
+                  size="small"
+                  component="a"
+                  href={
+                    allegroOfferHref(
+                      params.row.externalUrl,
+                      params.row.offerId,
+                      params.row.marketplace,
+                    ) ?? undefined
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Otwórz ofertę na Allegro"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <OpenInNewOutlinedIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            ) : null}
+            {params.row.productId != null ? (
+              <Tooltip title="Otwórz produkt">
+                <IconButton
+                  size="small"
+                  component="a"
+                  href={`#${Pages.smSystemProductDetails.replace(
+                    ':productId',
+                    String(params.row.productId),
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Otwórz produkt w nowej karcie"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <VisibilityOutlinedIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            ) : null}
+          </Stack>
+        ),
+      },
+      {
+        field: 'stock',
+        headerName: 'Stan',
+        type: 'number',
+        width: 90,
+        valueFormatter: (value) => (value == null ? '—' : String(value)),
+      },
+      {
+        field: 'offerStatus',
+        headerName: 'Publikacja',
+        description:
+          'Status publikacji na Allegro. Nieopublikowana (INACTIVE) nadal da się wycenić i wgrać. Zakończonych (ENDED) tu nie ma.',
+        width: 150,
+        renderCell: (params) => {
+          const raw = params.row.offerStatus;
+          if (!raw) return '—';
+          return (
+            <Chip
+              size="small"
+              color={offerStatusColor(raw)}
+              label={offerStatusLabel[raw] ?? raw}
+            />
+          );
+        },
+      },
+      {
+        field: 'status',
+        headerName: 'Status',
+        description:
+          'Status marży przy cenie z tabeli: Plus, Granica, Strata, brak danych albo cel nieosiągalny.',
+        width: 150,
+        renderCell: (params) => (
+          <Chip
+            size="small"
+            color={statusColor[params.row.status]}
+            label={statusLabel[params.row.status]}
+          />
+        ),
+      },
+      {
+        field: 'purchaseNetCents',
+        headerName: 'Zakup netto',
+        description:
+          'Ostatnia faktura zakupu na dziś — nie średnia z kilku faktur. Jeśli na jednej FV jest kilka pozycji tego SKU, średnia ważona ilością tylko z tej faktury. Gdy brak FV, ostatni zakup z karty produktu.',
+        type: 'number',
+        width: 130,
+        renderCell: (params) => {
+          const value = params.row.purchaseNetCents;
+          return (
+            <Tooltip title={marginSourceLabel(params.row.cogsSource)}>
+              <span>
+                {value == null ? '—' : formatPrice(Number(value), currency)}
+              </span>
+            </Tooltip>
+          );
+        },
+      },
+      {
+        field: 'offerGrossCents',
+        headerName: 'Cena oferty',
+        type: 'number',
+        width: 130,
+        valueFormatter: (value) =>
+          value == null ? '—' : formatPrice(Number(value), currency),
+      },
+      {
+        field: 'simulatedGrossCents',
+        headerName: 'Symulowana cena',
+        type: 'number',
+        width: 160,
+        editable: true,
+        valueGetter: (_value, row) =>
+          row.simulatedGrossCents == null
+            ? null
+            : row.simulatedGrossCents / 100,
+        valueSetter: (value, row) => {
+          if (value == null || value === '')
+            return { ...row, simulatedGrossCents: null };
+          const parsed = Number(value);
+          return {
+            ...row,
+            simulatedGrossCents: Number.isFinite(parsed)
+              ? Math.round(parsed * 100)
+              : row.simulatedGrossCents,
+          };
+        },
+        renderCell: (params) =>
+          params.row.simulatedGrossCents == null
+            ? '—'
+            : formatPrice(params.row.simulatedGrossCents, currency),
+      },
+      {
+        field: 'simulatedAt',
+        headerName: 'Data symulacji',
+        width: 150,
+        valueFormatter: (value) =>
+          value ? dayjs(String(value)).format('DD.MM.YYYY HH:mm') : '—',
+      },
+      {
+        field: 'apply',
+        headerName: 'Wgraj',
+        width: 80,
+        sortable: false,
+        filterable: false,
+        renderCell: (params) => {
+          const canApply =
+            params.row.simulatedGrossCents != null &&
+            params.row.offerGrossCents != null &&
+            params.row.simulatedGrossCents !== params.row.offerGrossCents;
+          if (!canApply) return null;
+          return (
+            <IconButton
+              size="small"
+              color="primary"
+              aria-label="Wgraj symulację na ofertę Allegro"
+              onClick={(event) => {
+                event.stopPropagation();
+                setApplyRow(params.row);
+              }}
+            >
+              <CheckCircleOutlineIcon fontSize="small" />
+            </IconButton>
+          );
+        },
+      },
+      {
+        field: 'marginCents',
+        headerName: 'Marża',
+        type: 'number',
+        width: 120,
+        valueFormatter: (value) =>
+          value == null ? '—' : formatPrice(Number(value), currency),
+      },
+      {
+        field: 'marginPercent',
+        headerName: 'Marża %',
+        type: 'number',
+        width: 100,
+        valueFormatter: (value) =>
+          value == null ? '—' : `${Number(value).toFixed(1)}%`,
+      },
+      {
+        field: 'minPriceGrossCents',
+        headerName: 'Cena min',
+        description:
+          'Najniższe brutto, przy którym marża % dochodzi do celu z paska. Zaokrąglone w górę do końcówek Allegro (.90 / .99). Puste, gdy cel jest nieosiągalny.',
+        type: 'number',
+        width: 120,
+        valueFormatter: (value) =>
+          value == null ? '—' : formatPrice(Number(value), currency),
+      },
+      {
+        field: 'commissionRateNet',
+        headerName: 'Kategoria %',
+        description:
+          'Stawka prowizji netto z cennika Allegro po drzewie kategorii oferty. Liść dziedziczy stawkę po rodzicu. Bez kategorii lub bez stawki: 17% (Pozostałe). Minimum 0,40 zł netto.',
+        type: 'number',
+        width: 120,
+        renderCell: (params) => {
+          const path = params.row.categoryPath.length
+            ? params.row.categoryPath.map((part) => part.name).join(' → ')
+            : params.row.allegroCategoryId || 'brak kategorii';
+          const cap =
+            params.row.commissionCapNet != null
+              ? `limit ${params.row.commissionCapNet.toFixed(2)} zł netto`
+              : null;
+          return (
+            <Tooltip
+              title={
+                <Stack spacing={0.25}>
+                  <span>{path}</span>
+                  <span>{marginSourceLabel(params.row.commissionSource)}</span>
+                  <span>
+                    {`min ${params.row.commissionMinNet.toFixed(2)} zł netto`}
+                  </span>
+                  {cap ? <span>{cap}</span> : null}
+                </Stack>
+              }
+            >
+              <span>{`${(params.row.commissionRateNet * 100).toFixed(2)}%`}</span>
+            </Tooltip>
+          );
+        },
+      },
+    ],
+    [currency],
+  );
+
+  if (canView === false) return <Navigate to={Pages.smSystemReports} replace />;
+
+  return (
+    <Stack spacing={2}>
+      <Stack
+        direction={{ xs: 'column', md: 'row' }}
+        justifyContent="space-between"
+      >
+        <Stack spacing={0.5}>
+          <Typography variant="h5">{'Symulacja cen Allegro'}</Typography>
+          <Button
+            variant="text"
+            href={`#${Pages.smSystemReports}`}
+            sx={{ alignSelf: 'flex-start', px: 0 }}
+          >
+            {'← Wróć do raportów'}
+          </Button>
+        </Stack>
+        <Button
+          size="small"
+          startIcon={<InfoOutlinedIcon />}
+          onClick={() => setHowWeCalculateOpen(true)}
+          sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}
+        >
+          {'Jak liczymy'}
+        </Button>
+      </Stack>
+
+      <Paper variant="outlined" sx={{ p: 1.5 }}>
+        <Stack spacing={1.5}>
+          <Stack spacing={0.75}>
+            <Typography variant="overline" color="text.secondary">
+              {'Założenia wyliczeń'}
+            </Typography>
+            <Stack
+              direction="row"
+              spacing={1.5}
+              flexWrap="wrap"
+              useFlexGap
+              alignItems="center"
+            >
+              <Tooltip title="Gdy oferta ma zamówienia Allegro z 180 dni, bierzemy średnią dostawy zapłaconej przez kupującego. To pole używamy tylko gdy takich zamówień nie ma. Allegro liczy prowizję od ceny brutto plus ta kwota — to nie jest Twój koszt wysyłki.">
+                <TextField
+                  size="small"
+                  label="Domyślna dostawa kupującego (zł)"
+                  value={buyerDraft}
+                  onChange={(event) => setBuyerDraft(event.target.value)}
+                  onBlur={() =>
+                    setBuyerDeliveryGross(
+                      commitDecimal(buyerDraft, buyerDeliveryGross),
+                    )
+                  }
+                  sx={{ width: 200 }}
+                />
+              </Tooltip>
+              <Tooltip title="Twój koszt wysyłki, gdy oferta nie ma grupy dostawy. Liczony jako procent od przychodu netto oferty. Gdy grupa jest, bierzemy zł z grupy, nie ten procent.">
+                <TextField
+                  size="small"
+                  label="Wysyłka bez grupy dostawy %"
+                  value={shippingDraft}
+                  onChange={(event) => setShippingDraft(event.target.value)}
+                  onBlur={() =>
+                    setShippingRatePercent(
+                      commitDecimal(shippingDraft, shippingRatePercent),
+                    )
+                  }
+                  sx={{ width: 230 }}
+                />
+              </Tooltip>
+              <Tooltip title="Próg marży od sprzedaży. Plus = marża % ≥ ten cel. Granica = zysk, ale poniżej celu. Cena min to najniższe brutto, które ten cel jeszcze spełnia.">
+                <TextField
+                  size="small"
+                  label="Cel marży %"
+                  value={targetDraft}
+                  onChange={(event) => setTargetDraft(event.target.value)}
+                  onBlur={() =>
+                    setTargetMarginPercent(
+                      commitDecimal(targetDraft, targetMarginPercent),
+                    )
+                  }
+                  sx={{ width: 140 }}
+                />
+              </Tooltip>
+            </Stack>
+          </Stack>
+          <Stack spacing={0.75}>
+            <Typography variant="overline" color="text.secondary">
+              {'Filtry'}
+            </Typography>
+            <Stack
+              direction="row"
+              spacing={1.5}
+              flexWrap="wrap"
+              useFlexGap
+              alignItems="center"
+            >
+              <Tooltip title="Stan magazynowy w tabeli z tego oddziału. Nie zmienia wyliczenia marży.">
+                <FormControl size="small" sx={{ minWidth: 180 }}>
+                  <InputLabel>{'Sklep'}</InputLabel>
+                  <Select
+                    label="Sklep"
+                    value={branchId ?? ''}
+                    onChange={(event) =>
+                      setBranchId(
+                        event.target.value === ''
+                          ? null
+                          : Number(event.target.value),
+                      )
+                    }
+                  >
+                    {(branches?.results ?? []).map((branch) => (
+                      <MenuItem key={branch.id} value={branch.id}>
+                        {branch.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Tooltip>
+              <TextField
+                size="small"
+                label="Szukaj"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                sx={{ minWidth: 160, flex: '1 1 180px' }}
+              />
+              <FormControl size="small" sx={{ minWidth: 140 }}>
+                <InputLabel>{'Status'}</InputLabel>
+                <Select
+                  label="Status"
+                  value={statusFilter}
+                  onChange={(event) => setStatusFilter(event.target.value)}
+                >
+                  <MenuItem value="all">{'Wszystkie'}</MenuItem>
+                  <MenuItem value="ok">{'Plus'}</MenuItem>
+                  <MenuItem value="thin">{'Granica'}</MenuItem>
+                  <MenuItem value="loss">{'Strata'}</MenuItem>
+                  <MenuItem value="missing">{'Brak danych'}</MenuItem>
+                  <MenuItem value="unreachable">{'Cel nieosiągalny'}</MenuItem>
+                </Select>
+              </FormControl>
+              <FormControl size="small" sx={{ minWidth: 110 }}>
+                <InputLabel>{'VAT'}</InputLabel>
+                <Select
+                  label="VAT"
+                  value={vatFilter}
+                  onChange={(event) => setVatFilter(event.target.value)}
+                >
+                  <MenuItem value="all">{'Wszystkie'}</MenuItem>
+                  {vatOptions.map((vat) => (
+                    <MenuItem key={vat} value={String(vat)}>
+                      {`${vat}%`}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Stack>
+          </Stack>
+        </Stack>
+      </Paper>
+
+      {isError ? (
+        <Alert severity="error">
+          {errorMessage ?? 'Nie udało się pobrać raportu.'}
+        </Alert>
+      ) : null}
+
+      {isLoading && displayRows.length === 0 ? (
+        <Skeleton variant="rounded" height={88} />
+      ) : (
+        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+          <KpiCard
+            title="Plus"
+            value={String(displayKpis.ok)}
+            tooltip="Marża % ≥ cel z paska."
+          />
+          <KpiCard
+            title="Granica"
+            value={String(displayKpis.thin)}
+            tooltip="Marża ≥ 0, ale poniżej celu."
+          />
+          <KpiCard
+            title="Strata"
+            value={String(displayKpis.loss)}
+            tooltip="Marża ujemna."
+          />
+          <KpiCard
+            title="Cel nieosiągalny"
+            value={String(displayKpis.unreachable)}
+            tooltip="Struktura kosztów nie pozwala dojść do celu; aktualna marża jest nadal w tabeli."
+          />
+          <KpiCard
+            title="Brak danych"
+            value={String(displayKpis.missing)}
+            tooltip="Brak zakupu, VAT albo ceny oferty."
+          />
+          <KpiCard
+            title="Śr. marża %"
+            value={
+              displayKpis.avgMarginPercent == null
+                ? '—'
+                : `${displayKpis.avgMarginPercent.toFixed(1)}%`
+            }
+            tooltip="Średnia tylko z wierszy z danymi, po zapisanej symulacji."
+          />
+        </Stack>
+      )}
+
+      <Paper
+        variant="outlined"
+        sx={{
+          height: { xs: 'min(70vh, 560px)', md: 560 },
+          minHeight: 320,
+        }}
+      >
+        <DataGrid
+          rows={filteredRows}
+          columns={columns}
+          loading={isLoading}
+          disableRowSelectionOnClick
+          pageSizeOptions={[25, 50, 100]}
+          initialState={{
+            pagination: { paginationModel: { pageSize: 25 } },
+          }}
+          processRowUpdate={async (updated, original) => {
+            const next = updated.simulatedGrossCents ?? null;
+            if (next === (original.simulatedGrossCents ?? null)) return updated;
+            setPriceOverrides((current) => ({
+              ...current,
+              [updated.offerId]: next,
+            }));
+            try {
+              if (next == null || next <= 0) {
+                await deleteOverride(updated.offerId);
+                notify('success', 'Usunięto symulację — liczymy z ceny oferty');
+              } else {
+                await saveOverride({
+                  offerId: updated.offerId,
+                  priceGrossCents: next,
+                });
+                notify(
+                  'success',
+                  `Zapisano symulację ${formatPrice(next, currency)}`,
+                );
+              }
+            } catch {
+              notify('error', 'Nie udało się zapisać symulacji');
+              throw new Error('Nie udało się zapisać symulacji');
+            }
+            return updated;
+          }}
+          onProcessRowUpdateError={() => undefined}
+          onRowClick={(params: GridRowParams<DisplayRow>, event) => {
+            const target = event.target as HTMLElement;
+            if (
+              target.closest('.MuiDataGrid-cell--editable') ||
+              target.closest('.MuiIconButton-root')
+            )
+              return;
+            setSelectedRow(params.row);
+          }}
+          sx={{
+            border: 0,
+            '& .MuiDataGrid-row': { cursor: 'pointer' },
+            '& .MuiDataGrid-cell': {
+              display: 'flex',
+              alignItems: 'center',
+            },
+          }}
+        />
+      </Paper>
+
+      <Modal
+        open={howWeCalculateOpen}
+        onClose={() => setHowWeCalculateOpen(false)}
+      >
+        <Stack
+          sx={{
+            ...modalStyle({ width: 640 }),
+            maxHeight: 'calc(100vh - 32px)',
+            overflow: 'auto',
+          }}
+          spacing={2}
+        >
+          <Typography variant="h6">{'Jak liczymy'}</Typography>
+          <Typography variant="body2">
+            {
+              'Marża = przychód netto − prowizja z kategorii − wysyłka sprzedawcy − zakup. Prowizja = stawka netto × (cena brutto + dostawa kupującego). Dostawa kupującego: średnia z zamówień oferty (180 dni), a jeśli brak — wartość z paska. Wysyłka sprzedawcy: zł z grupy dostawy, a jeśli brak grupy — procent z paska od przychodu netto. CIT nie jest odejmowany. Kolumna Symulowana cena zapisuje się u nas i nie zmienia oferty na Allegro. Cena min to najniższe brutto przy celu z paska.'
+            }
+          </Typography>
+          {data?.calculation ? (
+            <MarginCalculationBreakdown
+              calculation={data.calculation}
+              currency={currency}
+            />
+          ) : (
+            <Typography color="text.secondary">
+              {'Brak przykładowego wyliczenia — brak wierszy z danymi.'}
+            </Typography>
+          )}
+        </Stack>
+      </Modal>
+
+      <AllegroPriceSimOfferModal
+        open={selectedRow != null}
+        onClose={() => setSelectedRow(null)}
+        row={selectedRow}
+        currency={currency}
+        buyerDeliveryCents={buyerDeliveryCents}
+        shippingRate={shippingRate}
+        targetMargin={targetMargin}
+        onApplyPrice={async (offerId, priceGrossCents) => {
+          setPriceOverrides((current) => ({
+            ...current,
+            [offerId]: priceGrossCents,
+          }));
+          try {
+            await saveOverride({ offerId, priceGrossCents });
+            notify(
+              'success',
+              `Zastosowano ${formatPrice(priceGrossCents, currency)} w tabeli (tylko symulacja)`,
+            );
+          } catch {
+            notify('error', 'Nie udało się zapisać symulacji');
+            throw new Error('Nie udało się zapisać symulacji');
+          }
+        }}
+      />
+
+      <AllegroPriceSimApplyConfirmDialog
+        row={applyRow}
+        currency={currency}
+        isApplying={isApplying}
+        onClose={() => setApplyRow(null)}
+        onConfirm={() => {
+          const simulatedGrossCents = applyRow?.simulatedGrossCents;
+          const offerGrossCents = applyRow?.offerGrossCents;
+          if (
+            applyRow == null ||
+            simulatedGrossCents == null ||
+            !Number.isFinite(simulatedGrossCents) ||
+            simulatedGrossCents <= 0 ||
+            offerGrossCents == null
+          )
+            return;
+          const offerId = applyRow.offerId;
+          void applyPrice({
+            offerId,
+            expectedOfferGrossCents: offerGrossCents,
+            priceGrossCents: simulatedGrossCents,
+          })
+            .then((result) => {
+              setApplyRow(null);
+              if (result.status === 'stale') {
+                setStaleResult(result);
+                return;
+              }
+              if (result.status === 'error') {
+                notify(
+                  'error',
+                  result.error || 'Nie udało się wgrać ceny na Allegro',
+                );
+                return;
+              }
+              notify(
+                'success',
+                `Wgrano ${formatPrice(simulatedGrossCents, currency)} na ofertę Allegro`,
+              );
+            })
+            .catch(() =>
+              notify('error', 'Nie udało się wgrać ceny na Allegro'),
+            );
+        }}
+      />
+      <AllegroPriceSimApplyStaleDialog
+        result={staleResult}
+        currency={currency}
+        onClose={() => setStaleResult(null)}
+        onRefresh={() => {
+          void refetch();
+        }}
+      />
+    </Stack>
+  );
+};

@@ -137,7 +137,10 @@ export const navSections: NavSection[] = [
         label: 'Raporty',
         path: Pages.smSystemReports,
         icon: <BarChartOutlinedIcon />,
-        activePaths: [Pages.smSystemChannelMarginReport],
+        activePaths: [
+          Pages.smSystemChannelMarginReport,
+          Pages.smSystemAllegroPriceSim,
+        ],
       },
     ],
   },

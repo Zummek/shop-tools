@@ -15,6 +15,17 @@ export const marginSourceLabel = (source: string) => {
     nbp_table_a: 'kurs średni NBP tabela A (szacunek ± vs wypłata Allegro)',
     missing: 'brak danych',
     derived: 'wyliczone',
+    category_rate: 'stawka z kategorii Allegro',
+    unclassified_17: 'Pozostałe / 17% (brak stawki w drzewie)',
+    override: 'nadpisanie stawki',
+    delivery_group: 'grupa dostawy',
+    rate_fallback: 'szacunek % gdy brak grupy dostawy',
+    offer: 'cena oferty',
+    org_default: 'założenie organizacji',
+    order_avg: 'średnia z zamówień oferty (180 dni)',
+    fallback: 'wartość z założeń',
+    product: 'karta produktu',
+    promo: 'akcja promocyjna',
   };
   return map[source] ?? source;
 };

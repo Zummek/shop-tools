@@ -64,7 +64,8 @@ export const MarginCalculationBreakdown = ({
             fontWeight={600}
             sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}
           >
-            {formatPrice(component.amountCents, currency)}
+            {component.displayText ??
+              formatPrice(component.amountCents, currency)}
           </Typography>
         </Stack>
       ))}

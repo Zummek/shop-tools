@@ -22,6 +22,7 @@ export interface MarginComponent {
   source: string;
   asOf?: string | null;
   confidence?: string;
+  displayText?: string;
 }
 
 export interface MarginCalculation {

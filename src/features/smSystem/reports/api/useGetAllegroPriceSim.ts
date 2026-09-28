@@ -89,7 +89,7 @@ export interface AllegroPriceSimReport {
 
 export interface AllegroPriceSimQuery {
   targetMargin: number;
-  buyerDeliveryGross: number;
+  buyerDeliveryGross: number | null;
   shippingRatePercent: number;
   branchId: number | null;
 }
@@ -127,11 +127,14 @@ export const useGetAllegroPriceSim = (options?: {
     const parsed = raw ? Number(raw) : 15;
     return Number.isFinite(parsed) ? parsed : 15;
   });
-  const [buyerDeliveryGross, setBuyerDeliveryGross] = useState(() => {
+  const [buyerDeliveryGross, setBuyerDeliveryGrossState] = useState(() => {
     const raw = searchParams.get('buyerDeliveryGross');
     const parsed = raw ? Number(raw) : 0;
     return Number.isFinite(parsed) ? parsed : 0;
   });
+  const [buyerTouched, setBuyerTouched] = useState(() =>
+    searchParams.has('buyerDeliveryGross'),
+  );
   const [shippingRatePercent, setShippingRatePercent] = useState(() => {
     const raw = searchParams.get('shippingRate');
     const parsed = raw ? Number(raw) : 4.6;
@@ -149,13 +152,14 @@ export const useGetAllegroPriceSim = (options?: {
   useEffect(() => {
     const params: Record<string, string> = {};
     params.targetMargin = String(targetMarginPercent);
-    params.buyerDeliveryGross = String(buyerDeliveryGross);
+    if (buyerTouched) params.buyerDeliveryGross = String(buyerDeliveryGross);
     params.shippingRate = String(shippingRatePercent);
     if (branchId != null) params.branchId = String(branchId);
     setSearchParams(params, { replace: true });
   }, [
     targetMarginPercent,
     buyerDeliveryGross,
+    buyerTouched,
     shippingRatePercent,
     branchId,
     setSearchParams,
@@ -163,7 +167,7 @@ export const useGetAllegroPriceSim = (options?: {
 
   const query: AllegroPriceSimQuery = {
     targetMargin: targetMarginPercent / 100,
-    buyerDeliveryGross,
+    buyerDeliveryGross: buyerTouched ? buyerDeliveryGross : null,
     shippingRatePercent,
     branchId,
   };
@@ -176,8 +180,8 @@ export const useGetAllegroPriceSim = (options?: {
         {
           params: {
             targetMargin: targetMarginPercent / 100,
-            buyerDeliveryGross,
             shippingRate: shippingRatePercent / 100,
+            ...(buyerTouched ? { buyerDeliveryGross } : {}),
             ...(branchId != null ? { branchId } : {}),
           },
           timeout: REPORT_TIMEOUT_MS,
@@ -188,6 +192,18 @@ export const useGetAllegroPriceSim = (options?: {
     },
     enabled: queryEnabled,
   });
+
+  useEffect(() => {
+    if (buyerTouched) return;
+    const autoCents = data?.assumptions?.buyerDeliveryCents;
+    if (autoCents == null) return;
+    setBuyerDeliveryGrossState(autoCents / 100);
+  }, [buyerTouched, data?.assumptions?.buyerDeliveryCents]);
+
+  const setBuyerDeliveryGross = (value: number) => {
+    setBuyerTouched(true);
+    setBuyerDeliveryGrossState(value);
+  };
 
   return {
     data,

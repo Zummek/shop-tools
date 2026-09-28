@@ -17,6 +17,7 @@ export interface DeliveryGroupMethod {
 export interface DeliveryGroup {
   id: number;
   name: string;
+  sellerShippingCostCents: number | null;
   methods: DeliveryGroupMethod[];
 }
 

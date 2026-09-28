@@ -171,7 +171,7 @@ export const buildOfferCalculation = (
     components,
     notes: [
       'Prowizja: stawka netto z ID kategorii × (cena brutto + dostawa kupującego).',
-      'Dostawa kupującego: średnia z zamówień Allegro oferty (180 dni); pole z paska tylko gdy brak zamówień.',
+      'Dostawa kupującego: średnia z zamówień Allegro oferty (180 dni); gdy brak — mediana ze sklepu.',
       'VAT produktu z karty. CIT nie jest odejmowany.',
       'Marża % = marża / przychód netto oferty.',
     ],

@@ -15,6 +15,7 @@ export * from './useGetAllegroOffers';
 export * from './useGetAllegroSyncStatus';
 export * from './useGetDeliveryMethods';
 export * from './useGetDeliveryGroups';
+export * from './useUpdateDeliveryGroup';
 export * from './useGetEcommerceOrderDetails';
 export * from './useGetEcommerceOrders';
 export * from './useGetEcommerceOrdersStats';

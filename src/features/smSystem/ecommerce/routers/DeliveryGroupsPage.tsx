@@ -14,9 +14,10 @@ import {
 } from '@mui/material';
 import { Navigate } from 'react-router-dom';
 
-import { useAppSelector } from '../../../../hooks';
+import { useAppSelector, useNotify } from '../../../../hooks';
 import { Pages } from '../../../../utils';
-import { useGetDeliveryGroups } from '../api';
+import { useGetDeliveryGroups, useUpdateDeliveryGroup } from '../api';
+import { SellerShippingCostField } from '../components/SellerShippingCostField';
 import { DeliveryGroupMethod } from '../types';
 import { orderChannelLabel } from '../utils';
 
@@ -57,7 +58,9 @@ const MethodsTable = ({ methods }: { methods: DeliveryGroupMethod[] }) => {
 
 export const DeliveryGroupsPage = () => {
   const { user } = useAppSelector((state) => state.smSystemUser);
+  const { notify } = useNotify();
   const { catalog, isLoading, isError } = useGetDeliveryGroups();
+  const { updateDeliveryGroup, isPending } = useUpdateDeliveryGroup();
 
   if (!user?.permissions?.canAccessEcommerce)
     return <Navigate to={Pages.smSystem} replace />;
@@ -68,7 +71,7 @@ export const DeliveryGroupsPage = () => {
         <Typography variant="h5">{'Mapowanie dostaw'}</Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
           {
-            'Skrócone nazwy grup używane na liście zamówień. Edycja tylko przez administrację.'
+            'Skrócone nazwy grup używane na liście zamówień. Koszt wysyłki w zł jest opcjonalny — symulacja cen Allegro bierze opłaty za dostawę z billingu, a to pole je nadpisuje.'
           }
         </Typography>
       </Box>
@@ -101,6 +104,8 @@ export const DeliveryGroupsPage = () => {
                 direction="row"
                 alignItems="center"
                 spacing={1}
+                flexWrap="wrap"
+                useFlexGap
                 sx={{ mb: 1.5 }}
               >
                 <Typography variant="h6">{group.name}</Typography>
@@ -108,6 +113,21 @@ export const DeliveryGroupsPage = () => {
                   size="small"
                   label={`${group.methods.length}`}
                   variant="outlined"
+                />
+                <SellerShippingCostField
+                  valueCents={group.sellerShippingCostCents}
+                  disabled={isPending}
+                  onCommit={async (cents) => {
+                    try {
+                      await updateDeliveryGroup({
+                        id: group.id,
+                        sellerShippingCostCents: cents,
+                      });
+                    } catch (error) {
+                      notify('error', 'Nie udało się zapisać kosztu wysyłki');
+                      throw error;
+                    }
+                  }}
                 />
               </Stack>
               <MethodsTable methods={group.methods} />

@@ -136,6 +136,12 @@ const MarginDeltaCell = ({
 
 type GapFilter = 'all' | 'buyer' | 'shipping';
 
+const usesShippingPercent = (source: string) =>
+  source === 'rate_fallback' || source === 'group_no_cost';
+
+const usesBuyerGap = (source: string) =>
+  source === 'fallback' || source === 'org_avg';
+
 const showGapOffersLabel = (active: boolean) => (active ? 'Cofnij' : 'Pokaż');
 
 const GapFallbackField = ({
@@ -149,6 +155,7 @@ const GapFallbackField = ({
   countsReady,
   active,
   onToggle,
+  detail,
 }: {
   label: string;
   tooltip: string;
@@ -160,6 +167,7 @@ const GapFallbackField = ({
   countsReady: boolean;
   active: boolean;
   onToggle: () => void;
+  detail?: string;
 }) => (
   <Stack
     direction="row"
@@ -186,6 +194,11 @@ const GapFallbackField = ({
         sx={{ whiteSpace: 'nowrap' }}
       >
         {`${count} z ${total}`}
+      </Typography>
+    ) : null}
+    {countsReady && detail ? (
+      <Typography variant="caption" color="text.secondary">
+        {detail}
       </Typography>
     ) : null}
     {countsReady && count > 0 ? (
@@ -379,21 +392,35 @@ export const AllegroPriceSimPage = () => {
     let buyer = 0;
     let shipping = 0;
     displayRows.forEach((row) => {
-      if (row.buyerDeliverySource === 'fallback') buyer += 1;
-      if (row.costShippingSource === 'rate_fallback') shipping += 1;
+      if (usesBuyerGap(row.buyerDeliverySource)) buyer += 1;
+      if (usesShippingPercent(row.costShippingSource)) shipping += 1;
     });
-    return { buyer, shipping, total: displayRows.length };
+    return {
+      buyer,
+      shipping,
+      total: displayRows.length,
+    };
   }, [displayRows]);
+
+  const gapCountsReady = !isLoading && data != null;
+  const showBuyerGap = gapCountsReady && gapCounts.buyer > 0;
+  const showShippingGap = gapCountsReady && gapCounts.shipping > 0;
+  const showGapSection = showBuyerGap || showShippingGap;
+
+  useEffect(() => {
+    if (gapFilter === 'buyer' && !showBuyerGap) setGapFilter('all');
+    if (gapFilter === 'shipping' && !showShippingGap) setGapFilter('all');
+  }, [gapFilter, showBuyerGap, showShippingGap]);
 
   const filteredRows = useMemo(() => {
     const query = search.trim().toLowerCase();
     return displayRows.filter((row) => {
       if (statusFilter !== 'all' && row.status !== statusFilter) return false;
-      if (gapFilter === 'buyer' && row.buyerDeliverySource !== 'fallback')
+      if (gapFilter === 'buyer' && !usesBuyerGap(row.buyerDeliverySource))
         return false;
       if (
         gapFilter === 'shipping' &&
-        row.costShippingSource !== 'rate_fallback'
+        !usesShippingPercent(row.costShippingSource)
       )
         return false;
       if (vatFilter !== 'all' && String(row.vatRate) !== vatFilter)
@@ -768,53 +795,59 @@ export const AllegroPriceSimPage = () => {
               {'Dotyczy każdej oferty — Plus, Granica i cena min.'}
             </Typography>
           </Stack>
-          <Paper variant="outlined" sx={{ p: 1.25, bgcolor: 'action.hover' }}>
-            <Stack spacing={0.75}>
-              <Typography variant="overline" color="text.secondary">
-                {'Gdy brakuje danych'}
-              </Typography>
-              <Stack
-                direction="row"
-                spacing={1.5}
-                flexWrap="wrap"
-                useFlexGap
-                alignItems="center"
-              >
-                <GapFallbackField
-                  label="Dostawa w prowizji, gdy brak zamówień (zł)"
-                  tooltip="Allegro liczy prowizję od ceny plus ta kwota. Oferty ze sprzedażą z 180 dni biorą średnią z zamówień. To nie jest Twój koszt wysyłki — domyślna kwota wchodzi tylko wtedy, gdy nie ma zamówień z ostatnich 180 dni."
-                  value={buyerDraft}
-                  onChange={setBuyerDraft}
-                  onBlur={() =>
-                    setBuyerDeliveryGross(
-                      commitDecimal(buyerDraft, buyerDeliveryGross),
-                    )
-                  }
-                  count={gapCounts.buyer}
-                  total={gapCounts.total}
-                  countsReady={!isLoading && data != null}
-                  active={gapFilter === 'buyer'}
-                  onToggle={() => toggleGapFilter('buyer')}
-                />
-                <GapFallbackField
-                  label="Koszt Twojej wysyłki, gdy brak grupy (%)"
-                  tooltip="Procent od przychodu netto, gdy oferta nie ma grupy dostawy. Gdy grupa jest, bierzemy zł z grupy, nie ten procent."
-                  value={shippingDraft}
-                  onChange={setShippingDraft}
-                  onBlur={() =>
-                    setShippingRatePercent(
-                      commitDecimal(shippingDraft, shippingRatePercent),
-                    )
-                  }
-                  count={gapCounts.shipping}
-                  total={gapCounts.total}
-                  countsReady={!isLoading && data != null}
-                  active={gapFilter === 'shipping'}
-                  onToggle={() => toggleGapFilter('shipping')}
-                />
+          {showGapSection ? (
+            <Paper variant="outlined" sx={{ p: 1.25, bgcolor: 'action.hover' }}>
+              <Stack spacing={0.75}>
+                <Typography variant="overline" color="text.secondary">
+                  {'Gdy brakuje danych'}
+                </Typography>
+                <Stack
+                  direction="row"
+                  spacing={1.5}
+                  flexWrap="wrap"
+                  useFlexGap
+                  alignItems="center"
+                >
+                  {showBuyerGap ? (
+                    <GapFallbackField
+                      label="Dostawa w prowizji, gdy brak zamówień (zł)"
+                      tooltip="Allegro liczy prowizję od ceny plus ta kwota. Oferty ze sprzedażą z 180 dni biorą średnią z zamówień. Gdy zamówień nie ma — mediana ze wszystkich zamówień Allegro sklepu. To pole nadpisuje tylko tę medianę."
+                      value={buyerDraft}
+                      onChange={setBuyerDraft}
+                      onBlur={() =>
+                        setBuyerDeliveryGross(
+                          commitDecimal(buyerDraft, buyerDeliveryGross),
+                        )
+                      }
+                      count={gapCounts.buyer}
+                      total={gapCounts.total}
+                      countsReady={gapCountsReady}
+                      active={gapFilter === 'buyer'}
+                      onToggle={() => toggleGapFilter('buyer')}
+                    />
+                  ) : null}
+                  {showShippingGap ? (
+                    <GapFallbackField
+                      label="Koszt Twojej wysyłki, gdy brak billingu (%)"
+                      tooltip="Domyślnie bierzemy medianę opłat za dostawę z billingu Allegro (Smart / Allegro Delivery) z 180 dni — najpierw tej oferty, potem grupy, potem sklepu. Zł wpisane przy grupie dostawy nadpisuje billing. Ten procent wchodzi tylko gdy nie ma ani billingu, ani zł z grupy."
+                      value={shippingDraft}
+                      onChange={setShippingDraft}
+                      onBlur={() =>
+                        setShippingRatePercent(
+                          commitDecimal(shippingDraft, shippingRatePercent),
+                        )
+                      }
+                      count={gapCounts.shipping}
+                      total={gapCounts.total}
+                      countsReady={gapCountsReady}
+                      active={gapFilter === 'shipping'}
+                      onToggle={() => toggleGapFilter('shipping')}
+                    />
+                  ) : null}
+                </Stack>
               </Stack>
-            </Stack>
-          </Paper>
+            </Paper>
+          ) : null}
           <Stack spacing={0.75}>
             <Typography variant="overline" color="text.secondary">
               {'Filtry'}
@@ -895,7 +928,7 @@ export const AllegroPriceSimPage = () => {
               {gapFilter === 'shipping' ? (
                 <Chip
                   size="small"
-                  label="Oferty bez grupy dostawy"
+                  label="Oferty z kosztem wysyłki z %"
                   onDelete={() => setGapFilter('all')}
                 />
               ) : null}
@@ -1031,7 +1064,7 @@ export const AllegroPriceSimPage = () => {
           <Typography variant="h6">{'Jak liczymy'}</Typography>
           <Typography variant="body2">
             {
-              'Marża = przychód netto − prowizja z kategorii − wysyłka sprzedawcy − zakup. Prowizja = stawka netto × (cena brutto + dostawa kupującego). Dostawa kupującego: średnia z zamówień oferty (180 dni), a jeśli brak zamówień — kwota z sekcji „Gdy brakuje danych”. Wysyłka sprzedawcy: zł z grupy dostawy, a jeśli brak grupy — procent z tej sekcji, od przychodu netto. CIT nie jest odejmowany. Kolumna Symulowana cena zapisuje się u nas i nie zmienia oferty na Allegro. Cena min to najniższe brutto przy celu marży.'
+              'Marża = przychód netto − prowizja z kategorii − wysyłka sprzedawcy − zakup. Prowizja = stawka netto × (cena brutto + dostawa kupującego). Dostawa kupującego: średnia z zamówień oferty (180 dni), a jeśli brak zamówień — mediana ze sklepu (to pole ją nadpisuje). Wysyłka sprzedawcy: zł z grupy dostawy, jeśli jest wpisane; inaczej mediana opłat za dostawę z billingu Allegro (180 dni) — najpierw ta oferta, potem grupa, potem sklep. Gdy billingu i zł z grupy nie ma — procent z tej sekcji. CIT nie jest odejmowany. Kolumna Symulowana cena zapisuje się u nas i nie zmienia oferty na Allegro. Cena min to najniższe brutto przy celu marży.'
             }
           </Typography>
           {data?.calculation ? (

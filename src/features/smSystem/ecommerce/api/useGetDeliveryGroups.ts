@@ -6,7 +6,7 @@ import { DeliveryGroupCatalog } from '../types';
 const endpoint = '/api/v1/ecommerce/delivery-groups/';
 export const deliveryGroupsQueryKey = ['deliveryGroups'];
 
-export const useGetDeliveryGroups = () => {
+export const useGetDeliveryGroups = (options?: { enabled?: boolean }) => {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: deliveryGroupsQueryKey,
     queryFn: async () => {
@@ -18,6 +18,7 @@ export const useGetDeliveryGroups = () => {
         }
       );
     },
+    enabled: options?.enabled !== false,
   });
 
   return {

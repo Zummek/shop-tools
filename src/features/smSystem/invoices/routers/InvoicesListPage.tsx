@@ -1,6 +1,7 @@
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import SyncIcon from '@mui/icons-material/Sync';
 import {
   Box,
   Button,
@@ -10,6 +11,8 @@ import {
   MenuItem,
   Select,
   Stack,
+  Tab,
+  Tabs,
   TextField,
 } from '@mui/material';
 import {
@@ -19,6 +22,7 @@ import {
   GridSortModel,
 } from '@mui/x-data-grid';
 import { DatePicker } from '@mui/x-date-pickers';
+import { isAxiosError } from 'axios';
 import dayjs, { Dayjs } from 'dayjs';
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -32,9 +36,22 @@ import {
   InvoiceStatus,
   useExportInvoiceToPcMarket,
   useGetInvoices,
+  useGetKsefConnection,
+  useSyncKsef,
 } from '../api';
+import { KsefConnectionPanel } from '../components/KsefConnectionPanel';
 import { ImportInvoiceModal } from '../modals/ImportInvoiceModal';
 import { invoiceStatusColors, invoiceStatusLabels } from '../utils';
+
+const ksefErrorMessage = (error: unknown): string => {
+  if (isAxiosError(error)) {
+    const responseError = error.response?.data?.error;
+    if (typeof responseError === 'string' && responseError)
+      return responseError;
+  }
+  if (error instanceof Error && error.message) return error.message;
+  return 'Nie udało się zsynchronizować faktur z KSeF';
+};
 
 const columns: GridColDef<InvoiceListItem>[] = [
   {
@@ -110,7 +127,8 @@ const columns: GridColDef<InvoiceListItem>[] = [
 export const InvoicesListPage = () => {
   const { notify } = useNotify();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = searchParams.get('tab') === 'ksef' ? 'ksef' : 'list';
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<number[]>([]);
@@ -137,6 +155,11 @@ export const InvoicesListPage = () => {
     sortOrder,
     setSortOrder,
   } = useGetInvoices();
+
+  const { connection, isLoading: isKsefConnectionLoading } =
+    useGetKsefConnection();
+  const { syncKsef, isPending: isSyncing } = useSyncKsef();
+  const ksefConnected = Boolean(connection?.isConnected);
 
   const { exportInvoiceToPcMarket } = useExportInvoiceToPcMarket();
 
@@ -175,6 +198,29 @@ export const InvoicesListPage = () => {
     }
   };
 
+  const handleSync = async () => {
+    try {
+      const result = await syncKsef();
+      const parts = [`Zaimportowano ${result.imported}`];
+      if (result.failed.length) {
+        const numbers = result.failed
+          .map((item) => item.invoiceNumber)
+          .filter(Boolean)
+          .join(', ');
+        parts.push(
+          numbers
+            ? `uszkodzone: ${numbers}`
+            : `nie udało się ${result.failed.length}`,
+        );
+      }
+      if (result.hasMore)
+        parts.push('są kolejne — uruchom synchronizację ponownie');
+      notify(result.failed.length ? 'warning' : 'success', parts.join(', '));
+    } catch (error) {
+      notify('error', ksefErrorMessage(error));
+    }
+  };
+
   const handleDateFromChange = (value: Dayjs | null) => {
     setInvoiceDateFrom(value ? value.format('YYYY-MM-DD') : '');
   };
@@ -188,6 +234,8 @@ export const InvoicesListPage = () => {
     'PENDING_RECEIPT',
     'PARTIALLY_RECEIVED',
     'RECEIVED',
+    'REJECTED',
+    'DAMAGED',
   ];
 
   const handleSortModelChange = (model: GridSortModel) => {
@@ -204,113 +252,156 @@ export const InvoicesListPage = () => {
     }
   };
 
+  const handleTabChange = (_event: React.SyntheticEvent, value: string) => {
+    setSearchParams(
+      (prev) => {
+        const params = new URLSearchParams(prev);
+        if (value === 'ksef') params.set('tab', 'ksef');
+        else params.delete('tab');
+        return params;
+      },
+      { replace: true },
+    );
+  };
+
   return (
     <Stack spacing={2}>
-      <Box display="flex" justifyContent="flex-end" gap={2}>
-        {selectedInvoiceIds.length > 0 && (
-          <Button
-            variant="outlined"
-            startIcon={<FileDownloadIcon />}
-            onClick={handleExportSelected}
-          >
-            {`Eksportuj zaznaczone (${selectedInvoiceIds.length})`}
-          </Button>
-        )}
-        <Button
-          variant="contained"
-          startIcon={<CloudUploadIcon />}
-          onClick={() => setIsModalOpen(true)}
-        >
-          {'Importuj fakturę'}
-        </Button>
-      </Box>
+      <Tabs
+        value={tab}
+        onChange={handleTabChange}
+        sx={{ borderBottom: 1, borderColor: 'divider' }}
+      >
+        <Tab value="list" label="Faktury" />
+        <Tab value="ksef" label="Integracja KSeF" />
+      </Tabs>
+      {tab === 'ksef' ? (
+        <KsefConnectionPanel />
+      ) : (
+        <Stack spacing={2}>
+          <Box display="flex" justifyContent="flex-end" gap={2}>
+            {selectedInvoiceIds.length > 0 && (
+              <Button
+                variant="outlined"
+                startIcon={<FileDownloadIcon />}
+                onClick={handleExportSelected}
+              >
+                {`Eksportuj zaznaczone (${selectedInvoiceIds.length})`}
+              </Button>
+            )}
+            {isKsefConnectionLoading ? null : ksefConnected ? (
+              <Button
+                variant="contained"
+                startIcon={<SyncIcon />}
+                disabled={isSyncing}
+                onClick={handleSync}
+              >
+                {'Synchronizuj z KSeF'}
+              </Button>
+            ) : (
+              <Button
+                variant="contained"
+                startIcon={<CloudUploadIcon />}
+                onClick={() => setIsModalOpen(true)}
+              >
+                {'Importuj fakturę'}
+              </Button>
+            )}
+          </Box>
 
-      <Stack spacing={2}>
-        <Stack direction="row" spacing={2}>
-          <TextField
-            label="Numer faktury"
-            value={invoiceNumber}
-            onChange={(e) => setInvoiceNumber(e.target.value)}
-            size="small"
-            sx={{ minWidth: 200 }}
-          />
-          <TextField
-            label="Sprzedawca"
-            value={sellerName}
-            onChange={(e) => setSellerName(e.target.value)}
-            size="small"
-            sx={{ minWidth: 200 }}
-          />
-          <DatePicker
-            label="Data faktury od"
-            value={invoiceDateFrom ? dayjs(invoiceDateFrom) : null}
-            onChange={handleDateFromChange}
-            slotProps={{ textField: { size: 'small' } }}
-          />
-          <DatePicker
-            label="Data faktury do"
-            value={invoiceDateTo ? dayjs(invoiceDateTo) : null}
-            onChange={handleDateToChange}
-            slotProps={{ textField: { size: 'small' } }}
-          />
-          <FormControl size="small" sx={{ minWidth: 220 }}>
-            <InputLabel id="invoice-status-filter-label">{'Status'}</InputLabel>
-            <Select
-              labelId="invoice-status-filter-label"
-              label="Status"
-              value={status}
-              onChange={(e) => setStatus(e.target.value as InvoiceStatus | '')}
-            >
-              <MenuItem value="">
-                <em>{'Wszystkie'}</em>
-              </MenuItem>
-              {invoiceStatuses.map((s) => (
-                <MenuItem key={s} value={s}>
-                  {invoiceStatusLabels[s]}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <Stack spacing={2}>
+            <Stack direction="row" spacing={2}>
+              <TextField
+                label="Numer faktury"
+                value={invoiceNumber}
+                onChange={(e) => setInvoiceNumber(e.target.value)}
+                size="small"
+                sx={{ minWidth: 200 }}
+              />
+              <TextField
+                label="Sprzedawca"
+                value={sellerName}
+                onChange={(e) => setSellerName(e.target.value)}
+                size="small"
+                sx={{ minWidth: 200 }}
+              />
+              <DatePicker
+                label="Data faktury od"
+                value={invoiceDateFrom ? dayjs(invoiceDateFrom) : null}
+                onChange={handleDateFromChange}
+                slotProps={{ textField: { size: 'small' } }}
+              />
+              <DatePicker
+                label="Data faktury do"
+                value={invoiceDateTo ? dayjs(invoiceDateTo) : null}
+                onChange={handleDateToChange}
+                slotProps={{ textField: { size: 'small' } }}
+              />
+              <FormControl size="small" sx={{ minWidth: 220 }}>
+                <InputLabel id="invoice-status-filter-label">
+                  {'Status'}
+                </InputLabel>
+                <Select
+                  labelId="invoice-status-filter-label"
+                  label="Status"
+                  value={status}
+                  onChange={(e) =>
+                    setStatus(e.target.value as InvoiceStatus | '')
+                  }
+                >
+                  <MenuItem value="">
+                    <em>{'Wszystkie'}</em>
+                  </MenuItem>
+                  {invoiceStatuses.map((s) => (
+                    <MenuItem key={s} value={s}>
+                      {invoiceStatusLabels[s]}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Stack>
+          </Stack>
+
+          <Box height={500} width="100%">
+            <DataGrid
+              rows={invoices}
+              rowCount={totalCount || 0}
+              columns={columns}
+              pageSizeOptions={[pageSize]}
+              loading={isLoading}
+              paginationModel={{
+                page,
+                pageSize,
+              }}
+              onPaginationModelChange={(model) => setPage(model.page)}
+              paginationMode="server"
+              sortingMode="server"
+              sortModel={[{ field: sortBy, sort: sortOrder }]}
+              onSortModelChange={handleSortModelChange}
+              checkboxSelection
+              onRowSelectionModelChange={(newSelection) => {
+                setSelectedInvoiceIds(newSelection as number[]);
+              }}
+              onRowClick={handleRowClick}
+              disableColumnMenu
+              style={{
+                width: '100%',
+              }}
+              slotProps={{
+                pagination: {
+                  showFirstButton: true,
+                },
+              }}
+            />
+          </Box>
+
+          {!ksefConnected && (
+            <ImportInvoiceModal
+              open={isModalOpen}
+              onClose={() => setIsModalOpen(false)}
+            />
+          )}
         </Stack>
-      </Stack>
-
-      <Box height={500} width="100%">
-        <DataGrid
-          rows={invoices}
-          rowCount={totalCount || 0}
-          columns={columns}
-          pageSizeOptions={[pageSize]}
-          loading={isLoading}
-          paginationModel={{
-            page,
-            pageSize,
-          }}
-          onPaginationModelChange={(model) => setPage(model.page)}
-          paginationMode="server"
-          sortingMode="server"
-          sortModel={[{ field: sortBy, sort: sortOrder }]}
-          onSortModelChange={handleSortModelChange}
-          checkboxSelection
-          onRowSelectionModelChange={(newSelection) => {
-            setSelectedInvoiceIds(newSelection as number[]);
-          }}
-          onRowClick={handleRowClick}
-          disableColumnMenu
-          style={{
-            width: '100%',
-          }}
-          slotProps={{
-            pagination: {
-              showFirstButton: true,
-            },
-          }}
-        />
-      </Box>
-
-      <ImportInvoiceModal
-        open={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      />
+      )}
     </Stack>
   );
 };

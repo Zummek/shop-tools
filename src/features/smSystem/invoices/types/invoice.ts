@@ -4,7 +4,9 @@ export type InvoiceStatus =
   | 'IMPORTED'
   | 'PENDING_RECEIPT'
   | 'PARTIALLY_RECEIVED'
-  | 'RECEIVED';
+  | 'RECEIVED'
+  | 'REJECTED'
+  | 'DAMAGED';
 
 export interface InvoiceProduct {
   id: number;
@@ -75,6 +77,7 @@ export interface Invoice {
   paymentDueDate: string | null;
   paymentMethod: string | null;
   status: InvoiceStatus;
+  importError: string;
   sourceXml: string;
   items: InvoiceItem[];
   createdAt: string;

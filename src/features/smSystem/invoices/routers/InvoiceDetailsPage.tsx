@@ -44,6 +44,8 @@ const INVOICE_STATUSES: InvoiceStatus[] = [
   'PENDING_RECEIPT',
   'PARTIALLY_RECEIVED',
   'RECEIVED',
+  'REJECTED',
+  'DAMAGED',
 ];
 
 export const InvoiceDetailsPage = () => {
@@ -417,6 +419,12 @@ export const InvoiceDetailsPage = () => {
 
       <Paper sx={{ p: 3 }}>
         <Stack spacing={2}>
+          {invoice.status === 'DAMAGED' && (
+            <Alert severity="error">
+              {invoice.importError ||
+                'Nie udało się odczytać XML tej faktury. Widoczne są dane z KSeF.'}
+            </Alert>
+          )}
           <Box display="flex" alignItems="center" gap={2}>
             <Typography variant="h6">{'Status:'}</Typography>
             <Chip

@@ -46,11 +46,27 @@ export const ProductCell = ({
   onClose,
   anchorEl,
 }: ProductCellProps) => {
+  const extras = (orderItem.offerComponents ?? []).filter(
+    (product) => product.id !== orderItem.internalProduct?.id,
+  );
+
   return (
     <StyledProductCell isEditing={isEditing} onClick={onEdit}>
-      <Typography variant="body2" fontWeight="medium">
-        {orderItem.internalProduct ? orderItem.internalProduct.name : '-'}
-      </Typography>
+      <Box>
+        <Typography variant="body2" fontWeight="medium">
+          {orderItem.internalProduct ? orderItem.internalProduct.name : '-'}
+        </Typography>
+        {extras.map((product) => (
+          <Typography
+            key={product.id}
+            variant="caption"
+            color="text.secondary"
+            display="block"
+          >
+            {`${product.name} · część oferty`}
+          </Typography>
+        ))}
+      </Box>
       {isEditing && (
         <ProductSelector
           initialValue={orderItem.externalName}

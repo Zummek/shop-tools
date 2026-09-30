@@ -14,6 +14,8 @@ export interface EcommerceOrderItem {
   externalPricePerItem: number;
   externalCurrency: string;
   quantity: number;
+  unitsInOffer: number;
+  offerComponents: Product[];
   internalProduct: Product | null;
   productMatchType: ProductMatchType;
 }

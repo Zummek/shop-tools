@@ -1,4 +1,4 @@
-import { Box, Chip, Typography } from '@mui/material';
+import { Box, Chip, Tooltip, Typography } from '@mui/material';
 import { GridColDef } from '@mui/x-data-grid';
 
 import { Product, ProductMatchType } from '../../products/types';
@@ -136,26 +136,64 @@ export const createOrderItemsColumns = ({
   },
   {
     field: 'externalPricePerItem',
-    headerName: 'Zew. cena produktu',
+    headerName: 'Zew. cena oferty',
+    description:
+      'Cena całej oferty. Przy wielosztuce nie jest to cena jednej sztuki.',
     align: 'center',
-    width: 80,
+    width: 110,
     valueGetter: (_value, row) =>
       `${formatPrice(row.externalPricePerItem, row.externalCurrency)} `,
   },
   {
     field: 'internalPricePerItem',
-    headerName: 'Wew. cena produktu',
+    headerName: 'Wew. cena sztuki',
+    description: 'Cena jednej sztuki w katalogu.',
     align: 'center',
-    width: 80,
-    valueGetter: (_value, row) =>
-      row.internalProduct?.branches?.[0]?.grossPrice
+    width: 110,
+    valueGetter: (_value, row) => {
+      const components = row.offerComponents ?? [];
+      if (components.length > 1) {
+        return components
+          .map((product) =>
+            product.branches?.[0]?.grossPrice
+              ? formatPrice(product.branches[0].grossPrice, 'PLN')
+              : '-',
+          )
+          .join(' + ');
+      }
+      return row.internalProduct?.branches?.[0]?.grossPrice
         ? `${formatPrice(row.internalProduct.branches[0].grossPrice, 'PLN')} `
-        : '-',
+        : '-';
+    },
   },
   {
     field: 'quantity',
     headerName: 'Ilość produktu',
     align: 'center',
-    width: 80,
+    width: 110,
+    valueGetter: (_value, row) => row.quantity * (row.unitsInOffer ?? 1),
+    renderCell: (params) => {
+      const units = params.row.unitsInOffer ?? 1;
+      const pieces = params.row.quantity * units;
+      if (units <= 1) return pieces;
+      const offers = params.row.quantity;
+      const offerWord = offers === 1 ? 'oferta' : 'ofert';
+      return (
+        <Tooltip
+          title={`${offers} ${offerWord} × ${units} szt. Cena oferty jest za całość.`}
+        >
+          <Box lineHeight={1.15} textAlign="center">
+            <div>{pieces}</div>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              display="block"
+            >
+              {`${offers}×${units} szt.`}
+            </Typography>
+          </Box>
+        </Tooltip>
+      );
+    },
   },
 ];

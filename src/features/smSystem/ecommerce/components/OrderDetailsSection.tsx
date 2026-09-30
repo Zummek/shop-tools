@@ -22,7 +22,11 @@ import { useEffect, useState, type ReactNode } from 'react';
 
 import { LabelData } from '../../../../components';
 import { formatPrice } from '../../products/utils';
-import { EcommerceOrderDetails, OrderStatus } from '../types';
+import {
+  EcommerceOrderDetails,
+  EcommerceOrderItem,
+  OrderStatus,
+} from '../types';
 import {
   NEXT_ORDER_STATUS,
   canRefreshOrderStatus,
@@ -37,6 +41,27 @@ import {
 
 import { OrderStatusChip } from './OrderStatusChip';
 import { WooStatusChip } from './WooStatusChip';
+
+function catalogGross(
+  product: { branches?: { grossPrice?: number }[] } | null | undefined,
+) {
+  return product?.branches?.[0]?.grossPrice || 0;
+}
+
+function internalLineValue(item: EcommerceOrderItem) {
+  const components = item.offerComponents ?? [];
+  if (components.length > 1) {
+    return (
+      components.reduce((sum, product) => sum + catalogGross(product), 0) *
+      item.quantity
+    );
+  }
+  return (
+    catalogGross(item.internalProduct) *
+    item.quantity *
+    (item.unitsInOffer ?? 1)
+  );
+}
 
 interface OrderDetailsSectionProps {
   ecommerceOrder: EcommerceOrderDetails;
@@ -98,9 +123,7 @@ export const OrderDetailsSection = ({
     selectedWooStatus !== (ecommerceOrder.externalStatus || '');
 
   const internalOrderValue = ecommerceOrder.orderItems.reduce(
-    (total, item) =>
-      total +
-      (item.internalProduct?.branches?.[0]?.grossPrice || 0) * item.quantity,
+    (total, item) => total + internalLineValue(item),
     0,
   );
 

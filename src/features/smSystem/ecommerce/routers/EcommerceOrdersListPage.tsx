@@ -182,7 +182,8 @@ const columns: GridColDef<EcommerceOrderListItem>[] = [
   {
     field: 'productsAmount',
     headerName: 'Ilość produktów',
-    width: 120,
+    description: 'Sztuki produktu. Wielosztuka Allegro liczy sztuki w ofercie.',
+    width: 130,
     align: 'center',
   },
   {

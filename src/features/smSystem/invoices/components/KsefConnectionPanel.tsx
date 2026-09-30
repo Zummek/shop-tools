@@ -173,7 +173,7 @@ export const KsefConnectionPanel = () => {
             </Typography>
             <Typography variant="body2" color="text.secondary">
               {
-                'Nowe faktury pobierzesz na zakładce Faktury przyciskiem Synchronizuj z KSeF. Synchronizacja bierze faktury zakupowe z ostatnich 30 dni i pomija korekty oraz dokumenty już zapisane.'
+                'Nowe faktury wybierzesz na zakładce Faktury przyciskiem Zaimportuj z KSeF. Lista pokazuje niezaimportowane faktury zakupowe co najmniej z ostatnich 30 dni, a jeśli integracja jest włączona dłużej — od momentu jej włączenia. Zostają na liście, dopóki ich nie wybierzesz. Korekty, zaliczki i faktury już zapisane (także z XML) nie pojawiają się.'
               }
             </Typography>
             {connection.lastError && (

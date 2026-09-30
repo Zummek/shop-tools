@@ -3,6 +3,8 @@ export * from './useGetKsefConnection';
 export * from './useConnectKsef';
 export * from './useDisconnectKsef';
 export * from './useSyncKsef';
+export * from './useGetKsefCandidates';
+export * from './useImportKsefInvoices';
 export * from './useGetInvoiceDetails';
 export * from './useUploadInvoice';
 export * from './useDeleteInvoice';

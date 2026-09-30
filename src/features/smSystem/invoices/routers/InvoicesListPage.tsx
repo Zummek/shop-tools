@@ -1,7 +1,7 @@
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
-import SyncIcon from '@mui/icons-material/Sync';
 import {
   Box,
   Button,
@@ -22,7 +22,6 @@ import {
   GridSortModel,
 } from '@mui/x-data-grid';
 import { DatePicker } from '@mui/x-date-pickers';
-import { isAxiosError } from 'axios';
 import dayjs, { Dayjs } from 'dayjs';
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -37,21 +36,11 @@ import {
   useExportInvoiceToPcMarket,
   useGetInvoices,
   useGetKsefConnection,
-  useSyncKsef,
 } from '../api';
 import { KsefConnectionPanel } from '../components/KsefConnectionPanel';
 import { ImportInvoiceModal } from '../modals/ImportInvoiceModal';
+import { ImportKsefInvoicesModal } from '../modals/ImportKsefInvoicesModal';
 import { invoiceStatusColors, invoiceStatusLabels } from '../utils';
-
-const ksefErrorMessage = (error: unknown): string => {
-  if (isAxiosError(error)) {
-    const responseError = error.response?.data?.error;
-    if (typeof responseError === 'string' && responseError)
-      return responseError;
-  }
-  if (error instanceof Error && error.message) return error.message;
-  return 'Nie udało się zsynchronizować faktur z KSeF';
-};
 
 const columns: GridColDef<InvoiceListItem>[] = [
   {
@@ -158,7 +147,6 @@ export const InvoicesListPage = () => {
 
   const { connection, isLoading: isKsefConnectionLoading } =
     useGetKsefConnection();
-  const { syncKsef, isPending: isSyncing } = useSyncKsef();
   const ksefConnected = Boolean(connection?.isConnected);
 
   const { exportInvoiceToPcMarket } = useExportInvoiceToPcMarket();
@@ -195,29 +183,6 @@ export const InvoicesListPage = () => {
       notify('success', 'Faktury zostały wyeksportowane');
     } catch (error) {
       notify('error', 'Błąd podczas eksportowania faktur');
-    }
-  };
-
-  const handleSync = async () => {
-    try {
-      const result = await syncKsef();
-      const parts = [`Zaimportowano ${result.imported}`];
-      if (result.failed.length) {
-        const numbers = result.failed
-          .map((item) => item.invoiceNumber)
-          .filter(Boolean)
-          .join(', ');
-        parts.push(
-          numbers
-            ? `uszkodzone: ${numbers}`
-            : `nie udało się ${result.failed.length}`,
-        );
-      }
-      if (result.hasMore)
-        parts.push('są kolejne — uruchom synchronizację ponownie');
-      notify(result.failed.length ? 'warning' : 'success', parts.join(', '));
-    } catch (error) {
-      notify('error', ksefErrorMessage(error));
     }
   };
 
@@ -291,11 +256,10 @@ export const InvoicesListPage = () => {
             {isKsefConnectionLoading ? null : ksefConnected ? (
               <Button
                 variant="contained"
-                startIcon={<SyncIcon />}
-                disabled={isSyncing}
-                onClick={handleSync}
+                startIcon={<CloudDownloadIcon />}
+                onClick={() => setIsModalOpen(true)}
               >
-                {'Synchronizuj z KSeF'}
+                {'Zaimportuj z KSeF'}
               </Button>
             ) : (
               <Button
@@ -394,7 +358,12 @@ export const InvoicesListPage = () => {
             />
           </Box>
 
-          {!ksefConnected && (
+          {ksefConnected ? (
+            <ImportKsefInvoicesModal
+              open={isModalOpen}
+              onClose={() => setIsModalOpen(false)}
+            />
+          ) : (
             <ImportInvoiceModal
               open={isModalOpen}
               onClose={() => setIsModalOpen(false)}

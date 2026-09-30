@@ -11,7 +11,11 @@ import {
   useUpdateEcommerceOrder,
   useUpdateEcommerceOrderItem,
 } from '../api';
-import { createOrderItemsColumns, OrderDetailsSection } from '../components';
+import {
+  buildOrderItemRows,
+  createOrderItemsColumns,
+  OrderDetailsSection,
+} from '../components';
 import { useOrderItemEditing } from '../hooks/useOrderItemEditing';
 import { ImportEcommerceOrderModal } from '../modals/ImportEcommerceOrderModal/ImportEcommerceOrderModal';
 import { OrderStatus } from '../types';
@@ -30,6 +34,9 @@ export const EcommerceOrderDetailsPage = () => {
   const { updateEcommerceOrderItem } = useUpdateEcommerceOrderItem();
   const { updateEcommerceOrder, isPending: isUpdatingStatus } =
     useUpdateEcommerceOrder();
+
+  const itemRows = buildOrderItemRows(ecommerceOrder?.orderItems ?? []);
+  const pageSize = Math.max(itemRows.length, 1);
 
   const unmatchedCount = (ecommerceOrder?.orderItems ?? []).filter(
     (item) => item.productMatchType === 'NONE',
@@ -174,31 +181,38 @@ export const EcommerceOrderDetailsPage = () => {
             '& .MuiDataGrid-cell': {
               display: 'flex',
               alignItems: 'center',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
+              py: 1,
+              whiteSpace: 'normal',
+              lineHeight: 'normal',
             },
-            '& .MuiDataGrid-cellContent': {
-              overflow: 'hidden',
-              whiteSpace: 'nowrap',
+            '& .order-item-component': {
+              bgcolor: 'action.hover',
             },
-            '& .MuiDataGrid-cell--textLeft': {
-              overflow: 'hidden',
-              whiteSpace: 'nowrap',
+            '& .order-item-offer .MuiDataGrid-cell': {
+              borderBottomColor: 'transparent',
             },
           }}
-          rows={ecommerceOrder?.orderItems}
-          rowCount={ecommerceOrder?.orderItems.length || 0}
+          rows={itemRows}
+          getRowHeight={() => 'auto'}
+          getRowClassName={(params) =>
+            params.row.kind === 'component'
+              ? 'order-item-component'
+              : params.row.kind === 'offer'
+                ? 'order-item-offer'
+                : ''
+          }
+          rowCount={itemRows.length}
           columns={createOrderItemsColumns({
             editingItemId,
             setEditingItemId,
             updateEcommerceOrderItem:
               handleUpdateEcommerceOrderItemInternalProduct,
           })}
-          pageSizeOptions={[ecommerceOrder?.orderItems.length || 0]}
+          pageSizeOptions={[pageSize]}
           loading={isLoading}
           paginationModel={{
             page: 0,
-            pageSize: ecommerceOrder?.orderItems.length || 0,
+            pageSize,
           }}
           paginationMode="server"
           disableColumnSorting

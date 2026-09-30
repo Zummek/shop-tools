@@ -1,6 +1,7 @@
 export * from './ProductSelector';
 export * from './Barcode';
 export * from './OrderItemsTableColumns';
+export * from './orderItemRows';
 export * from './ProductCell';
 export * from './OrderDetailsSection';
 export * from './OrderStatusChip';

@@ -41,11 +41,12 @@ import {
 
 import { OrderStatusChip } from './OrderStatusChip';
 import { WooStatusChip } from './WooStatusChip';
+import { catalogUnitGross } from './orderItemRows';
 
 function catalogGross(
-  product: { branches?: { grossPrice?: number }[] } | null | undefined,
+  product: Parameters<typeof catalogUnitGross>[0],
 ) {
-  return product?.branches?.[0]?.grossPrice || 0;
+  return catalogUnitGross(product) ?? 0;
 }
 
 function internalLineValue(item: EcommerceOrderItem) {

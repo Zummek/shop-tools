@@ -42,13 +42,15 @@ const instructionItemSx = { display: 'list-item', py: 0.25, pl: 0.5 };
 
 const KsefSetupInstructions = ({ environment }: { environment: string }) => (
   <Stack spacing={1}>
-    <Typography variant="body2">
-      {
-        'Token z innego środowiska nie zadziała. Ten serwer łączy się ze środowiskiem '
-      }
-      <strong>{environmentLabel(environment)}</strong>
-      {'.'}
-    </Typography>
+    {environment !== 'prod' && (
+      <Typography variant="body2">
+        {
+          'Token z innego środowiska nie zadziała. Ten serwer łączy się ze środowiskiem '
+        }
+        <strong>{environmentLabel(environment)}</strong>
+        {'.'}
+      </Typography>
+    )}
     <List dense disablePadding sx={{ listStyleType: 'decimal', pl: 2.5 }}>
       <ListItem sx={instructionItemSx}>
         <Typography variant="body2">

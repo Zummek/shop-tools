@@ -37,9 +37,7 @@ function item(
 
 test('a single product stays one row', () => {
   const mag = product(1, 'Mag');
-  const rows = buildOrderItemRows([
-    item({ id: 10, internalProduct: mag }),
-  ]);
+  const rows = buildOrderItemRows([item({ id: 10, internalProduct: mag })]);
   assert.deepEqual(
     rows.map((row) => [row.kind, row.product?.id]),
     [['line', 1]],
@@ -107,8 +105,14 @@ test('catalog unit gross uses the lowest branch id and keeps zero', () => {
   assert.equal(
     catalogUnitGross(
       product(1, 'Mag', [
-        { branch: { id: 8, name: 'B' }, grossPrice: 5000 } as Product['branches'][number],
-        { branch: { id: 2, name: 'A' }, grossPrice: 0 } as Product['branches'][number],
+        {
+          branch: { id: 8, name: 'B' },
+          grossPrice: 5000,
+        } as Product['branches'][number],
+        {
+          branch: { id: 2, name: 'A' },
+          grossPrice: 0,
+        } as Product['branches'][number],
       ]),
     ),
     0,
@@ -116,8 +120,14 @@ test('catalog unit gross uses the lowest branch id and keeps zero', () => {
   assert.equal(
     catalogUnitGross(
       product(1, 'Mag', [
-        { branch: { id: 3, name: 'B' }, grossPrice: 2790 } as Product['branches'][number],
-        { branch: { id: 1, name: 'A' }, grossPrice: 5000 } as Product['branches'][number],
+        {
+          branch: { id: 3, name: 'B' },
+          grossPrice: 2790,
+        } as Product['branches'][number],
+        {
+          branch: { id: 1, name: 'A' },
+          grossPrice: 5000,
+        } as Product['branches'][number],
       ]),
     ),
     5000,

@@ -1,31 +1,31 @@
 import { useEffect, useState } from 'react';
 
 export const useOrderItemEditing = () => {
-  const [editingItemId, setEditingItemId] = useState<number | null>(null);
+  const [editingRowId, setEditingRowId] = useState<string | null>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (editingItemId) {
+      if (editingRowId) {
         const target = event.target as Element;
         const isProductSelector =
           target.closest('[data-testid="product-selector"]') ||
           target.closest('.MuiAutocomplete-popper') ||
           target.closest('.MuiAutocomplete-paper');
 
-        if (!isProductSelector) setEditingItemId(null);
+        if (!isProductSelector) setEditingRowId(null);
       }
     };
 
-    if (editingItemId)
+    if (editingRowId)
       document.addEventListener('mousedown', handleClickOutside);
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [editingItemId]);
+  }, [editingRowId]);
 
   return {
-    editingItemId,
-    setEditingItemId,
+    editingRowId,
+    setEditingRowId,
   };
 };

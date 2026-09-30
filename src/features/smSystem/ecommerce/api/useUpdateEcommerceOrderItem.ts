@@ -11,6 +11,7 @@ export interface Payload {
   orderId: number;
   orderItemId: number;
   internalProductId: number;
+  componentIndex?: number;
 }
 
 const getEndpoint = (orderId: number, itemId: number) =>
@@ -24,10 +25,14 @@ export const useUpdateEcommerceOrderItem = () => {
     orderId,
     orderItemId,
     internalProductId,
+    componentIndex,
   }: Payload) => {
     const response = await axiosInstance.patch<EcommerceOrderDetails>(
       getEndpoint(orderId, orderItemId),
-      { internalProductId }
+      {
+        internalProductId,
+        ...(componentIndex == null ? {} : { componentIndex }),
+      },
     );
     return response.data;
   };
@@ -41,7 +46,7 @@ export const useUpdateEcommerceOrderItem = () => {
     onSuccess: (response, variables) => {
       queryClient.setQueryData(
         getEcommerceOrderDetailsQueryKey(variables.orderId),
-        response
+        response,
       );
       queryClient.invalidateQueries({
         queryKey: [getEcommerceOrdersQueryKeyBase],

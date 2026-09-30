@@ -1,9 +1,12 @@
 import type { Product } from '../../products/types';
 import type { EcommerceOrderItem } from '../types';
 
-type PricedProduct = {
-  branches?: { grossPrice?: number; branch?: { id?: number } }[];
-} | null | undefined;
+type PricedProduct =
+  | {
+      branches?: { grossPrice?: number; branch?: { id?: number } }[];
+    }
+  | null
+  | undefined;
 
 export type OrderItemRowKind = 'line' | 'offer' | 'component';
 
@@ -73,15 +76,24 @@ export function offerQuantityLabel(count: number) {
   return 'ofert';
 }
 
-/** Catalog gross of the branch with the lowest id. Missing price stays null, 0 stays 0. */
-export function catalogUnitGross(product: PricedProduct): number | null {
+/** Catalog gross of the user's branch, otherwise the lowest branch id. */
+export function catalogUnitGross(
+  product: PricedProduct,
+  preferredBranchId?: number | null,
+): number | null {
   const branches = product?.branches;
   if (!branches?.length) return null;
-  const ordered = [...branches].sort(
-    (a, b) =>
-      (a.branch?.id ?? Number.MAX_SAFE_INTEGER) -
-      (b.branch?.id ?? Number.MAX_SAFE_INTEGER),
-  );
-  const gross = ordered[0]?.grossPrice;
+  const preferred =
+    preferredBranchId == null
+      ? undefined
+      : branches.find((branch) => branch.branch?.id === preferredBranchId);
+  const chosen =
+    preferred ??
+    [...branches].sort(
+      (a, b) =>
+        (a.branch?.id ?? Number.MAX_SAFE_INTEGER) -
+        (b.branch?.id ?? Number.MAX_SAFE_INTEGER),
+    )[0];
+  const gross = chosen?.grossPrice;
   return gross == null ? null : gross;
 }

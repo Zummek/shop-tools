@@ -4,7 +4,7 @@ import dayjs from 'dayjs';
 import { useCallback, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import { useNotify } from '../../../../hooks';
+import { useAppSelector, useNotify } from '../../../../hooks';
 import { Pages } from '../../../../utils';
 import {
   useGetEcommerceOrderDetails,
@@ -26,7 +26,10 @@ export const EcommerceOrderDetailsPage = () => {
   const { notify } = useNotify();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { editingItemId, setEditingItemId } = useOrderItemEditing();
+  const { editingRowId, setEditingRowId } = useOrderItemEditing();
+  const branchId = useAppSelector(
+    (state) => state.smSystemUser.user?.defaultBranch?.id ?? null,
+  );
   const { orderId: rawOrderId } = useParams<{ orderId: string }>();
   const id = Number(rawOrderId);
 
@@ -49,11 +52,13 @@ export const EcommerceOrderDetailsPage = () => {
   const handleUpdateEcommerceOrderItemInternalProduct = async (payload: {
     orderItemId: number;
     internalProductId: number;
+    componentIndex?: number;
   }) => {
     const response = await updateEcommerceOrderItem({
       orderId: id,
       orderItemId: payload.orderItemId,
       internalProductId: payload.internalProductId,
+      componentIndex: payload.componentIndex,
     });
     notify('success', 'Produkt został zaktualizowany');
     return response.orderItems.find((item) => item.id === payload.orderItemId);
@@ -203,8 +208,9 @@ export const EcommerceOrderDetailsPage = () => {
           }
           rowCount={itemRows.length}
           columns={createOrderItemsColumns({
-            editingItemId,
-            setEditingItemId,
+            editingRowId,
+            setEditingRowId,
+            branchId,
             updateEcommerceOrderItem:
               handleUpdateEcommerceOrderItemInternalProduct,
           })}

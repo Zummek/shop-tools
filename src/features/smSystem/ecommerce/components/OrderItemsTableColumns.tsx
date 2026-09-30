@@ -15,11 +15,13 @@ import {
 } from './orderItemRows';
 
 interface CreateColumnsParams {
-  editingItemId: number | null;
-  setEditingItemId: (id: number | null) => void;
+  editingRowId: string | null;
+  setEditingRowId: (id: string | null) => void;
+  branchId: number | null;
   updateEcommerceOrderItem: (payload: {
     orderItemId: number;
     internalProductId: number;
+    componentIndex?: number;
   }) => Promise<unknown>;
 }
 
@@ -57,8 +59,9 @@ function productCountLabel(count: number) {
 }
 
 export const createOrderItemsColumns = ({
-  editingItemId,
-  setEditingItemId,
+  editingRowId,
+  setEditingRowId,
+  branchId,
   updateEcommerceOrderItem,
 }: CreateColumnsParams): GridColDef<OrderItemGridRow>[] => [
   {
@@ -100,21 +103,29 @@ export const createOrderItemsColumns = ({
     flex: 1,
     renderCell: (params) => {
       const { row } = params;
-      const isEditing = editingItemId === row.item.id;
+      const isEditing = editingRowId === row.id;
+      const componentIndex = (row.item.offerComponents ?? []).findIndex(
+        (product) => product.id === row.product?.id,
+      );
+      const replaceComponent =
+        row.kind === 'component' &&
+        !isMatchedComponent(row) &&
+        componentIndex >= 0;
       const editProps = {
         orderItem: row.item,
         isEditing,
-        onEdit: () => setEditingItemId(row.item.id),
+        onEdit: () => setEditingRowId(row.id),
         onUpdateProduct: async (product: Product | null) => {
           if (product) {
             await updateEcommerceOrderItem({
               orderItemId: row.item.id,
               internalProductId: product.id,
+              ...(replaceComponent ? { componentIndex } : {}),
             });
           }
-          setEditingItemId(null);
+          setEditingRowId(null);
         },
-        onClose: () => setEditingItemId(null),
+        onClose: () => setEditingRowId(null),
         anchorEl: params.api.getCellElement(params.id, 'internalProduct'),
       };
 
@@ -128,14 +139,7 @@ export const createOrderItemsColumns = ({
         );
       }
 
-      if (row.kind === 'component' && row.product && !isMatchedComponent(row)) {
-        return (
-          <Stack direction="row" alignItems="center" spacing={0.75} pl={0.5}>
-            <SubdirectoryArrowRight fontSize="small" color="disabled" />
-            <Typography variant="body2">{row.product.name}</Typography>
-          </Stack>
-        );
-      }
+      if (row.kind === 'component' && !row.product) return null;
 
       return (
         <Stack direction="row" alignItems="center" spacing={0.75} width="100%">
@@ -146,6 +150,9 @@ export const createOrderItemsColumns = ({
             {...editProps}
             dense={row.kind === 'component'}
             productName={row.product?.name}
+            searchValue={
+              row.kind === 'component' ? row.product?.name : undefined
+            }
           />
         </Stack>
       );
@@ -207,7 +214,7 @@ export const createOrderItemsColumns = ({
     width: 120,
     valueGetter: (_value, row) => {
       if (row.kind === 'offer') return '';
-      const gross = catalogUnitGross(row.product);
+      const gross = catalogUnitGross(row.product, branchId);
       return gross == null ? '-' : `${formatPrice(gross, 'PLN')} `;
     },
   },

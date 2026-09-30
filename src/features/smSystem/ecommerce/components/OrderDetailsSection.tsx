@@ -21,6 +21,7 @@ import dayjs from 'dayjs';
 import { useEffect, useState, type ReactNode } from 'react';
 
 import { LabelData } from '../../../../components';
+import { useAppSelector } from '../../../../hooks';
 import { formatPrice } from '../../products/utils';
 import {
   EcommerceOrderDetails,
@@ -45,20 +46,23 @@ import { catalogUnitGross } from './orderItemRows';
 
 function catalogGross(
   product: Parameters<typeof catalogUnitGross>[0],
+  branchId?: number | null,
 ) {
-  return catalogUnitGross(product) ?? 0;
+  return catalogUnitGross(product, branchId) ?? 0;
 }
 
-function internalLineValue(item: EcommerceOrderItem) {
+function internalLineValue(item: EcommerceOrderItem, branchId?: number | null) {
   const components = item.offerComponents ?? [];
   if (components.length > 1) {
     return (
-      components.reduce((sum, product) => sum + catalogGross(product), 0) *
-      item.quantity
+      components.reduce(
+        (sum, product) => sum + catalogGross(product, branchId),
+        0,
+      ) * item.quantity
     );
   }
   return (
-    catalogGross(item.internalProduct) *
+    catalogGross(item.internalProduct, branchId) *
     item.quantity *
     (item.unitsInOffer ?? 1)
   );
@@ -122,9 +126,12 @@ export const OrderDetailsSection = ({
 
   const wooStatusDirty =
     selectedWooStatus !== (ecommerceOrder.externalStatus || '');
+  const branchId = useAppSelector(
+    (state) => state.smSystemUser.user?.defaultBranch?.id ?? null,
+  );
 
   const internalOrderValue = ecommerceOrder.orderItems.reduce(
-    (total, item) => total + internalLineValue(item),
+    (total, item) => total + internalLineValue(item, branchId),
     0,
   );
 

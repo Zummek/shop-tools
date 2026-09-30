@@ -38,6 +38,7 @@ interface ProductCellProps {
   anchorEl: HTMLElement | null;
   dense?: boolean;
   productName?: string;
+  searchValue?: string;
 }
 
 export const ProductCell = ({
@@ -49,6 +50,7 @@ export const ProductCell = ({
   anchorEl,
   dense = false,
   productName,
+  searchValue,
 }: ProductCellProps) => {
   const label =
     productName ??
@@ -63,7 +65,7 @@ export const ProductCell = ({
       </Box>
       {isEditing && (
         <ProductSelector
-          initialValue={orderItem.externalName}
+          initialValue={searchValue ?? orderItem.externalName}
           onChange={onUpdateProduct}
           onClose={onClose}
           open={true}

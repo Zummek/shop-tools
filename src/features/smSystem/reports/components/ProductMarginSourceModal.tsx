@@ -66,11 +66,7 @@ const AmountWithPercent = ({
     </Typography>
     <Typography variant="caption" color="text.secondary" component="span">
       {formatSharePercent(
-        shareOfMarginBasePercent(
-          amountCents,
-          revenueCents,
-          buyerDeliveryCents,
-        ),
+        shareOfMarginBasePercent(amountCents, revenueCents, buyerDeliveryCents),
       )}
     </Typography>
   </Stack>
@@ -118,10 +114,10 @@ export const ProductMarginSourceModal = ({
     : '';
 
   const salesTableMinWidth = showEcommerceFees
-    ? 980
+    ? 1100
     : lens === 'pcmarket'
-      ? 880
-      : 800;
+      ? 1000
+      : 920;
 
   return (
     <Modal open={open} onClose={onClose}>
@@ -303,16 +299,23 @@ export const ProductMarginSourceModal = ({
                             {'Sprzedane szt.'}
                           </TableCell>
                           <TableCell align="right">
-                            {'Przychód (PLN)'}
+                            {'Przychód brutto (PLN)'}
                           </TableCell>
-                          <TableCell align="right">{'COGS (PLN)'}</TableCell>
+                          <TableCell align="right">
+                            {'COGS brutto (PLN)'}
+                          </TableCell>
                           {showEcommerceFees ? (
                             <TableCell align="right">
                               {'Prowizja (PLN)'}
                             </TableCell>
                           ) : null}
                           <TableCell>{'FV zakupu'}</TableCell>
-                          <TableCell align="right">{'Marża (PLN)'}</TableCell>
+                          <TableCell align="right">
+                            {'Marża brutto (PLN)'}
+                          </TableCell>
+                          <TableCell align="right">
+                            {'Marża netto (PLN)'}
+                          </TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -400,6 +403,13 @@ export const ProductMarginSourceModal = ({
                                 amountCents={line.marginCents}
                                 revenueCents={line.revenueCents}
                                 buyerDeliveryCents={line.buyerDeliveryCents}
+                              />
+                            </TableCell>
+                            <TableCell align="right">
+                              <AmountWithPercent
+                                amountCents={line.marginNetCents}
+                                revenueCents={line.revenueNetCents}
+                                buyerDeliveryCents={line.buyerDeliveryNetCents}
                               />
                             </TableCell>
                           </TableRow>

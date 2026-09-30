@@ -33,13 +33,18 @@ export interface MarginCalculation {
 
 export interface ChannelMarginTotals {
   revenueCents: number;
+  revenueNetCents: number;
   cogsCents: number;
+  cogsNetCents: number;
   commissionCents: number;
   buyerDeliveryCents: number;
+  buyerDeliveryNetCents: number;
   sellerDeliveryCents: number;
   otherFeesCents: number;
   marginCents: number;
   marginPercent: number | null;
+  marginNetCents: number;
+  marginNetPercent: number | null;
 }
 
 export interface ChannelMarginOverview extends ChannelMarginTotals {

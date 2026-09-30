@@ -31,6 +31,8 @@ export const marginSourceLabel = (source: string) => {
     org_avg: 'mediana dostawy kupującego ze sklepu (180 dni)',
     fallback: 'uzupełnienie, gdy brak zamówień',
     product: 'karta produktu',
+    product_vat: 'VAT z karty produktu',
+    buyer_delivery_vat: 'VAT 23% (usługa kurierska)',
     promo: 'akcja promocyjna',
   };
   return map[source] ?? source;

@@ -29,12 +29,16 @@ export interface ChannelMarginDetailLine {
   branchName: string | null;
   quantity: number;
   revenueCents: number;
+  revenueNetCents: number;
   cogsCents: number;
+  cogsNetCents: number;
   commissionCents: number;
   buyerDeliveryCents: number;
+  buyerDeliveryNetCents: number;
   sellerDeliveryCents: number;
   otherFeesCents: number;
   marginCents: number;
+  marginNetCents: number;
   cogsSource: string;
   unitCogsCents: number | null;
   invoiceId: number | null;

@@ -121,7 +121,7 @@ const KpiCard = ({
   previous?: string | null;
   tooltip: string;
 }) => (
-  <Paper variant="outlined" sx={{ p: 2, minWidth: 160, flex: 1 }}>
+  <Paper variant="outlined" sx={{ p: 2, minWidth: 200, flex: '1 0 200px' }}>
     <Stack spacing={0.5}>
       <Stack direction="row" spacing={0.5} alignItems="center">
         <Typography variant="caption" color="text.secondary">
@@ -164,9 +164,9 @@ export const ChannelMarginReportPage = () => {
     enabled: canView === true,
   });
 
-  const [chartMetric, setChartMetric] = useState<'margin' | 'percent'>(
-    'margin',
-  );
+  const [chartMetric, setChartMetric] = useState<
+    'gross' | 'net' | 'grossPercent' | 'netPercent'
+  >('gross');
   const [rowMode, setRowMode] = useState<'product' | 'offer'>('product');
   const [selectedRow, setSelectedRow] = useState<ChannelMarginRow | null>(null);
   const [search, setSearch] = useState('');
@@ -205,7 +205,9 @@ export const ChannelMarginReportPage = () => {
           (p) => p.date === date && p.channel === channel,
         );
         if (!point) return 0;
-        if (chartMetric === 'percent') return point.marginPercent ?? 0;
+        if (chartMetric === 'grossPercent') return point.marginPercent ?? 0;
+        if (chartMetric === 'netPercent') return point.marginNetPercent ?? 0;
+        if (chartMetric === 'net') return point.marginNetCents / 100;
         return point.marginCents / 100;
       }),
     }));
@@ -254,16 +256,16 @@ export const ChannelMarginReportPage = () => {
       },
       {
         field: 'revenueCents',
-        headerName: 'Przychód\nłączny (PLN)',
-        description: 'Suma przychodu ze sprzedaży w okresie.',
+        headerName: 'Przychód\nbrutto (PLN)',
+        description: 'Suma cen sprzedaży brutto (z VAT) w okresie.',
         type: 'number',
         width: 128,
         valueFormatter: (value) => formatPrice(Number(value)),
       },
       {
         field: 'cogsCents',
-        headerName: 'COGS\nłączny (PLN)',
-        description: `Suma kosztu zakupu w okresie. ${SHARE_PERCENT_DESCRIPTION}`,
+        headerName: 'COGS\nbrutto (PLN)',
+        description: `Suma kosztu zakupu brutto (netto z FV × VAT). ${SHARE_PERCENT_DESCRIPTION}`,
         type: 'number',
         width: 128,
         valueFormatter: (value) => formatPrice(Number(value)),
@@ -299,7 +301,7 @@ export const ChannelMarginReportPage = () => {
       {
         field: 'buyerDeliveryCents',
         headerName: 'Dostawa od\nklienta (PLN)',
-        description: `Kwota, którą kupujący zapłacił za przesyłkę. To wpływ — dodawany do marży. ${SHARE_PERCENT_DESCRIPTION}`,
+        description: `Kwota brutto, którą kupujący zapłacił za przesyłkę. To wpływ — dodawany do marży. W marży netto VAT 23% jest zdjęty. ${SHARE_PERCENT_DESCRIPTION}`,
         type: 'number',
         width: 128,
         valueFormatter: (value) => formatPrice(Number(value)),
@@ -352,8 +354,8 @@ export const ChannelMarginReportPage = () => {
       },
       {
         field: 'marginCents',
-        headerName: 'Marża\nłączna (PLN)',
-        description: `Suma marży w okresie. ${SHARE_PERCENT_DESCRIPTION}`,
+        headerName: 'Marża\nbrutto (PLN)',
+        description: `Suma marży brutto (sprzedaż i zakup z VAT). ${SHARE_PERCENT_DESCRIPTION}`,
         type: 'number',
         width: 128,
         valueFormatter: (value) => formatPrice(Number(value)),
@@ -368,6 +370,21 @@ export const ChannelMarginReportPage = () => {
                 params.row.buyerDeliveryCents,
               )
             }
+          />
+        ),
+      },
+      {
+        field: 'marginNetCents',
+        headerName: 'Marża\nnetto (PLN)',
+        description:
+          'Marża po zdjęciu VAT ze sprzedaży (stawka produktu), z zakupu (netto z FV) i z dostawy kupującego (23%). Procent = marża netto / (przychód netto + dostawa netto).',
+        type: 'number',
+        width: 128,
+        valueFormatter: (value) => formatPrice(Number(value)),
+        renderCell: (params) => (
+          <AmountWithPercentCell
+            amountCents={params.row.marginNetCents}
+            percent={params.row.marginNetPercent}
           />
         ),
       },
@@ -448,18 +465,27 @@ export const ChannelMarginReportPage = () => {
       {isLoading || !overview ? (
         <Skeleton variant="rounded" height={120} />
       ) : (
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+        <Stack
+          direction="row"
+          spacing={2}
+          sx={{
+            overflowX: 'auto',
+            width: '100%',
+            minWidth: 0,
+            pb: 0.5,
+          }}
+        >
           <KpiCard
-            title="Przychód"
+            title="Przychód brutto"
             value={formatPrice(overview.revenueCents, currency)}
             previous={formatPrice(overview.previous.revenueCents, currency)}
-            tooltip="Suma cen sprzedaży pozycji (PLN)."
+            tooltip="Suma cen sprzedaży brutto (z VAT)."
           />
           <KpiCard
-            title="COGS"
+            title="COGS brutto"
             value={formatPrice(overview.cogsCents, currency)}
             previous={formatPrice(overview.previous.cogsCents, currency)}
-            tooltip="Koszt zakupu brutto: ostatnia FV na dzień sprzedaży (linie tego samego produktu na FV uśrednione ilością) lub ostatnia KSeF."
+            tooltip="Koszt zakupu brutto: netto z FV × VAT. Ostatnia FV na dzień sprzedaży (linie tego samego produktu na FV uśrednione ilością) lub ostatnia KSeF."
           />
           <KpiCard
             title="Prowizja / opłaty"
@@ -480,13 +506,13 @@ export const ChannelMarginReportPage = () => {
             }
           />
           <KpiCard
-            title="Marża"
+            title="Marża brutto"
             value={formatPrice(overview.marginCents, currency)}
             previous={formatPrice(overview.previous.marginCents, currency)}
-            tooltip="Przychód + dostawa kupującego − COGS − prowizja − koszt dostawy sprzedawcy − inne opłaty."
+            tooltip="Przychód brutto + dostawa brutto − COGS brutto − prowizja − koszt dostawy sprzedawcy − inne opłaty."
           />
           <KpiCard
-            title="Marża %"
+            title="Marża brutto %"
             value={
               overview.marginPercent == null
                 ? '—'
@@ -497,7 +523,27 @@ export const ChannelMarginReportPage = () => {
                 ? '—'
                 : `${overview.previous.marginPercent.toFixed(1)}%`
             }
-            tooltip="Marża / (przychód + dostawa od kupującego)."
+            tooltip="Marża brutto / (przychód brutto + dostawa brutto)."
+          />
+          <KpiCard
+            title="Marża netto"
+            value={formatPrice(overview.marginNetCents, currency)}
+            previous={formatPrice(overview.previous.marginNetCents, currency)}
+            tooltip="Przychód netto (brutto / (1 + VAT produktu)) + dostawa kupującego netto (VAT 23%) − zakup netto − prowizja − koszt dostawy sprzedawcy − inne. Prowizja Allegro (SUC) jest już netto."
+          />
+          <KpiCard
+            title="Marża netto %"
+            value={
+              overview.marginNetPercent == null
+                ? '—'
+                : `${overview.marginNetPercent.toFixed(1)}%`
+            }
+            previous={
+              overview.previous.marginNetPercent == null
+                ? '—'
+                : `${overview.previous.marginNetPercent.toFixed(1)}%`
+            }
+            tooltip="Marża netto / (przychód netto + dostawa kupującego netto)."
           />
         </Stack>
       )}
@@ -583,13 +629,13 @@ export const ChannelMarginReportPage = () => {
               <Typography variant="subtitle1">
                 {'Marża według kanału'}
               </Typography>
-              <Tooltip title="Marża / (przychód + dostawa od kupującego).">
+              <Tooltip title="Brutto: marża / (przychód brutto + dostawa brutto). Netto: marża / (przychód netto + dostawa netto).">
                 <InfoOutlinedIcon sx={{ fontSize: 16 }} color="action" />
               </Tooltip>
             </Stack>
             <Typography variant="caption" color="text.secondary">
               {
-                'Marża zł oraz marża % = marża / (przychód + dostawa kupującego).'
+                'Marża brutto obejmuje VAT sprzedaży i zakupu. Marża netto jest bez tego VAT. Procent to marża / (przychód + dostawa kupującego) w tej samej podstawie.'
               }
             </Typography>
           </Stack>
@@ -598,7 +644,8 @@ export const ChannelMarginReportPage = () => {
               <TableHead>
                 <TableRow>
                   <TableCell>{'Kanał'}</TableCell>
-                  <TableCell align="right">{'Marża łączna (PLN)'}</TableCell>
+                  <TableCell align="right">{'Marża brutto (PLN)'}</TableCell>
+                  <TableCell align="right">{'Marża netto (PLN)'}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -638,6 +685,24 @@ export const ChannelMarginReportPage = () => {
                           </Typography>
                         </Stack>
                       </TableCell>
+                      <TableCell align="right">
+                        <Stack spacing={0} alignItems="flex-end">
+                          <Typography
+                            variant="body2"
+                            component="span"
+                            fontWeight={isTotal ? 600 : undefined}
+                          >
+                            {formatPrice(ch.marginNetCents)}
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            component="span"
+                          >
+                            {formatSharePercent(ch.marginNetPercent)}
+                          </Typography>
+                        </Stack>
+                      </TableCell>
                     </TableRow>
                   );
                 })}
@@ -661,13 +726,15 @@ export const ChannelMarginReportPage = () => {
             value={chartMetric}
             onChange={(
               _e: MouseEvent<HTMLElement>,
-              value: 'margin' | 'percent' | null,
+              value: 'gross' | 'net' | 'grossPercent' | 'netPercent' | null,
             ) => {
               if (value) setChartMetric(value);
             }}
           >
-            <ToggleButton value="margin">{'zł'}</ToggleButton>
-            <ToggleButton value="percent">{'%'}</ToggleButton>
+            <ToggleButton value="gross">{'brutto zł'}</ToggleButton>
+            <ToggleButton value="net">{'netto zł'}</ToggleButton>
+            <ToggleButton value="grossPercent">{'brutto %'}</ToggleButton>
+            <ToggleButton value="netPercent">{'netto %'}</ToggleButton>
           </ToggleButtonGroup>
         </Stack>
         {isLoading || !chartData ? (
@@ -687,7 +754,10 @@ export const ChannelMarginReportPage = () => {
             ]}
             series={chartData.series.map((s) => ({
               ...s,
-              stack: chartMetric === 'margin' ? 'total' : undefined,
+              stack:
+                chartMetric === 'gross' || chartMetric === 'net'
+                  ? 'total'
+                  : undefined,
             }))}
           />
         )}

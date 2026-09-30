@@ -144,7 +144,7 @@ export const HowWeCalculateAccordion = ({
           </Typography>
           <Typography variant="body2">
             {
-              'Marża = przychód + dostawa od kupującego − koszt zakupu − prowizja − koszt dostawy sprzedawcy − inne opłaty. Anulowane zamówienia e-commerce są wykluczone. Sumy są w PLN: pozycje CZK/HUF/EUR przeliczamy kursem średnim NBP (tabela A) z dnia zamówienia. To szacunek ± — rzeczywista wypłata Allegro Finance idzie po EBC + marża, nie po NBP. Allegro bez Smart (HB*): koszt dostawy z grupy dostawy, jeśli ustawiony.'
+              'Marża brutto = przychód brutto + dostawa brutto − koszt zakupu brutto − prowizja − koszt dostawy sprzedawcy − inne opłaty. Marża netto zdejmuje VAT ze sprzedaży (stawka z karty produktu) i z dostawy kupującego (23%) oraz bierze zakup netto z faktury. Prowizja i koszty z billingu wchodzą w obu kwotach tak, jak są zapisane. Anulowane zamówienia e-commerce są wykluczone. Sumy są w PLN: pozycje CZK/HUF/EUR przeliczamy kursem średnim NBP (tabela A) z dnia zamówienia. To szacunek ± — rzeczywista wypłata Allegro Finance idzie po EBC + marża, nie po NBP. Allegro bez Smart (HB*): koszt dostawy z grupy dostawy, jeśli ustawiony.'
             }
           </Typography>
           <Typography variant="body2">

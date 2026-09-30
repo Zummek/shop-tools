@@ -446,6 +446,10 @@ const ChannelOfferCard = ({ link, schedules }: ChannelOfferCardProps) => {
             value={link.stockSold != null ? String(link.stockSold) : '—'}
           />
           <LabelData
+            label="Szt. w ofercie"
+            value={String(link.unitsInOffer ?? 1)}
+          />
+          <LabelData
             label="Ostatnia aktualizacja"
             value={
               link.lastSyncedAt

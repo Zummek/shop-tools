@@ -17,6 +17,7 @@ export interface ChannelProductLink {
   currency: string | null;
   stockAvailable: number | null;
   stockSold: number | null;
+  unitsInOffer: number;
   offerStatus: string | null;
   lastSyncedAt: string | null;
   externalUrl: string | null;

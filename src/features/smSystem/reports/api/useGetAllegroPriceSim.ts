@@ -28,6 +28,7 @@ export interface AllegroPriceSimRow {
   categoryPath: AllegroPriceSimCategoryPath[];
   commissionCapNet: number | null;
   purchaseNetCents: number | null;
+  unitsInOffer: number;
   offerGrossCents: number | null;
   simulatedGrossCents: number | null;
   simulatedAt: string | null;

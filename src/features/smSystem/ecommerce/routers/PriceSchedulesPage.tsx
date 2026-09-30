@@ -194,6 +194,7 @@ const scheduleToLink = (
   currency: schedule.currency,
   stockAvailable: null,
   stockSold: null,
+  unitsInOffer: 1,
   offerStatus: null,
   lastSyncedAt: null,
   externalUrl: null,

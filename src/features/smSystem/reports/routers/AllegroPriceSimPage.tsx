@@ -605,13 +605,18 @@ export const AllegroPriceSimPage = () => {
         field: 'purchaseNetCents',
         headerName: 'Zakup netto\n(PLN)',
         description:
-          'Ostatnia faktura zakupu na dziś — nie średnia z kilku faktur. Jeśli na jednej FV jest kilka pozycji tego SKU, średnia ważona ilością tylko z tej faktury. Gdy brak FV, ostatni zakup z karty produktu.',
+          'Ostatnia faktura zakupu na dziś — nie średnia z kilku faktur. Jeśli na jednej FV jest kilka pozycji tego SKU, średnia ważona ilością tylko z tej faktury. Gdy brak FV, ostatni zakup z karty produktu. Wielosztuka Allegro mnoży tę cenę przez liczbę sztuk w ofercie.',
         type: 'number',
         width: 120,
         renderCell: (params) => {
           const value = params.row.purchaseNetCents;
+          const units = params.row.unitsInOffer;
+          const pack =
+            units > 1
+              ? ` Oferta zawiera ${units} szt. — zakup × ${units}.`
+              : '';
           return (
-            <Tooltip title={marginSourceLabel(params.row.cogsSource)}>
+            <Tooltip title={`${marginSourceLabel(params.row.cogsSource)}${pack}`}>
               <span>{value == null ? '—' : formatPrice(Number(value))}</span>
             </Tooltip>
           );

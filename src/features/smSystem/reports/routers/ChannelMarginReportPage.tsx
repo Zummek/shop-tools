@@ -250,7 +250,7 @@ export const ChannelMarginReportPage = () => {
         field: 'units',
         headerName: 'Sprzedane\nszt.',
         description:
-          'Suma sprzedanych sztuk produktu (lub oferty) w wybranym okresie i kanale.',
+          'Suma sprzedanych sztuk produktu w wybranym okresie i kanale. Wielosztuka Allegro (np. 2 szt. w ofercie) jest wliczona.',
         type: 'number',
         width: 92,
       },

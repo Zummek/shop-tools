@@ -19,7 +19,12 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { DataGrid, GridColDef, GridRowParams } from '@mui/x-data-grid';
+import {
+  DataGrid,
+  GridColDef,
+  GridRowParams,
+  useGridApiRef,
+} from '@mui/x-data-grid';
 import dayjs from 'dayjs';
 import { useEffect, useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
@@ -47,6 +52,10 @@ import { MarginCalculationBreakdown } from '../components/MarginCalculationBreak
 import { allegroOfferHref } from '../utils/allegroOfferUrl';
 import { marginSourceLabel } from '../utils/marginSourceLabel';
 import { simulateAllegroOffer } from '../utils/simulateAllegroOffer';
+import {
+  reportDataGridLayoutSx,
+  usePinDataGridColumn,
+} from '../utils/usePinDataGridColumn';
 
 const statusLabel: Record<AllegroPriceSimRow['status'], string> = {
   ok: 'Plus',
@@ -80,6 +89,15 @@ const statusColor: Record<
   loss: 'error',
   missing: 'default',
   unreachable: 'error',
+};
+
+const compactChipSx = {
+  maxWidth: '100%',
+  '& .MuiChip-label': {
+    px: 0.75,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+  },
 };
 
 const KpiCard = ({
@@ -121,13 +139,19 @@ const MarginDeltaCell = ({
     spacing={0}
     alignItems="flex-end"
     justifyContent="center"
-    sx={{ width: '100%', lineHeight: 1.2 }}
+    sx={{ width: '100%', minWidth: 0, lineHeight: 1.2 }}
   >
-    <Typography variant="body2" component="span">
+    <Typography variant="body2" component="span" noWrap title={value}>
       {value}
     </Typography>
     {previous != null ? (
-      <Typography variant="caption" color="text.secondary" component="span">
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        component="span"
+        noWrap
+        title={previous}
+      >
         {previous}
       </Typography>
     ) : null}
@@ -224,6 +248,7 @@ const GapFallbackField = ({
 export const AllegroPriceSimPage = () => {
   const user = useAppSelector((state) => state.smSystemUser.user);
   const canView = user?.permissions?.canViewPurchasePrices;
+  const apiRef = useGridApiRef();
   const { notify } = useNotify();
   const { saveOverride, deleteOverride } = useSaveAllegroPriceSimOverride();
   const { applyPrice, isApplying } = useApplyAllegroPriceSim();
@@ -461,13 +486,14 @@ export const AllegroPriceSimPage = () => {
     setGapFilter((current) => (current === next ? 'all' : next));
   };
 
+  usePinDataGridColumn(apiRef, 'name', canView === true);
+
   const columns: GridColDef<DisplayRow>[] = useMemo(
     () => [
       {
         field: 'name',
         headerName: 'Oferta',
-        flex: 1,
-        minWidth: 240,
+        width: 280,
         renderCell: (params) => (
           <Stack
             direction="row"
@@ -529,7 +555,7 @@ export const AllegroPriceSimPage = () => {
         field: 'stock',
         headerName: 'Stan',
         type: 'number',
-        width: 90,
+        width: 72,
         valueFormatter: (value) => (value == null ? '—' : String(value)),
       },
       {
@@ -537,7 +563,7 @@ export const AllegroPriceSimPage = () => {
         headerName: 'Publikacja',
         description:
           'Status publikacji na Allegro. Nieopublikowana (INACTIVE) nadal da się wycenić i wgrać. Zakończonych (ENDED) tu nie ma.',
-        width: 150,
+        width: 132,
         renderCell: (params) => {
           const raw = params.row.offerStatus;
           if (!raw) return '—';
@@ -546,6 +572,8 @@ export const AllegroPriceSimPage = () => {
               size="small"
               color={offerStatusColor(raw)}
               label={offerStatusLabel[raw] ?? raw}
+              title={offerStatusLabel[raw] ?? raw}
+              sx={compactChipSx}
             />
           );
         },
@@ -555,22 +583,31 @@ export const AllegroPriceSimPage = () => {
         headerName: 'Status',
         description:
           'Status marży przy cenie z tabeli: Plus, Granica, Strata, brak danych albo cel nieosiągalny.',
-        width: 150,
+        width: 118,
         renderCell: (params) => (
           <Chip
             size="small"
             color={statusColor[params.row.status]}
             label={statusLabel[params.row.status]}
+            title={statusLabel[params.row.status]}
+            sx={{
+              maxWidth: '100%',
+              '& .MuiChip-label': {
+                px: 0.5,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              },
+            }}
           />
         ),
       },
       {
         field: 'purchaseNetCents',
-        headerName: 'Zakup netto (PLN)',
+        headerName: 'Zakup netto\n(PLN)',
         description:
           'Ostatnia faktura zakupu na dziś — nie średnia z kilku faktur. Jeśli na jednej FV jest kilka pozycji tego SKU, średnia ważona ilością tylko z tej faktury. Gdy brak FV, ostatni zakup z karty produktu.',
         type: 'number',
-        width: 155,
+        width: 120,
         renderCell: (params) => {
           const value = params.row.purchaseNetCents;
           return (
@@ -582,17 +619,17 @@ export const AllegroPriceSimPage = () => {
       },
       {
         field: 'offerGrossCents',
-        headerName: 'Cena oferty (PLN)',
+        headerName: 'Cena oferty\n(PLN)',
         type: 'number',
-        width: 155,
+        width: 120,
         valueFormatter: (value) =>
           value == null ? '—' : formatPrice(Number(value)),
       },
       {
         field: 'simulatedGrossCents',
-        headerName: 'Symulowana cena (PLN)',
+        headerName: 'Symulowana\ncena (PLN)',
         type: 'number',
-        width: 180,
+        width: 124,
         editable: true,
         valueGetter: (_value, row) =>
           row.simulatedGrossCents == null
@@ -616,15 +653,15 @@ export const AllegroPriceSimPage = () => {
       },
       {
         field: 'simulatedAt',
-        headerName: 'Data symulacji',
-        width: 150,
+        headerName: 'Data\nsymulacji',
+        width: 152,
         valueFormatter: (value) =>
           value ? dayjs(String(value)).format('DD.MM.YYYY HH:mm') : '—',
       },
       {
         field: 'apply',
         headerName: 'Wgraj',
-        width: 80,
+        width: 72,
         sortable: false,
         filterable: false,
         renderCell: (params) => {
@@ -650,11 +687,11 @@ export const AllegroPriceSimPage = () => {
       },
       {
         field: 'marginCents',
-        headerName: 'Marża (PLN)',
+        headerName: 'Marża\n(PLN)',
         description:
           'Marża przy cenie z tabeli (symulacja lub oferta). Szara wartość pod spodem to marża przy aktualnej cenie oferty Allegro.',
         type: 'number',
-        width: 140,
+        width: 112,
         valueFormatter: (value) =>
           value == null ? '—' : formatPrice(Number(value)),
         renderCell: (params) => {
@@ -676,7 +713,7 @@ export const AllegroPriceSimPage = () => {
         description:
           'Marża % przy cenie z tabeli. Szara wartość pod spodem to marża % przy aktualnej cenie oferty Allegro.',
         type: 'number',
-        width: 110,
+        width: 88,
         valueFormatter: (value) =>
           value == null ? '—' : `${Number(value).toFixed(1)}%`,
         renderCell: (params) => {
@@ -694,11 +731,11 @@ export const AllegroPriceSimPage = () => {
       },
       {
         field: 'minPriceGrossCents',
-        headerName: 'Cena min (PLN)',
+        headerName: 'Cena min\n(PLN)',
         description:
           'Najniższe brutto, przy którym marża % dochodzi do celu z paska. Zaokrąglone w górę do końcówek Allegro (.90 / .99). Puste, gdy cel jest nieosiągalny.',
         type: 'number',
-        width: 145,
+        width: 112,
         valueFormatter: (value) =>
           value == null ? '—' : formatPrice(Number(value)),
       },
@@ -708,7 +745,7 @@ export const AllegroPriceSimPage = () => {
         description:
           'Stawka prowizji netto z cennika Allegro po drzewie kategorii oferty. Liść dziedziczy stawkę po rodzicu. Bez kategorii lub bez stawki: 17% (Pozostałe). Minimum 0,40 zł netto.',
         type: 'number',
-        width: 120,
+        width: 108,
         renderCell: (params) => {
           const path = params.row.categoryPath.length
             ? params.row.categoryPath.map((part) => part.name).join(' → ')
@@ -991,11 +1028,13 @@ export const AllegroPriceSimPage = () => {
         }}
       >
         <DataGrid
+          apiRef={apiRef}
           rows={filteredRows}
           columns={columns}
           loading={isLoading}
           disableColumnMenu
           disableRowSelectionOnClick
+          columnHeaderHeight={64}
           pageSizeOptions={[25, 50, 100]}
           initialState={{
             pagination: { paginationModel: { pageSize: 25 } },
@@ -1044,6 +1083,10 @@ export const AllegroPriceSimPage = () => {
               display: 'flex',
               alignItems: 'center',
             },
+            '& .MuiDataGrid-cell[data-field="status"]': {
+              px: 0.5,
+            },
+            ...reportDataGridLayoutSx,
           }}
         />
       </Paper>

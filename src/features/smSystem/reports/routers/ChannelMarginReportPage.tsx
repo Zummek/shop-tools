@@ -23,7 +23,12 @@ import {
   Typography,
 } from '@mui/material';
 import { BarChart } from '@mui/x-charts/BarChart';
-import { DataGrid, GridColDef, GridRowParams } from '@mui/x-data-grid';
+import {
+  DataGrid,
+  GridColDef,
+  GridRowParams,
+  useGridApiRef,
+} from '@mui/x-data-grid';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from 'dayjs';
 import { MouseEvent, useMemo, useState } from 'react';
@@ -44,6 +49,10 @@ import {
   SHARE_PERCENT_DESCRIPTION,
   shareOfMarginBasePercent,
 } from '../utils/marginSharePercent';
+import {
+  reportDataGridLayoutSx,
+  usePinDataGridColumn,
+} from '../utils/usePinDataGridColumn';
 
 const channelLabel = (channel: string) => {
   if (channel === 'pcmarket') return 'PC-Market';
@@ -65,12 +74,23 @@ const AmountWithPercentCell = ({
     spacing={0}
     alignItems="flex-end"
     justifyContent="center"
-    sx={{ width: '100%', height: '100%', lineHeight: 1.2 }}
+    sx={{ width: '100%', minWidth: 0, height: '100%', lineHeight: 1.2 }}
   >
-    <Typography variant="body2" component="span">
+    <Typography
+      variant="body2"
+      component="span"
+      noWrap
+      title={formatPrice(amountCents)}
+    >
       {formatPrice(amountCents)}
     </Typography>
-    <Typography variant="caption" color="text.secondary" component="span">
+    <Typography
+      variant="caption"
+      color="text.secondary"
+      component="span"
+      noWrap
+      title={formatSharePercent(percent)}
+    >
       {formatSharePercent(percent)}
     </Typography>
   </Stack>
@@ -126,6 +146,7 @@ export const ChannelMarginReportPage = () => {
     (state) => state.smSystemUser.user?.permissions,
   );
   const canView = permissions?.canViewPurchasePrices;
+  const apiRef = useGridApiRef();
 
   const {
     data,
@@ -191,26 +212,26 @@ export const ChannelMarginReportPage = () => {
     return { dates, series };
   }, [data, chartMetric]);
 
+  usePinDataGridColumn(apiRef, 'productName', canView === true);
+
   const columns: GridColDef<ChannelMarginRow>[] = useMemo(() => {
     const nameCol: GridColDef<ChannelMarginRow> =
       rowMode === 'offer' && lens === 'ecommerce'
         ? {
             field: 'productName',
             headerName: 'Oferta',
-            flex: 1,
-            minWidth: 180,
+            width: 220,
           }
         : {
             field: 'productName',
             headerName: 'Produkt',
-            flex: 1,
-            minWidth: 180,
+            width: 220,
           };
 
     const offerIdCol: GridColDef<ChannelMarginRow> = {
       field: 'offerId',
-      headerName: 'ID oferty',
-      width: 130,
+      headerName: 'ID\noferty',
+      width: 112,
       valueFormatter: (value) => (value == null ? '—' : String(value)),
     };
 
@@ -225,26 +246,26 @@ export const ChannelMarginReportPage = () => {
       },
       {
         field: 'units',
-        headerName: 'Sprzedane szt.',
+        headerName: 'Sprzedane\nszt.',
         description:
           'Suma sprzedanych sztuk produktu (lub oferty) w wybranym okresie i kanale.',
         type: 'number',
-        width: 120,
+        width: 92,
       },
       {
         field: 'revenueCents',
-        headerName: 'Przychód łączny (PLN)',
+        headerName: 'Przychód\nłączny (PLN)',
         description: 'Suma przychodu ze sprzedaży w okresie.',
         type: 'number',
-        width: 150,
+        width: 128,
         valueFormatter: (value) => formatPrice(Number(value)),
       },
       {
         field: 'cogsCents',
-        headerName: 'COGS łączny (PLN)',
+        headerName: 'COGS\nłączny (PLN)',
         description: `Suma kosztu zakupu w okresie. ${SHARE_PERCENT_DESCRIPTION}`,
         type: 'number',
-        width: 140,
+        width: 128,
         valueFormatter: (value) => formatPrice(Number(value)),
         renderCell: (params) => (
           <AmountWithPercentCell
@@ -259,10 +280,10 @@ export const ChannelMarginReportPage = () => {
       },
       {
         field: 'commissionCents',
-        headerName: 'Prowizja łączna (PLN)',
+        headerName: 'Prowizja\nłączna (PLN)',
         description: `Suma prowizji / opłat kanału w okresie. ${SHARE_PERCENT_DESCRIPTION}`,
         type: 'number',
-        width: 150,
+        width: 128,
         valueFormatter: (value) => formatPrice(Number(value)),
         renderCell: (params) => (
           <AmountWithPercentCell
@@ -277,10 +298,10 @@ export const ChannelMarginReportPage = () => {
       },
       {
         field: 'buyerDeliveryCents',
-        headerName: 'Dostawa od klienta łączna (PLN)',
+        headerName: 'Dostawa od\nklienta (PLN)',
         description: `Kwota, którą kupujący zapłacił za przesyłkę. To wpływ — dodawany do marży. ${SHARE_PERCENT_DESCRIPTION}`,
         type: 'number',
-        width: 210,
+        width: 128,
         valueFormatter: (value) => formatPrice(Number(value)),
         renderCell: (params) => (
           <AmountWithPercentCell
@@ -295,10 +316,10 @@ export const ChannelMarginReportPage = () => {
       },
       {
         field: 'sellerDeliveryCents',
-        headerName: 'Koszt dostawy łączny (PLN)',
+        headerName: 'Koszt dostawy\nłączny (PLN)',
         description: `Twój koszt wysyłki (kurier / Allegro Smart / grupa dostawy). To wydatek — odejmowany od marży. ${SHARE_PERCENT_DESCRIPTION}`,
         type: 'number',
-        width: 190,
+        width: 132,
         valueFormatter: (value) => formatPrice(Number(value)),
         renderCell: (params) => (
           <AmountWithPercentCell
@@ -313,10 +334,10 @@ export const ChannelMarginReportPage = () => {
       },
       {
         field: 'otherFeesCents',
-        headerName: 'Inne łączne (PLN)',
+        headerName: 'Inne\nłączne (PLN)',
         description: `Suma pozostałych opłat w okresie. ${SHARE_PERCENT_DESCRIPTION}`,
         type: 'number',
-        width: 130,
+        width: 128,
         valueFormatter: (value) => formatPrice(Number(value)),
         renderCell: (params) => (
           <AmountWithPercentCell
@@ -331,10 +352,10 @@ export const ChannelMarginReportPage = () => {
       },
       {
         field: 'marginCents',
-        headerName: 'Marża łączna (PLN)',
+        headerName: 'Marża\nłączna (PLN)',
         description: `Suma marży w okresie. ${SHARE_PERCENT_DESCRIPTION}`,
         type: 'number',
-        width: 140,
+        width: 128,
         valueFormatter: (value) => formatPrice(Number(value)),
         renderCell: (params) => (
           <AmountWithPercentCell
@@ -730,6 +751,7 @@ export const ChannelMarginReportPage = () => {
           </Stack>
         </Stack>
         <DataGrid
+          apiRef={apiRef}
           rows={filteredTableRows.map((row, index) => ({
             ...row,
             id:
@@ -741,6 +763,7 @@ export const ChannelMarginReportPage = () => {
           loading={isLoading}
           disableColumnMenu
           disableRowSelectionOnClick
+          columnHeaderHeight={64}
           rowHeight={56}
           pageSizeOptions={[25, 50, 100]}
           initialState={{
@@ -757,6 +780,7 @@ export const ChannelMarginReportPage = () => {
               display: 'flex',
               alignItems: 'center',
             },
+            ...reportDataGridLayoutSx,
           }}
         />
       </Paper>

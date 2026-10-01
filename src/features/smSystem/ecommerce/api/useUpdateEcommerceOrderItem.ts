@@ -1,7 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { useNotify } from '../../../../hooks';
-import { axiosInstance } from '../../../../services';
+import {
+  axiosInstance,
+  throwAxiosErrorFromResponse,
+} from '../../../../services';
 import { EcommerceOrderDetails } from '../types';
 
 import { getEcommerceOrderDetailsQueryKey } from './useGetEcommerceOrderDetails';
@@ -34,6 +37,8 @@ export const useUpdateEcommerceOrderItem = () => {
         ...(componentIndex == null ? {} : { componentIndex }),
       },
     );
+    if (response.status === 400 || response.status === 404)
+      throwAxiosErrorFromResponse(response);
     return response.data;
   };
 

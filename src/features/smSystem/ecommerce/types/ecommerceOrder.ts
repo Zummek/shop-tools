@@ -16,6 +16,7 @@ export interface EcommerceOrderItem {
   quantity: number;
   unitsInOffer: number;
   offerComponents: Product[];
+  offerComponentMatchTypes: ProductMatchType[];
   internalProduct: Product | null;
   productMatchType: ProductMatchType;
 }

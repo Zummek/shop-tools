@@ -8,7 +8,8 @@ export type ProductMatchType =
   | 'PREVIOUS_MANUAL'
   | 'SIMILARITY'
   | 'CHANNEL_LINK'
-  | 'SKU';
+  | 'SKU'
+  | 'OFFER_NAME';
 
 export enum ProductUnit {
   kg = 'kg',

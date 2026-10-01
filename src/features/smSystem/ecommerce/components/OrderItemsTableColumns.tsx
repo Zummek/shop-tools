@@ -9,7 +9,6 @@ import { Barcode } from './Barcode';
 import { ProductCell } from './ProductCell';
 import {
   catalogUnitGross,
-  isMatchedComponent,
   offerQuantityLabel,
   OrderItemGridRow,
 } from './orderItemRows';
@@ -34,6 +33,7 @@ const matchLabels: Record<ProductMatchType, string> = {
   SIMILARITY: 'Auto (podobna nazwa)',
   CHANNEL_LINK: 'Auto (link kanału)',
   SKU: 'Auto (SKU)',
+  OFFER_NAME: 'Auto (nazwa oferty)',
 };
 
 const matchColors: Record<
@@ -48,6 +48,7 @@ const matchColors: Record<
   SIMILARITY: 'warning',
   CHANNEL_LINK: 'success',
   SKU: 'success',
+  OFFER_NAME: 'success',
 };
 
 function productCountLabel(count: number) {
@@ -104,13 +105,6 @@ export const createOrderItemsColumns = ({
     renderCell: (params) => {
       const { row } = params;
       const isEditing = editingRowId === row.id;
-      const componentIndex = (row.item.offerComponents ?? []).findIndex(
-        (product) => product.id === row.product?.id,
-      );
-      const replaceComponent =
-        row.kind === 'component' &&
-        !isMatchedComponent(row) &&
-        componentIndex >= 0;
       const editProps = {
         orderItem: row.item,
         isEditing,
@@ -120,7 +114,9 @@ export const createOrderItemsColumns = ({
             await updateEcommerceOrderItem({
               orderItemId: row.item.id,
               internalProductId: product.id,
-              ...(replaceComponent ? { componentIndex } : {}),
+              ...(row.componentIndex == null
+                ? {}
+                : { componentIndex: row.componentIndex }),
             });
           }
           setEditingRowId(null);
@@ -163,13 +159,11 @@ export const createOrderItemsColumns = ({
     headerName: 'Status dopasowania',
     minWidth: 140,
     renderCell: ({ row }) => {
-      if (row.kind === 'component' && !isMatchedComponent(row))
-        return <Chip label="Część oferty" size="small" variant="outlined" />;
-      if (row.kind === 'offer' && row.item.internalProduct) return null;
+      if (!row.matchType) return null;
       return (
         <Chip
-          label={matchLabels[row.item.productMatchType]}
-          color={matchColors[row.item.productMatchType]}
+          label={matchLabels[row.matchType]}
+          color={matchColors[row.matchType]}
           size="small"
         />
       );
@@ -245,10 +239,9 @@ export const createOrderItemsColumns = ({
       const pieces = row.item.quantity * units;
       if (units <= 1) return pieces;
       const offers = row.item.quantity;
-      const offerWord = offers === 1 ? 'oferta' : 'ofert';
       return (
         <Tooltip
-          title={`${offers} ${offerWord} × ${units} szt. Cena oferty jest za całość.`}
+          title={`${offers} ${offerQuantityLabel(offers)} × ${units} szt. Cena oferty jest za całość.`}
         >
           <Box lineHeight={1.15} textAlign="center">
             <div>{pieces}</div>

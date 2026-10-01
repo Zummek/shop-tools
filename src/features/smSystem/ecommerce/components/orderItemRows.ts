@@ -1,4 +1,4 @@
-import type { Product } from '../../products/types';
+import type { Product, ProductMatchType } from '../../products/types';
 import type { EcommerceOrderItem } from '../types';
 
 type PricedProduct =
@@ -15,6 +15,9 @@ export interface OrderItemGridRow {
   kind: OrderItemRowKind;
   item: EcommerceOrderItem;
   product: Product | null;
+  matchType: ProductMatchType | null;
+  /** Set on a bundle part. Null on the offer, the line, and an assigned product outside the bundle. */
+  componentIndex: number | null;
 }
 
 export function buildOrderItemRows(
@@ -29,6 +32,8 @@ export function buildOrderItemRows(
         kind: 'line',
         item,
         product: item.internalProduct,
+        matchType: item.productMatchType,
+        componentIndex: null,
       });
       continue;
     }
@@ -37,6 +42,8 @@ export function buildOrderItemRows(
       kind: 'offer',
       item,
       product: null,
+      matchType: null,
+      componentIndex: null,
     });
     const assigned = item.internalProduct;
     const componentIds = new Set(components.map((product) => product.id));
@@ -46,16 +53,22 @@ export function buildOrderItemRows(
         kind: 'component',
         item,
         product: assigned,
+        matchType: item.productMatchType,
+        componentIndex: null,
       });
     }
-    for (const product of components) {
+    components.forEach((product, index) => {
       rows.push({
-        id: `item-${item.id}-product-${product.id}`,
+        id: `item-${item.id}-part-${index}`,
         kind: 'component',
         item,
         product,
+        matchType:
+          item.offerComponentMatchTypes?.[index] ??
+          (product.id === assigned?.id ? item.productMatchType : 'OFFER_NAME'),
+        componentIndex: index,
       });
-    }
+    });
   }
   return rows;
 }

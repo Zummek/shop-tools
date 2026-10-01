@@ -200,6 +200,7 @@ export const InvoiceDetailsPage = () => {
           SIMILARITY: 'Auto (podobna nazwa)',
           CHANNEL_LINK: 'Auto (link kanału)',
           SKU: 'Auto (SKU)',
+          OFFER_NAME: 'Auto (nazwa oferty)',
         };
         const matchColors: Record<
           ProductMatchType,
@@ -213,6 +214,7 @@ export const InvoiceDetailsPage = () => {
           SIMILARITY: 'warning',
           CHANNEL_LINK: 'success',
           SKU: 'success',
+          OFFER_NAME: 'success',
         };
 
         return (

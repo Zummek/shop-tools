@@ -29,6 +29,7 @@ function item(
     quantity: 1,
     unitsInOffer: 1,
     offerComponents: [],
+    offerComponentMatchTypes: [],
     internalProduct: null,
     productMatchType: 'MANUAL',
     ...overrides,
@@ -51,19 +52,30 @@ test('a bundle lists the offer and each component once', () => {
     item({
       id: 10,
       internalProduct: mag,
+      productMatchType: 'PREVIOUS_MANUAL',
       offerComponents: [mag, potas],
+      offerComponentMatchTypes: ['PREVIOUS_MANUAL', 'OFFER_NAME'],
     }),
   ]);
   assert.deepEqual(
-    rows.map((row) => [row.kind, row.id, row.product?.id ?? null]),
+    rows.map((row) => [
+      row.kind,
+      row.id,
+      row.product?.id ?? null,
+      row.componentIndex,
+    ]),
     [
-      ['offer', 'item-10', null],
-      ['component', 'item-10-product-1', 1],
-      ['component', 'item-10-product-2', 2],
+      ['offer', 'item-10', null, null],
+      ['component', 'item-10-part-0', 1, 0],
+      ['component', 'item-10-part-1', 2, 1],
     ],
   );
   assert.equal(isMatchedComponent(rows[1]), true);
   assert.equal(isMatchedComponent(rows[2]), false);
+  assert.deepEqual(
+    rows.map((row) => row.matchType),
+    [null, 'PREVIOUS_MANUAL', 'OFFER_NAME'],
+  );
 });
 
 test('an assigned product outside the bundle gets its own editable row', () => {
@@ -78,16 +90,35 @@ test('an assigned product outside the bundle gets its own editable row', () => {
     }),
   ]);
   assert.deepEqual(
-    rows.map((row) => [row.kind, row.product?.id ?? null]),
+    rows.map((row) => [row.kind, row.product?.id ?? null, row.componentIndex]),
     [
-      ['offer', null],
-      ['component', 9],
-      ['component', 1],
-      ['component', 2],
+      ['offer', null, null],
+      ['component', 9, null],
+      ['component', 1, 0],
+      ['component', 2, 1],
     ],
   );
   assert.equal(isMatchedComponent(rows[1]), true);
   assert.equal(isMatchedComponent(rows[2]), false);
+});
+
+test('two parts with the same product keep distinct indexes', () => {
+  const mag = product(1, 'Mag');
+  const rows = buildOrderItemRows([
+    item({
+      id: 10,
+      internalProduct: mag,
+      offerComponents: [mag, mag],
+    }),
+  ]);
+  assert.deepEqual(
+    rows.map((row) => [row.id, row.componentIndex]),
+    [
+      ['item-10', null],
+      ['item-10-part-0', 0],
+      ['item-10-part-1', 1],
+    ],
+  );
 });
 
 test('offer quantity label follows Polish plural rules', () => {

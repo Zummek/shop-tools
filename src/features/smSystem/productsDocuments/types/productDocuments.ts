@@ -18,4 +18,9 @@ export interface ProductsDocumentListItem {
   createdBy: SimpleUser | null;
   updatedAt: Date | null;
   updatedBy: SimpleUser | null;
+  remanent: {
+    id: number;
+    name: string;
+    status: 'OPEN' | 'CLOSED';
+  } | null;
 }

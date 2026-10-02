@@ -1,5 +1,5 @@
 import { LoadingButton } from '@mui/lab';
-import { Box, Stack, Typography } from '@mui/material';
+import { Box, Chip, Stack, Typography } from '@mui/material';
 import { DataGrid, GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
 import dayjs from 'dayjs';
 import { useState } from 'react';
@@ -30,7 +30,9 @@ const statusMessage: Record<ProductsDocumentStatus, string> = {
   PREPARING: 'W trakcie tworzenia',
 };
 
-const columns: GridColDef<ProductsDocumentListItem>[] = [
+const getColumns = (
+  navigate: (path: string) => void,
+): GridColDef<ProductsDocumentListItem>[] => [
   { field: 'id', headerName: 'ID', width: 70 },
   { field: 'name', headerName: 'Nazwa', width: 150 },
   {
@@ -60,6 +62,23 @@ const columns: GridColDef<ProductsDocumentListItem>[] = [
     field: 'comment',
     headerName: 'Komentarz',
     width: 100,
+  },
+  {
+    field: 'remanent',
+    headerName: 'Remanent',
+    width: 200,
+    renderCell: (params) =>
+      params.row.remanent ? (
+        <Chip
+          size="small"
+          color={params.row.remanent.status === 'OPEN' ? 'warning' : 'success'}
+          label={params.row.remanent.name}
+          onClick={(event) => {
+            event.stopPropagation();
+            navigate(`${Pages.smSystemRemanents}/${params.row.remanent?.id}`);
+          }}
+        />
+      ) : null,
   },
   {
     field: 'branch',
@@ -174,7 +193,7 @@ export const ProductsDocumentsPage = () => {
           }}
           rows={productsDocuments}
           rowCount={totalCount || 0}
-          columns={columns}
+          columns={getColumns(navigate)}
           pageSizeOptions={[pageSize]}
           loading={isLoading}
           paginationModel={{

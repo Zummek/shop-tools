@@ -39,6 +39,8 @@ import { ImportProductsPage } from './features/smSystem/products/routers/ImportP
 import { ProductDetailsPage } from './features/smSystem/products/routers/ProductDetailsPage/ProductDetailsPage';
 import { ProductsListPage } from './features/smSystem/products/routers/ProductsListPage/ProductsListPage';
 import { ProductsDocumentsPage } from './features/smSystem/productsDocuments/routers/ProductsDocumentsPage';
+import { RemanentDetailsPage } from './features/smSystem/remanents/routers/RemanentDetailsPage';
+import { RemanentsPage } from './features/smSystem/remanents/routers/RemanentsPage';
 import { AllegroPriceSimPage } from './features/smSystem/reports/routers/AllegroPriceSimPage';
 import { ChannelMarginReportPage } from './features/smSystem/reports/routers/ChannelMarginReportPage';
 import { ReportsPage } from './features/smSystem/reports/routers/ReportsPage';
@@ -93,6 +95,14 @@ const router = sentryCreateHashRouter(
         {
           path: 'products-documents',
           element: <ProductsDocumentsPage />,
+        },
+        {
+          path: 'remanents',
+          element: <RemanentsPage />,
+        },
+        {
+          path: 'remanents/:remanentId',
+          element: <RemanentDetailsPage />,
         },
         {
           path: 'import-products',

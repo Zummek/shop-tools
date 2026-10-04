@@ -80,6 +80,62 @@ const parsePriceInput = (value: string): number | null => {
   return Math.round(parseFloat(trimmed.replace(',', '.')) * 100);
 };
 
+const ReportPurchasePrice = ({ product }: { product: Product }) => {
+  const report = product.reportPurchase;
+  const heroCents =
+    report?.unitNetCents ?? product.lastPurchaseNetPrice ?? null;
+  const invoiceId = report?.invoiceId;
+  const invoiceNumber = report?.invoiceNumber;
+  const fromInvoice = invoiceId != null && !!invoiceNumber;
+  const lastReceivedCents = report?.lastReceivedNetCents;
+  const lastReceivedDiffers =
+    lastReceivedCents != null &&
+    heroCents != null &&
+    lastReceivedCents !== heroCents;
+  const invoiceDate = report?.invoiceDate
+    ? dayjs(report.invoiceDate).format('DD.MM.YYYY')
+    : null;
+  const seller = report?.sellerName?.trim() || null;
+
+  return (
+    <Stack spacing={0.5}>
+      <Typography variant="h6">{'Cena zakupu netto'}</Typography>
+      <Typography sx={{ fontSize: 20, fontWeight: 500 }}>
+        {heroCents != null ? formatPrice(heroCents, 'PLN') : '—'}
+      </Typography>
+      {fromInvoice ? (
+        <Typography>
+          {'z faktury '}
+          <Link
+            component={RouterLink}
+            to={Pages.smSystemInvoiceDetails.replace(
+              ':invoiceId',
+              String(invoiceId),
+            )}
+          >
+            {invoiceNumber}
+          </Link>
+          {invoiceDate ? ` · ${invoiceDate}` : ''}
+          {seller ? ` · ${seller}` : ''}
+        </Typography>
+      ) : null}
+      {lastReceivedDiffers && lastReceivedCents != null ? (
+        <Typography variant="body2" color="text.secondary">
+          {`Ostatnia przyjęta: ${formatPrice(lastReceivedCents, 'PLN')}`}
+          {report?.lastReceivedAt
+            ? ` · ${dayjs(report.lastReceivedAt).format('DD.MM.YYYY')}`
+            : ''}
+        </Typography>
+      ) : null}
+      {!fromInvoice && !lastReceivedDiffers && product.lastPurchaseAt ? (
+        <Typography variant="body2" color="text.secondary">
+          {`Ostatnia przyjęta · ${dayjs(product.lastPurchaseAt).format('DD.MM.YYYY')}`}
+        </Typography>
+      ) : null}
+    </Stack>
+  );
+};
+
 const ManualPurchaseSection = ({ product }: { product: Product }) => {
   const { notify } = useNotify();
   const queryClient = useQueryClient();
@@ -155,28 +211,14 @@ const ManualPurchaseSection = ({ product }: { product: Product }) => {
     }
   };
 
+  if (product.hasRealPurchase) return <ReportPurchasePrice product={product} />;
+
   return (
     <Stack spacing={2}>
       <Typography variant="h6">{'Cena zakupu netto'}</Typography>
-      {product.hasRealPurchase ? (
-        <Alert severity="info">
-          {
-            'Ręczna cena zakupu jest zablokowana — produkt ma historię z faktury.'
-          }
-        </Alert>
-      ) : null}
-      {product.lastPurchaseNetPrice != null ? (
-        <Typography>
-          {`Ostatnia z FV: ${formatPrice(product.lastPurchaseNetPrice, 'PLN')}`}
-          {product.lastPurchaseAt
-            ? ` (${dayjs(product.lastPurchaseAt).format('DD.MM.YYYY')})`
-            : ''}
-        </Typography>
-      ) : !product.hasRealPurchase ? (
-        <Typography color="text.secondary">
-          {'Brak historii zakupu z faktury.'}
-        </Typography>
-      ) : null}
+      <Typography color="text.secondary">
+        {'Brak historii zakupu z faktury.'}
+      </Typography>
       {vatMissing && product.canEditManualPurchase ? (
         <Alert severity="warning">
           {'Ustaw stawkę VAT produktu, zanim wpiszesz ręczną cenę zakupu.'}
@@ -283,14 +325,14 @@ export const ProductWarehouseTab = ({ product }: ProductWarehouseTabProps) => {
   return (
     <Stack spacing={3}>
       <Stack spacing={2}>
-        <Typography variant="h6">{'Stany i ceny (oddziały)'}</Typography>
+        <Typography variant="h6">{'Stany i ceny sprzedaży'}</Typography>
         <Table size="small">
           <TableHead>
             <TableRow>
               <TableCell>{'Oddział'}</TableCell>
               <TableCell align="right">{'Stan'}</TableCell>
-              <TableCell align="right">{'Cena netto'}</TableCell>
-              <TableCell align="right">{'Cena brutto'}</TableCell>
+              <TableCell align="right">{'Sprzedaż netto'}</TableCell>
+              <TableCell align="right">{'Sprzedaż brutto'}</TableCell>
               <TableCell>{'Aktualizacja stanu'}</TableCell>
             </TableRow>
           </TableHead>
@@ -446,47 +488,59 @@ export const ProductWarehouseTab = ({ product }: ProductWarehouseTabProps) => {
                       <TableCell>{'Dostawca'}</TableCell>
                       <TableCell align="right">{'Ilość'}</TableCell>
                       <TableCell align="right">{'Przyjęto'}</TableCell>
-                      <TableCell align="right">{'Cena netto'}</TableCell>
+                      <TableCell align="right">{'Netto po rabacie'}</TableCell>
                       <TableCell>{'Status'}</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
+                    {history.reportPurchase &&
+                    history.reportPurchase.outsideWindow ? (
+                      <PurchaseRow
+                        invoiceId={history.reportPurchase.invoiceId}
+                        invoiceNumber={history.reportPurchase.invoiceNumber}
+                        invoiceDate={history.reportPurchase.invoiceDate}
+                        sellerName={history.reportPurchase.sellerName}
+                        quantity={history.reportPurchase.quantity}
+                        receivedQuantity={
+                          history.reportPurchase.receivedQuantity
+                        }
+                        netCents={history.reportPurchase.unitNetCents}
+                        currency={history.reportPurchase.currency}
+                        status={history.reportPurchase.status}
+                        pinned
+                      />
+                    ) : null}
                     {(history.purchases ?? []).map((row) => (
-                      <TableRow key={row.id}>
-                        <TableCell>
-                          <Link
-                            component={RouterLink}
-                            to={Pages.smSystemInvoiceDetails.replace(
-                              ':invoiceId',
-                              String(row.invoiceId),
-                            )}
-                          >
-                            {row.invoiceNumber}
-                          </Link>
-                        </TableCell>
-                        <TableCell>
-                          {dayjs(row.invoiceDate).format('DD.MM.YYYY')}
-                        </TableCell>
-                        <TableCell>{row.sellerName}</TableCell>
-                        <TableCell align="right">
-                          {formatQuantity(row.quantity)}
-                        </TableCell>
-                        <TableCell align="right">
-                          {formatQuantity(row.receivedQuantity)}
-                        </TableCell>
-                        <TableCell align="right">
-                          {row.unitNetPrice != null
-                            ? formatPrice(row.unitNetPrice, row.currency)
-                            : '—'}
-                        </TableCell>
-                        <TableCell>{invoiceStatusLabel(row.status)}</TableCell>
-                      </TableRow>
+                      <PurchaseRow
+                        key={row.id}
+                        invoiceId={row.invoiceId}
+                        invoiceNumber={row.invoiceNumber}
+                        invoiceDate={row.invoiceDate}
+                        sellerName={row.sellerName}
+                        quantity={row.quantity}
+                        receivedQuantity={row.receivedQuantity}
+                        netCents={row.unitNetAfterDiscount ?? row.unitNetPrice}
+                        currency={row.currency}
+                        status={row.status}
+                      />
                     ))}
                     {(history.purchases ?? []).length === 0 && (
-                      <EmptyRow colSpan={7} label="Brak zakupów w okresie" />
+                      <EmptyRow
+                        colSpan={7}
+                        label={
+                          history.reportPurchase?.outsideWindow
+                            ? 'Brak innych zakupów w okresie'
+                            : 'Brak zakupów w okresie'
+                        }
+                      />
                     )}
                   </TableBody>
                 </HistoryTable>
+                {history.reportPurchase?.outsideWindow ? (
+                  <Typography variant="body2" color="text.secondary">
+                    {`Poza ostatnimi ${history.days} dniami. Z tej faktury liczony jest aktualny koszt: średnia ważona ilością, netto po rabacie.`}
+                  </Typography>
+                ) : null}
                 {history.purchasesTruncated && (
                   <Typography variant="body2" color="text.secondary">
                     {'Pokazano 100 najnowszych zakupów.'}
@@ -605,6 +659,58 @@ const DailySaleRow = ({
     </>
   );
 };
+
+const PurchaseRow = ({
+  invoiceId,
+  invoiceNumber,
+  invoiceDate,
+  sellerName,
+  quantity,
+  receivedQuantity,
+  netCents,
+  currency,
+  status,
+  pinned = false,
+}: {
+  invoiceId: number | null;
+  invoiceNumber: string | null;
+  invoiceDate: string | null;
+  sellerName: string | null;
+  quantity: number | null;
+  receivedQuantity: number | null;
+  netCents: number | null;
+  currency: string;
+  status: string;
+  pinned?: boolean;
+}) => (
+  <TableRow sx={pinned ? { bgcolor: 'action.hover' } : undefined}>
+    <TableCell>
+      {invoiceId != null ? (
+        <Link
+          component={RouterLink}
+          to={Pages.smSystemInvoiceDetails.replace(
+            ':invoiceId',
+            String(invoiceId),
+          )}
+        >
+          {invoiceNumber || '—'}
+        </Link>
+      ) : (
+        invoiceNumber || '—'
+      )}
+    </TableCell>
+    <TableCell>
+      {invoiceDate ? dayjs(invoiceDate).format('DD.MM.YYYY') : '—'}
+    </TableCell>
+    <TableCell>{sellerName || '—'}</TableCell>
+    <TableCell align="right">{formatQuantity(quantity)}</TableCell>
+    <TableCell align="right">{formatQuantity(receivedQuantity)}</TableCell>
+    <TableCell align="right">
+      {netCents != null ? formatPrice(netCents, currency) : '—'}
+    </TableCell>
+    <TableCell>{invoiceStatusLabel(status)}</TableCell>
+  </TableRow>
+);
 
 const HISTORY_TABLE_MAX_HEIGHT = 360;
 

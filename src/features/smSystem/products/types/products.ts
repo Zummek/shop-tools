@@ -52,7 +52,19 @@ export interface Product {
   manualPurchaseSetAt?: string | null;
   hasRealPurchase?: boolean;
   canEditManualPurchase?: boolean;
+  reportPurchase?: ProductReportPurchase | null;
   channels?: ProductSalesChannel[];
+}
+
+export interface ProductReportPurchase {
+  unitNetCents: number;
+  source: string;
+  invoiceId: number | null;
+  invoiceNumber: string | null;
+  invoiceDate: string | null;
+  sellerName: string | null;
+  lastReceivedNetCents: number | null;
+  lastReceivedAt: string | null;
 }
 
 export const PRODUCT_SALES_CHANNELS = [
@@ -122,8 +134,17 @@ export interface ProductHistoryPurchase {
   quantity: number;
   receivedQuantity: number | null;
   unitNetPrice: number | null;
+  unitNetAfterDiscount: number | null;
   status: string;
   currency: string;
+}
+
+export interface ProductHistoryReportPurchase extends ProductReportPurchase {
+  quantity: number;
+  receivedQuantity: number | null;
+  status: string;
+  currency: string;
+  outsideWindow: boolean;
 }
 
 export interface ProductHistory {
@@ -133,6 +154,7 @@ export interface ProductHistory {
   transfersTruncated: boolean;
   purchases?: ProductHistoryPurchase[];
   purchasesTruncated?: boolean;
+  reportPurchase?: ProductHistoryReportPurchase | null;
 }
 
 export interface ProductChannelSalesDay {

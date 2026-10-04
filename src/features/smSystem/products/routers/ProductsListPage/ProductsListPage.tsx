@@ -116,10 +116,10 @@ export const ProductsListPage = () => {
       <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
         <TextField
           size="small"
-          label="Szukaj po nazwie lub EAN"
+          label="Szukaj po nazwie, EAN lub SKU / ID wewnętrznym"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          sx={{ maxWidth: 400 }}
+          sx={{ minWidth: 360, maxWidth: 480 }}
         />
         {canViewPurchases ? (
           <>

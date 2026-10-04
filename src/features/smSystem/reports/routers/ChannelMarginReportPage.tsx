@@ -1,9 +1,11 @@
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import {
   Alert,
   Button,
   Chip,
   FormControl,
+  IconButton,
   InputLabel,
   MenuItem,
   Paper,
@@ -227,7 +229,41 @@ export const ChannelMarginReportPage = () => {
         : {
             field: 'productName',
             headerName: 'Produkt',
-            width: 220,
+            width: 260,
+            renderCell: (params) => (
+              <Stack
+                direction="row"
+                alignItems="center"
+                spacing={0.5}
+                sx={{ height: '100%', width: '100%', minWidth: 0 }}
+              >
+                <Typography
+                  variant="body2"
+                  noWrap
+                  sx={{ flex: 1, minWidth: 0 }}
+                >
+                  {params.row.productName}
+                </Typography>
+                {params.row.productId != null ? (
+                  <Tooltip title="Otwórz produkt">
+                    <IconButton
+                      size="small"
+                      component="a"
+                      href={`#${Pages.smSystemProductDetails.replace(
+                        ':productId',
+                        String(params.row.productId),
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Otwórz produkt w nowej karcie"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <VisibilityOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                ) : null}
+              </Stack>
+            ),
           };
 
     const offerIdCol: GridColDef<ChannelMarginRow> = {

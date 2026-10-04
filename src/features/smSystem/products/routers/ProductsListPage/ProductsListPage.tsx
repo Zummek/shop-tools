@@ -25,7 +25,7 @@ import { ProductListChannel, productsListSearchString } from '../../utils';
 const baseColumns: GridColDef<Product>[] = [
   {
     field: 'internalId',
-    headerName: 'SKU / ID wewnętrzne',
+    headerName: 'SKU',
     width: 160,
   },
   {
@@ -133,7 +133,7 @@ export const ProductsListPage = () => {
       <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
         <TextField
           size="small"
-          label="Szukaj po nazwie, EAN lub SKU / ID wewnętrznym"
+          label="Szukaj po nazwie, EAN lub SKU"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           sx={{ minWidth: 360, maxWidth: 480 }}

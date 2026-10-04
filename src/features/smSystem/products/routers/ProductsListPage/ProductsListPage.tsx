@@ -8,13 +8,14 @@ import {
   TextField,
 } from '@mui/material';
 import { DataGrid, GridColDef, GridRowParams } from '@mui/x-data-grid';
-import { useEffect, useMemo, useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { useMemo } from 'react';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { useAppSelector } from '../../../../../hooks';
 import { Pages } from '../../../../../utils';
 import { useGetProducts } from '../../api';
 import { Product } from '../../types';
+import { productsListSearchString } from '../../utils';
 
 const baseColumns: GridColDef<Product>[] = [
   {
@@ -64,22 +65,25 @@ const actionColumn: GridColDef<Product> = {
 
 export const ProductsListPage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAppSelector((state) => state.smSystemUser);
   const canViewPurchases = !!user?.permissions?.canViewPurchasePrices;
-  const [missingPurchaseCost, setMissingPurchaseCost] = useState(false);
-  const [manualUnset, setManualUnset] = useState(false);
-  const { products, totalCount, isLoading, page, setPage, query, setQuery } =
-    useGetProducts({
-      missingPurchaseCost: canViewPurchases && missingPurchaseCost,
-      manualUnset: canViewPurchases && missingPurchaseCost && manualUnset,
-    });
-
-  const [searchInput, setSearchInput] = useState(query);
-
-  useEffect(() => {
-    const timeout = setTimeout(() => setQuery(searchInput), 300);
-    return () => clearTimeout(timeout);
-  }, [searchInput, setQuery]);
+  const {
+    products,
+    totalCount,
+    isLoading,
+    page,
+    setPage,
+    query,
+    setQuery,
+    missingPurchaseCost,
+    setMissingPurchaseCost,
+    manualUnset,
+    setManualUnset,
+  } = useGetProducts({
+    syncSearchParams: true,
+    canViewPurchases,
+  });
 
   const columns = useMemo(() => {
     if (!canViewPurchases || !missingPurchaseCost)
@@ -98,9 +102,13 @@ export const ProductsListPage = () => {
     return <Navigate to={Pages.smSystem} replace />;
 
   const handleRowClick = (params: GridRowParams<Product>) => {
-    navigate(
-      Pages.smSystemProductDetails.replace(':productId', String(params.row.id)),
-    );
+    navigate({
+      pathname: Pages.smSystemProductDetails.replace(
+        ':productId',
+        String(params.row.id),
+      ),
+      search: productsListSearchString(searchParams),
+    });
   };
 
   return (
@@ -109,8 +117,8 @@ export const ProductsListPage = () => {
         <TextField
           size="small"
           label="Szukaj po nazwie lub EAN"
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
           sx={{ maxWidth: 400 }}
         />
         {canViewPurchases ? (
@@ -119,11 +127,9 @@ export const ProductsListPage = () => {
               control={
                 <Switch
                   checked={missingPurchaseCost}
-                  onChange={(event) => {
-                    setMissingPurchaseCost(event.target.checked);
-                    if (!event.target.checked) setManualUnset(false);
-                    setPage(0);
-                  }}
+                  onChange={(event) =>
+                    setMissingPurchaseCost(event.target.checked)
+                  }
                   size="small"
                 />
               }
@@ -134,14 +140,11 @@ export const ProductsListPage = () => {
                 control={
                   <Switch
                     checked={manualUnset}
-                    onChange={(event) => {
-                      setManualUnset(event.target.checked);
-                      setPage(0);
-                    }}
+                    onChange={(event) => setManualUnset(event.target.checked)}
                     size="small"
                   />
                 }
-                label="Jeszcze bez ręcznej ceny"
+                label="Bez ręcznej ceny zakupu"
               />
             ) : null}
           </>

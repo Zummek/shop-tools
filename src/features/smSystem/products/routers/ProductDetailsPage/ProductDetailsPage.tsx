@@ -21,7 +21,12 @@ import {
 } from '@mui/material';
 import dayjs from 'dayjs';
 import { useMemo, useState } from 'react';
-import { Navigate, useNavigate, useParams } from 'react-router-dom';
+import {
+  Navigate,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from 'react-router-dom';
 
 import { LabelData } from '../../../../../components';
 import { useAppSelector, useNotify } from '../../../../../hooks';
@@ -37,7 +42,7 @@ import {
 import { SchedulePriceChangeModal } from '../../../ecommerce/modals';
 import { isPriceScheduleSnoozed } from '../../../ecommerce/utils';
 import { useGetProductDetails } from '../../api';
-import { formatPrice } from '../../utils';
+import { formatPrice, productsListSearchString } from '../../utils';
 
 import { ProductWarehouseTab } from './ProductWarehouseTab';
 
@@ -89,7 +94,14 @@ const isEndedOffer = (link: ChannelProductLink) =>
 
 export const ProductDetailsPage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAppSelector((state) => state.smSystemUser);
+  const goToProductsList = () => {
+    navigate({
+      pathname: Pages.smSystemProducts,
+      search: productsListSearchString(searchParams),
+    });
+  };
   const { productId: rawProductId } = useParams<{ productId: string }>();
   const productId = Number(rawProductId);
 
@@ -143,10 +155,7 @@ export const ProductDetailsPage = () => {
     return (
       <Stack spacing={2}>
         <Typography>{'Nie znaleziono produktu'}</Typography>
-        <Button
-          variant="outlined"
-          onClick={() => navigate(Pages.smSystemProducts)}
-        >
+        <Button variant="outlined" onClick={goToProductsList}>
           {'Wróć do listy'}
         </Button>
       </Stack>
@@ -167,7 +176,7 @@ export const ProductDetailsPage = () => {
         <Button
           variant="outlined"
           size="small"
-          onClick={() => navigate(Pages.smSystemProducts)}
+          onClick={goToProductsList}
           sx={{ flexShrink: 0 }}
         >
           {'Wróć do listy'}
@@ -203,7 +212,10 @@ export const ProductDetailsPage = () => {
         sx={{ borderBottom: 1, borderColor: 'divider' }}
       >
         <Tab value="warehouse" label="Magazyn" />
-        <Tab value="channels" label="Kanały" />
+        <Tab
+          value="channels"
+          label={isLoadingLinks ? 'Kanały' : `Kanały (${channelLinks.length})`}
+        />
       </Tabs>
 
       {tab === 'warehouse' && <ProductWarehouseTab product={product} />}

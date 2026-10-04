@@ -1,3 +1,6 @@
+import CheckIcon from '@mui/icons-material/Check';
+import CloseIcon from '@mui/icons-material/Close';
+import EditIcon from '@mui/icons-material/Edit';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import {
@@ -18,13 +21,14 @@ import {
   TextField,
   ToggleButton,
   ToggleButtonGroup,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
-import { AxiosError } from 'axios';
+import { AxiosError, AxiosResponse } from 'axios';
 import dayjs from 'dayjs';
 import get from 'lodash/get';
-import { MouseEvent, ReactNode, useEffect, useState } from 'react';
+import { KeyboardEvent, MouseEvent, ReactNode, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useAppSelector, useNotify } from '../../../../../hooks';
@@ -33,6 +37,7 @@ import { type InvoiceStatus } from '../../../invoices/types';
 import { invoiceStatusLabels } from '../../../invoices/utils';
 import {
   getProductDetailsQueryKey,
+  getProductsQueryKeyBase,
   useGetProductDaySales,
   useGetProductHistory,
   useUpdateProduct,
@@ -79,17 +84,28 @@ const ManualPurchaseSection = ({ product }: { product: Product }) => {
   const { notify } = useNotify();
   const queryClient = useQueryClient();
   const { updateManualPurchaseNetPrice } = useUpdateProduct();
+  const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(() =>
     centsToInput(product.manualPurchaseNetPrice),
   );
   const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
-    setDraft(centsToInput(product.manualPurchaseNetPrice));
-  }, [product.manualPurchaseNetPrice]);
-
   const vatMissing = product.vat == null;
   const canEdit = !!product.canEditManualPurchase && !vatMissing;
+  const savedPrice =
+    product.manualPurchaseNetPrice != null
+      ? formatPrice(product.manualPurchaseNetPrice, 'PLN')
+      : '—';
+
+  const handleStartEdit = () => {
+    setDraft(centsToInput(product.manualPurchaseNetPrice));
+    setIsEditing(true);
+  };
+
+  const handleCancel = () => {
+    setDraft(centsToInput(product.manualPurchaseNetPrice));
+    setIsEditing(false);
+  };
 
   const handleSave = async () => {
     const cents = parsePriceInput(draft);
@@ -99,11 +115,19 @@ const ManualPurchaseSection = ({ product }: { product: Product }) => {
     }
     setIsSaving(true);
     try {
-      await updateManualPurchaseNetPrice(product.id, cents);
+      const updated = await updateManualPurchaseNetPrice(product.id, cents);
+      queryClient.setQueryData<AxiosResponse<Product>>(
+        getProductDetailsQueryKey(product.id),
+        (current) => (current ? { ...current, data: updated } : current),
+      );
       await queryClient.invalidateQueries({
         queryKey: getProductDetailsQueryKey(product.id),
       });
-      await queryClient.invalidateQueries({ queryKey: ['products'] });
+      await queryClient.invalidateQueries({
+        queryKey: [getProductsQueryKeyBase],
+        refetchType: 'all',
+      });
+      setIsEditing(false);
       notify('success', 'Zapisano ręczną cenę zakupu');
     } catch (error) {
       const apiMessage =
@@ -117,6 +141,17 @@ const ManualPurchaseSection = ({ product }: { product: Product }) => {
       );
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDraftKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      void handleSave();
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      handleCancel();
     }
   };
 
@@ -147,31 +182,79 @@ const ManualPurchaseSection = ({ product }: { product: Product }) => {
           {'Ustaw stawkę VAT produktu, zanim wpiszesz ręczną cenę zakupu.'}
         </Alert>
       ) : null}
-      <Stack direction="row" spacing={1} alignItems="flex-start" maxWidth={360}>
-        <TextField
-          size="small"
-          label="Cena zakupu netto (ręczna)"
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          disabled={!canEdit || isSaving}
-          placeholder="0,00"
-          helperText={
-            canEdit
-              ? 'PLN netto. Zastąpi ją pierwsza faktura zakupu.'
-              : undefined
-          }
-        />
-        {product.canEditManualPurchase ? (
-          <Button
-            variant="contained"
-            onClick={handleSave}
-            disabled={!canEdit || isSaving}
+      {isEditing ? (
+        <Stack direction="row" spacing={1} alignItems="flex-start">
+          <TextField
+            size="small"
+            autoFocus
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            onKeyDown={handleDraftKeyDown}
+            disabled={isSaving}
+            placeholder="0,00"
+            helperText="PLN netto. Zastąpi ją pierwsza faktura zakupu."
+            slotProps={{
+              htmlInput: { 'aria-label': 'Cena zakupu netto' },
+            }}
+            sx={{ width: 220 }}
+          />
+          <IconButton
+            color="primary"
+            aria-label="Zapisz cenę zakupu"
+            onClick={() => void handleSave()}
+            disabled={isSaving}
             sx={{ mt: 0.25 }}
           >
-            {isSaving ? <CircularProgress size={18} /> : 'Zapisz'}
-          </Button>
-        ) : null}
-      </Stack>
+            {isSaving ? <CircularProgress size={18} /> : <CheckIcon />}
+          </IconButton>
+          <IconButton
+            aria-label="Anuluj edycję"
+            onClick={handleCancel}
+            disabled={isSaving}
+            sx={{ mt: 0.25 }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </Stack>
+      ) : (
+        <Stack spacing={0.5}>
+          <Stack direction="row" spacing={0.5} alignItems="center">
+            <Typography>{savedPrice}</Typography>
+            {product.canEditManualPurchase ? (
+              <Tooltip
+                title={
+                  vatMissing
+                    ? 'Ustaw stawkę VAT, zanim wpiszesz cenę'
+                    : 'Edytuj cenę zakupu netto'
+                }
+              >
+                <span>
+                  <IconButton
+                    size="small"
+                    aria-label="Edytuj cenę zakupu netto"
+                    onClick={handleStartEdit}
+                    disabled={!canEdit}
+                  >
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            ) : null}
+          </Stack>
+          {product.manualPurchaseSetAt ? (
+            <Typography variant="caption" color="text.secondary">
+              {`Zapisano ${dayjs(product.manualPurchaseSetAt).format(
+                'DD.MM.YYYY HH:mm',
+              )}`}
+            </Typography>
+          ) : null}
+          {canEdit ? (
+            <Typography variant="caption" color="text.secondary">
+              {'PLN netto. Zastąpi ją pierwsza faktura zakupu.'}
+            </Typography>
+          ) : null}
+        </Stack>
+      )}
     </Stack>
   );
 };

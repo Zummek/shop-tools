@@ -191,22 +191,23 @@ export const ProductDetailsPage = () => {
       <Paper
         elevation={0}
         sx={{
-          p: 3,
+          p: { xs: 2, md: 3 },
           border: '1px solid',
           borderColor: 'divider',
           borderRadius: 2,
         }}
       >
         <Stack
-          direction={{ xs: 'column', md: 'row' }}
-          spacing={3}
-          alignItems={{ md: 'center' }}
+          direction={{ xs: 'column', lg: 'row' }}
+          spacing={{ xs: 2, lg: 3 }}
+          alignItems={{ lg: 'center' }}
         >
           <Stack
             direction="row"
             flexWrap="wrap"
-            gap={4}
-            sx={{ flex: '1 1 280px' }}
+            columnGap={{ xs: 2, sm: 4 }}
+            rowGap={1.5}
+            sx={{ flex: { lg: '1 1 280px' } }}
           >
             <LabelData label="ID" value={product.id} />
             <LabelData label="SKU / ID wewnętrzne" value={product.internalId} />
@@ -219,7 +220,7 @@ export const ProductDetailsPage = () => {
               value={(product.barcodes || []).join(', ') || '—'}
             />
           </Stack>
-          <Box sx={{ flex: '1 1 420px', minWidth: 0 }}>
+          <Box sx={{ flex: { lg: '1 1 420px' }, minWidth: 0, width: '100%' }}>
             <ProductReceiptSalesChart productId={product.id} />
           </Box>
         </Stack>

@@ -6,6 +6,8 @@ export const marginSourceLabel = (source: string) => {
     manual_buy: 'ręczna cena zakupu',
     invoice_as_of: 'FV przyjęta na dzień sprzedaży',
     invoice_line: 'FV (data faktury, pozycja nieprzyjęta)',
+    invoice_after_sale: 'FV późniejsza niż sprzedaż — jedyna znana cena',
+    mixed: 'różne źródła kosztu zakupu',
     allegro_billing_suc: 'billing Allegro (prowizja SUC)',
     allegro_billing_smart: 'billing Allegro (Smart HB*)',
     allegro_billing_other: 'billing Allegro (inne opłaty)',

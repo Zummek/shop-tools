@@ -1,6 +1,8 @@
 import { Box, CircularProgress } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { plPL } from '@mui/x-date-pickers/locales';
+import 'dayjs/locale/pl';
 import * as Sentry from '@sentry/react';
 import { SnackbarProvider } from 'notistack';
 import ReactDOM from 'react-dom/client';
@@ -321,7 +323,14 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <SentryContext>
             <ReactQueryClientProvider>
               <AxiosInterceptorsProvider store={store}>
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <LocalizationProvider
+                  dateAdapter={AdapterDayjs}
+                  adapterLocale="pl"
+                  localeText={
+                    plPL.components.MuiLocalizationProvider.defaultProps
+                      .localeText
+                  }
+                >
                   <NewVersionNotifier />
                   <RouterProvider router={router} />
                 </LocalizationProvider>

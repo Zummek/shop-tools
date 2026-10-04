@@ -17,6 +17,7 @@ test('parseProductsListFilters reads query, page, and purchase filters', () => {
     page: 2,
     missingPurchaseCost: true,
     manualUnset: true,
+    channels: [],
   });
 });
 
@@ -46,4 +47,13 @@ test('productsListSearchString keeps only list filters', () => {
 
 test('productsListSearchString omits defaults', () => {
   assert.equal(productsListSearchString(new URLSearchParams('page=1')), '');
+});
+
+test('productsListSearchString keeps known sales channels in catalog order', () => {
+  const search = productsListSearchString(
+    new URLSearchParams('channel=erli&channel=allegro&channel=shop&query=a'),
+  );
+  const params = new URLSearchParams(search);
+  assert.equal(params.get('query'), 'a');
+  assert.deepEqual(params.getAll('channel'), ['allegro', 'erli']);
 });

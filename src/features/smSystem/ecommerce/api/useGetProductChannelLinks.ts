@@ -12,7 +12,7 @@ export const getProductChannelLinksQueryKey = (productId: number) => [
 ];
 
 export const useGetProductChannelLinks = (productId: number | undefined) => {
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: getProductChannelLinksQueryKey(productId ?? 0),
     queryFn: () =>
       axiosInstance.get<ChannelProductLink[]>(endpoint(productId!)),
@@ -22,6 +22,7 @@ export const useGetProductChannelLinks = (productId: number | undefined) => {
   return {
     channelLinks: data?.data ?? [],
     isLoading,
+    isError,
     refetch,
   };
 };

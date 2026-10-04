@@ -1,5 +1,20 @@
 const FLAG = '1';
 
+export const PRODUCT_LIST_CHANNELS = [
+  'allegro',
+  'woocommerce',
+  'erli',
+] as const;
+
+export type ProductListChannel = (typeof PRODUCT_LIST_CHANNELS)[number];
+
+export const parseProductListChannels = (
+  searchParams: URLSearchParams,
+): ProductListChannel[] =>
+  PRODUCT_LIST_CHANNELS.filter((channel) =>
+    searchParams.getAll('channel').some((value) => value === channel),
+  );
+
 export const parseProductsListPage = (
   searchParams: URLSearchParams,
 ): number => {
@@ -17,6 +32,7 @@ export const parseProductsListFilters = (searchParams: URLSearchParams) => {
     missingPurchaseCost,
     manualUnset:
       missingPurchaseCost && searchParams.get('manualUnset') === FLAG,
+    channels: parseProductListChannels(searchParams),
   };
 };
 
@@ -34,6 +50,9 @@ export const productsListSearchString = (
     next.set('missingPurchaseCost', FLAG);
     if (searchParams.get('manualUnset') === FLAG) next.set('manualUnset', FLAG);
   }
+
+  for (const channel of parseProductListChannels(searchParams))
+    next.append('channel', channel);
 
   const serialized = next.toString();
   return serialized ? `?${serialized}` : '';

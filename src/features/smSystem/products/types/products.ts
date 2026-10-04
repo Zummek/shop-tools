@@ -52,7 +52,16 @@ export interface Product {
   manualPurchaseSetAt?: string | null;
   hasRealPurchase?: boolean;
   canEditManualPurchase?: boolean;
+  channels?: ProductSalesChannel[];
 }
+
+export const PRODUCT_SALES_CHANNELS = [
+  'allegro',
+  'woocommerce',
+  'erli',
+] as const;
+
+export type ProductSalesChannel = (typeof PRODUCT_SALES_CHANNELS)[number];
 
 export interface ProductBranch {
   branch: SimpleBranch;
@@ -124,6 +133,38 @@ export interface ProductHistory {
   transfersTruncated: boolean;
   purchases?: ProductHistoryPurchase[];
   purchasesTruncated?: boolean;
+}
+
+export interface ProductChannelSalesDay {
+  date: string;
+  units: number;
+  revenueCents: number;
+  ordersCount: number;
+}
+
+export interface ProductChannelSalesChannel {
+  channel: ProductSalesChannel;
+  units: number;
+  revenueCents: number;
+  ordersCount: number;
+  previousUnits: number;
+  previousRevenueCents: number;
+  previousOrdersCount: number;
+  fxMissingLines: number;
+  bundlePieceLines: number;
+  daily: ProductChannelSalesDay[];
+}
+
+export interface ProductChannelSales {
+  currency: string;
+  startDate: string;
+  endDate: string;
+  periodDays: number;
+  previousStartDate: string;
+  previousEndDate: string;
+  fxMissingLines: number;
+  bundlePieceLines: number;
+  channels: ProductChannelSalesChannel[];
 }
 
 export interface ProductDaySales {

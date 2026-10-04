@@ -2,7 +2,11 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import {
   Box,
   CircularProgress,
+  FormControl,
   FormControlLabel,
+  InputLabel,
+  MenuItem,
+  Select,
   Stack,
   Switch,
   TextField,
@@ -13,9 +17,10 @@ import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { useAppSelector } from '../../../../../hooks';
 import { Pages } from '../../../../../utils';
+import { ORDER_CHANNELS, orderChannelLabel } from '../../../ecommerce/utils';
 import { useGetProducts } from '../../api';
 import { Product } from '../../types';
-import { productsListSearchString } from '../../utils';
+import { ProductListChannel, productsListSearchString } from '../../utils';
 
 const baseColumns: GridColDef<Product>[] = [
   {
@@ -35,6 +40,16 @@ const baseColumns: GridColDef<Product>[] = [
     flex: 1,
     minWidth: 180,
     valueGetter: (_value, row) => (row.barcodes || []).join(', '),
+  },
+  {
+    field: 'channels',
+    headerName: 'Kanały',
+    width: 180,
+    sortable: false,
+    valueGetter: (_value, row) =>
+      (row.channels || [])
+        .map((channel) => orderChannelLabel(channel))
+        .join(', '),
   },
   {
     field: 'vat',
@@ -80,6 +95,8 @@ export const ProductsListPage = () => {
     setMissingPurchaseCost,
     manualUnset,
     setManualUnset,
+    channels,
+    setChannels,
   } = useGetProducts({
     syncSearchParams: true,
     canViewPurchases,
@@ -121,6 +138,33 @@ export const ProductsListPage = () => {
           onChange={(e) => setQuery(e.target.value)}
           sx={{ minWidth: 360, maxWidth: 480 }}
         />
+        <FormControl size="small" sx={{ minWidth: 220 }}>
+          <InputLabel id="product-sales-channel-label">
+            {'Kanał sprzedaży'}
+          </InputLabel>
+          <Select
+            labelId="product-sales-channel-label"
+            label="Kanał sprzedaży"
+            multiple
+            value={channels}
+            onChange={(event) => {
+              const value = event.target.value;
+              const next = (
+                typeof value === 'string' ? value.split(',') : value
+              ) as ProductListChannel[];
+              setChannels(next);
+            }}
+            renderValue={(selected) =>
+              selected.map((channel) => orderChannelLabel(channel)).join(', ')
+            }
+          >
+            {ORDER_CHANNELS.map((channel) => (
+              <MenuItem key={channel.source} value={channel.source}>
+                {channel.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
         {canViewPurchases ? (
           <>
             <FormControlLabel

@@ -3,6 +3,7 @@ import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
+  Alert,
   Box,
   Button,
   Chip,
@@ -40,10 +41,15 @@ import {
   useGetProductChannelLinks,
 } from '../../../ecommerce/api';
 import { SchedulePriceChangeModal } from '../../../ecommerce/modals';
-import { isPriceScheduleSnoozed } from '../../../ecommerce/utils';
+import {
+  isEndedChannelOffer,
+  isPriceScheduleSnoozed,
+} from '../../../ecommerce/utils';
 import { useGetProductDetails } from '../../api';
 import { formatPrice, productsListSearchString } from '../../utils';
 
+import { ProductReceiptSalesChart } from './ProductReceiptSalesChart';
+import { ProductSalesTab } from './ProductSalesTab';
 import { ProductWarehouseTab } from './ProductWarehouseTab';
 
 const allegroOfferUrl = (offerId: string, marketplace?: string | null) => {
@@ -86,12 +92,6 @@ const statusColor = (status?: string | null) => {
   return 'default' as const;
 };
 
-const isEndedOffer = (link: ChannelProductLink) =>
-  link.offerStatus === 'ENDED' ||
-  link.offerStatus === 'trash' ||
-  link.offerStatus === 'inactive' ||
-  !link.isActive;
-
 export const ProductDetailsPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -106,10 +106,15 @@ export const ProductDetailsPage = () => {
   const productId = Number(rawProductId);
 
   const { product, isLoading } = useGetProductDetails(productId);
-  const { channelLinks, isLoading: isLoadingLinks } =
-    useGetProductChannelLinks(productId);
+  const {
+    channelLinks,
+    isLoading: isLoadingLinks,
+    isError: isLinksError,
+  } = useGetProductChannelLinks(productId);
   const { schedules } = useGetPriceSchedules({ productId });
-  const [tab, setTab] = useState<'warehouse' | 'channels'>('warehouse');
+  const [tab, setTab] = useState<'warehouse' | 'channels' | 'sales'>(
+    'warehouse',
+  );
 
   const schedulesByLinkId = useMemo(() => {
     const map = new Map<number, ChannelPriceSchedule[]>();
@@ -125,7 +130,7 @@ export const ProductDetailsPage = () => {
     const active: ChannelProductLink[] = [];
     const ended: ChannelProductLink[] = [];
     for (const link of channelLinks) {
-      if (isEndedOffer(link)) ended.push(link);
+      if (isEndedChannelOffer(link)) ended.push(link);
       else active.push(link);
     }
     return { activeLinks: active, endedLinks: ended };
@@ -192,33 +197,56 @@ export const ProductDetailsPage = () => {
           borderRadius: 2,
         }}
       >
-        <Stack direction="row" flexWrap="wrap" gap={4}>
-          <LabelData label="ID" value={product.id} />
-          <LabelData label="SKU / ID wewnętrzne" value={product.internalId} />
-          <LabelData
-            label="VAT"
-            value={product.vat != null ? `${product.vat}%` : '—'}
-          />
-          <LabelData
-            label="Kody EAN"
-            value={(product.barcodes || []).join(', ') || '—'}
-          />
+        <Stack
+          direction={{ xs: 'column', md: 'row' }}
+          spacing={3}
+          alignItems={{ md: 'center' }}
+        >
+          <Stack
+            direction="row"
+            flexWrap="wrap"
+            gap={4}
+            sx={{ flex: '1 1 280px' }}
+          >
+            <LabelData label="ID" value={product.id} />
+            <LabelData label="SKU / ID wewnętrzne" value={product.internalId} />
+            <LabelData
+              label="VAT"
+              value={product.vat != null ? `${product.vat}%` : '—'}
+            />
+            <LabelData
+              label="Kody EAN"
+              value={(product.barcodes || []).join(', ') || '—'}
+            />
+          </Stack>
+          <Box sx={{ flex: '1 1 420px', minWidth: 0 }}>
+            <ProductReceiptSalesChart productId={product.id} />
+          </Box>
         </Stack>
       </Paper>
 
       <Tabs
         value={tab}
-        onChange={(_event, value: 'warehouse' | 'channels') => setTab(value)}
+        onChange={(_event, value: 'warehouse' | 'channels' | 'sales') =>
+          setTab(value)
+        }
         sx={{ borderBottom: 1, borderColor: 'divider' }}
       >
         <Tab value="warehouse" label="Magazyn" />
+        <Tab value="sales" label="Sprzedaż e-commerce" />
         <Tab
           value="channels"
-          label={isLoadingLinks ? 'Kanały' : `Kanały (${channelLinks.length})`}
+          label={
+            isLoadingLinks || isLinksError
+              ? 'Kanały'
+              : `Kanały (${channelLinks.length})`
+          }
         />
       </Tabs>
 
       {tab === 'warehouse' && <ProductWarehouseTab product={product} />}
+
+      {tab === 'sales' && <ProductSalesTab productId={product.id} />}
 
       {tab === 'channels' && (
         <Stack spacing={2}>
@@ -226,6 +254,10 @@ export const ProductDetailsPage = () => {
 
           {isLoadingLinks ? (
             <CircularProgress size={28} />
+          ) : isLinksError ? (
+            <Alert severity="error">
+              {'Nie udało się pobrać ofert na kanałach.'}
+            </Alert>
           ) : channelLinks.length === 0 ? (
             <Typography color="text.secondary">
               {
@@ -344,7 +376,9 @@ const ChannelOfferCard = ({ link, schedules }: ChannelOfferCardProps) => {
 
   const schedule = pickPrimarySchedule(schedules);
   const canSchedule =
-    link.channel === 'allegro' && !isEndedOffer(link) && link.price != null;
+    link.channel === 'allegro' &&
+    !isEndedChannelOffer(link) &&
+    link.price != null;
 
   const handleDisable = async () => {
     if (!schedule || !confirmDisable) return;
@@ -411,7 +445,7 @@ const ChannelOfferCard = ({ link, schedules }: ChannelOfferCardProps) => {
         border: '1px solid',
         borderColor: 'divider',
         borderRadius: 2,
-        opacity: isEndedOffer(link) ? 0.75 : 1,
+        opacity: isEndedChannelOffer(link) ? 0.75 : 1,
       }}
     >
       <Stack spacing={1.5}>

@@ -5,7 +5,11 @@ import { useSearchParams } from 'react-router-dom';
 import { axiosInstance } from '../../../../services';
 import { ListResponse } from '../../app/types';
 import { Product } from '../types';
-import { parseProductsListFilters } from '../utils';
+import {
+  parseProductsListFilters,
+  PRODUCT_LIST_CHANNELS,
+  ProductListChannel,
+} from '../utils';
 
 const pageSize = 25;
 const endpoint = '/api/v1/products/';
@@ -52,6 +56,7 @@ export const useGetProducts = ({
   const [searchParams, setSearchParams] = useSearchParams();
   const [localPage, setLocalPage] = useState(0);
   const [localQuery, setLocalQuery] = useState('');
+  const [localChannels, setLocalChannels] = useState<ProductListChannel[]>([]);
 
   const urlFilters = parseProductsListFilters(searchParams);
   const query = syncSearchParams ? urlFilters.query : localQuery;
@@ -59,6 +64,7 @@ export const useGetProducts = ({
   const missingPurchaseCost =
     syncSearchParams && canViewPurchases && urlFilters.missingPurchaseCost;
   const manualUnset = missingPurchaseCost && urlFilters.manualUnset;
+  const channels = syncSearchParams ? urlFilters.channels : localChannels;
   const requestQuery = useDebouncedValue(
     query,
     syncSearchParams ? searchDebounceMs : 0,
@@ -113,6 +119,27 @@ export const useGetProducts = ({
     [setSearchParams, syncSearchParams],
   );
 
+  const setChannels = useCallback(
+    (value: ProductListChannel[]) => {
+      const next = PRODUCT_LIST_CHANNELS.filter((channel) =>
+        value.includes(channel),
+      );
+      if (!syncSearchParams) {
+        setLocalChannels(next);
+        setLocalPage(0);
+        return;
+      }
+      replaceSearchParams(setSearchParams, (params) => {
+        const current = parseProductsListFilters(params).channels.join(',');
+        if (current === next.join(',')) return;
+        params.delete('channel');
+        for (const channel of next) params.append('channel', channel);
+        params.delete('page');
+      });
+    },
+    [setSearchParams, syncSearchParams],
+  );
+
   const setManualUnset = useCallback(
     (value: boolean) => {
       if (!syncSearchParams) return;
@@ -134,6 +161,7 @@ export const useGetProducts = ({
       page,
       missingPurchaseCost,
       manualUnset,
+      channels.join(','),
     ],
     queryFn: async ({ signal }) => {
       const response = await axiosInstance.get<Response>(endpoint, {
@@ -144,7 +172,9 @@ export const useGetProducts = ({
           pageSize,
           missingPurchaseCost: missingPurchaseCost ? 1 : undefined,
           manualUnset: missingPurchaseCost && manualUnset ? 1 : undefined,
+          channel: channels.length ? channels : undefined,
         },
+        paramsSerializer: { indexes: null },
       });
       return response.data;
     },
@@ -169,5 +199,7 @@ export const useGetProducts = ({
     setMissingPurchaseCost,
     manualUnset,
     setManualUnset,
+    channels,
+    setChannels,
   };
 };

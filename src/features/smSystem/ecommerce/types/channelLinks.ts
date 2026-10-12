@@ -24,6 +24,8 @@ export interface ChannelProductLink {
   productId: number | null;
   productName: string | null;
   productInternalId: string | null;
+  /** Existing price schedules on this offer, including inactive drafts. */
+  priceScheduleCount?: number;
 }
 
 export interface ChannelSyncRun {

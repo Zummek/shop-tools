@@ -1,5 +1,3 @@
-import AddIcon from '@mui/icons-material/Add';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { LoadingButton } from '@mui/lab';
 import {
   Alert,
@@ -7,12 +5,9 @@ import {
   FormControl,
   FormControlLabel,
   FormLabel,
-  IconButton,
-  MenuItem,
   Modal,
   Radio,
   RadioGroup,
-  Select,
   Stack,
   TextField,
   Typography,
@@ -33,14 +28,11 @@ import {
   useCreatePriceSchedule,
   useUpdatePriceSchedule,
 } from '../../api';
-import { formatPriceScheduleWindows, WEEKDAY_LABELS } from '../../utils';
-
-const NIGHTS_PRESET: PriceScheduleWindow[] = [0, 1, 2, 3, 4].map((weekday) => ({
-  startWeekday: weekday,
-  startTime: '17:00',
-  endWeekday: (weekday + 1) % 7,
-  endTime: '07:00',
-}));
+import {
+  formatPriceScheduleWindows,
+  isPriceScheduleWindowValid,
+} from '../../utils';
+import { PriceScheduleWindowsEditor } from '../PriceScheduleWindowsEditor/PriceScheduleWindowsEditor';
 
 /** Digits with an optional single decimal part, comma or dot. */
 const PRICE_INPUT_RE = /^\d+([.,]\d{1,2})?$/;
@@ -50,23 +42,6 @@ const parsePriceInput = (value: string): number => {
   if (!PRICE_INPUT_RE.test(trimmed)) return NaN;
   return Math.round(parseFloat(trimmed.replace(',', '.')) * 100);
 };
-
-const isWindowValid = (window: PriceScheduleWindow) =>
-  !!window.startTime &&
-  !!window.endTime &&
-  !(
-    window.startWeekday === window.endWeekday &&
-    window.startTime === window.endTime
-  );
-
-const WEEKEND_PRESET: PriceScheduleWindow[] = [
-  { startWeekday: 5, startTime: '00:00', endWeekday: 0, endTime: '07:00' },
-];
-
-const NIGHTS_AND_WEEKEND_PRESET: PriceScheduleWindow[] = [
-  ...NIGHTS_PRESET,
-  ...WEEKEND_PRESET,
-];
 
 interface Props {
   open: boolean;
@@ -89,9 +64,6 @@ export const SchedulePriceChangeModal = ({
   const [originalPriceInput, setOriginalPriceInput] = useState('');
   const [windows, setWindows] = useState<PriceScheduleWindow[]>([]);
   const [apiError, setApiError] = useState<string | null>(null);
-  const [pendingPreset, setPendingPreset] = useState<
-    PriceScheduleWindow[] | null
-  >(null);
   const [applyMode, setApplyMode] =
     useState<PriceScheduleApplyMode>('apply_now');
   const [originalApplyMode, setOriginalApplyMode] =
@@ -106,11 +78,14 @@ export const SchedulePriceChangeModal = ({
   useEffect(() => {
     if (!open) return;
     setApiError(null);
-    setPendingPreset(null);
     setApplyMode('apply_now');
     setOriginalApplyMode(schedule?.isApplied ? 'next_revert' : 'apply_now');
     if (schedule) {
-      setPriceInput((schedule.temporaryPrice / 100).toFixed(2));
+      setPriceInput(
+        schedule.temporaryPrice != null
+          ? (schedule.temporaryPrice / 100).toFixed(2)
+          : '',
+      );
       setOriginalPriceInput((schedule.originalPrice / 100).toFixed(2));
       setWindows(schedule.windows.map((w) => ({ ...w })));
     } else {
@@ -122,30 +97,13 @@ export const SchedulePriceChangeModal = ({
     }
   }, [open, schedule, link.price]);
 
-  const updateWindow = (index: number, patch: Partial<PriceScheduleWindow>) => {
-    setWindows((prev) =>
-      prev.map((w, i) => (i === index ? { ...w, ...patch } : w)),
-    );
-  };
-
-  const addWindow = () => {
-    setWindows((prev) => [
-      ...prev,
-      { startWeekday: 0, startTime: '17:00', endWeekday: 1, endTime: '07:00' },
-    ]);
-  };
-
-  const removeWindow = (index: number) => {
-    setWindows((prev) => prev.filter((_, i) => i !== index));
-  };
-
   const priceCents = parsePriceInput(priceInput);
   const originalPriceCents = parsePriceInput(originalPriceInput);
   const isPriceValid = Number.isFinite(priceCents) && priceCents > 0;
   const isOriginalPriceValid =
     Number.isFinite(originalPriceCents) && originalPriceCents > 0;
   const pricesDiffer = priceCents !== originalPriceCents;
-  const allWindowsValid = windows.every(isWindowValid);
+  const allWindowsValid = windows.every(isPriceScheduleWindowValid);
   const temporaryPriceChanged =
     !!schedule && isPriceValid && priceCents !== schedule.temporaryPrice;
   const originalPriceChanged =
@@ -178,11 +136,6 @@ export const SchedulePriceChangeModal = ({
     isOriginalPriceValid &&
     link.price !== originalPriceCents &&
     !schedule?.isApplied;
-
-  const applyPreset = (preset: PriceScheduleWindow[]) => {
-    if (windows.length === 0) setWindows(preset);
-    else setPendingPreset(preset);
-  };
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
@@ -414,150 +367,12 @@ export const SchedulePriceChangeModal = ({
           </FormControl>
         )}
 
-        <Stack spacing={1.5}>
-          <Stack
-            direction="row"
-            justifyContent="space-between"
-            alignItems="center"
-            flexWrap="wrap"
-            gap={1}
-          >
-            <Typography variant="subtitle2" fontWeight={600}>
-              {'Okna tygodniowe (cykliczne, godziny wg czasu polskiego)'}
-            </Typography>
-            <Stack direction="row" spacing={1} flexWrap="wrap">
-              <Button size="small" onClick={() => applyPreset(NIGHTS_PRESET)}>
-                {'Noce (pn–pt 17:00–07:00)'}
-              </Button>
-              <Button size="small" onClick={() => applyPreset(WEEKEND_PRESET)}>
-                {'Weekend (sob 00:00 – pon 07:00)'}
-              </Button>
-              <Button
-                size="small"
-                onClick={() => applyPreset(NIGHTS_AND_WEEKEND_PRESET)}
-              >
-                {'Noce + weekend'}
-              </Button>
-            </Stack>
-          </Stack>
-
-          {pendingPreset && (
-            <Alert
-              severity="warning"
-              action={
-                <Stack direction="row" spacing={1}>
-                  <Button
-                    size="small"
-                    color="inherit"
-                    onClick={() => {
-                      setWindows(pendingPreset);
-                      setPendingPreset(null);
-                    }}
-                  >
-                    {'Zastąp'}
-                  </Button>
-                  <Button
-                    size="small"
-                    color="inherit"
-                    onClick={() => setPendingPreset(null)}
-                  >
-                    {'Anuluj'}
-                  </Button>
-                </Stack>
-              }
-            >
-              {`Gotowiec zastąpi obecne okna (${windows.length}).`}
-            </Alert>
-          )}
-
-          {windows.length === 0 && (
-            <Typography variant="body2" color="text.secondary">
-              {'Dodaj co najmniej jedno okno albo użyj gotowca.'}
-            </Typography>
-          )}
-
-          {windows.map((window, index) => (
-            <Stack
-              key={index}
-              direction="row"
-              spacing={1}
-              alignItems="center"
-              flexWrap="wrap"
-            >
-              <Select
-                size="small"
-                value={window.startWeekday}
-                onChange={(e) =>
-                  updateWindow(index, {
-                    startWeekday: Number(e.target.value),
-                  })
-                }
-              >
-                {WEEKDAY_LABELS.map((label, weekday) => (
-                  <MenuItem key={label} value={weekday}>
-                    {label}
-                  </MenuItem>
-                ))}
-              </Select>
-              <TextField
-                size="small"
-                type="time"
-                value={window.startTime}
-                onChange={(e) =>
-                  updateWindow(index, { startTime: e.target.value })
-                }
-                inputProps={{ step: 60 }}
-                sx={{ width: 110 }}
-              />
-              <Typography color="text.secondary">{'→'}</Typography>
-              <Select
-                size="small"
-                value={window.endWeekday}
-                onChange={(e) =>
-                  updateWindow(index, { endWeekday: Number(e.target.value) })
-                }
-              >
-                {WEEKDAY_LABELS.map((label, weekday) => (
-                  <MenuItem key={label} value={weekday}>
-                    {label}
-                  </MenuItem>
-                ))}
-              </Select>
-              <TextField
-                size="small"
-                type="time"
-                value={window.endTime}
-                onChange={(e) =>
-                  updateWindow(index, { endTime: e.target.value })
-                }
-                inputProps={{ step: 60 }}
-                error={!isWindowValid(window)}
-                helperText={
-                  !isWindowValid(window)
-                    ? 'Koniec musi różnić się od startu'
-                    : undefined
-                }
-                sx={{ width: 110 }}
-              />
-              <IconButton
-                size="small"
-                onClick={() => removeWindow(index)}
-                aria-label="Usuń okno"
-              >
-                <DeleteOutlineIcon fontSize="small" />
-              </IconButton>
-            </Stack>
-          ))}
-
-          <Button
-            size="small"
-            startIcon={<AddIcon />}
-            onClick={addWindow}
-            sx={{ alignSelf: 'flex-start' }}
-          >
-            {'Dodaj okno'}
-          </Button>
-        </Stack>
+        <PriceScheduleWindowsEditor
+          windows={windows}
+          onChange={setWindows}
+          disabled={isPending}
+          active={open}
+        />
 
         {showSummary && (
           <Alert severity="info">

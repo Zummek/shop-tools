@@ -27,6 +27,7 @@ import {
   Typography,
 } from '@mui/material';
 import { DataGrid, GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
+import { isAxiosError } from 'axios';
 import dayjs from 'dayjs';
 import { MouseEvent, useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
@@ -47,10 +48,7 @@ import {
   useGetPriceSchedules,
   useRefreshPriceSchedulePrices,
 } from '../api';
-import {
-  SchedulePriceChangeModal,
-  SelectAllegroOfferForScheduleModal,
-} from '../modals';
+import { SchedulePriceChangeModal, SchedulePriceDraftWizard } from '../modals';
 import {
   formatPriceScheduleEventLabel,
   formatPriceScheduleNextChange,
@@ -60,9 +58,32 @@ import {
   isPriceScheduleSnoozed,
 } from '../utils';
 
+const enableErrorMessage = (err: unknown) => {
+  if (!isAxiosError(err)) return null;
+  const detail = (err.response?.data as { detail?: unknown } | undefined)
+    ?.detail;
+  if (typeof detail === 'string' && detail.trim()) return detail;
+  if (Array.isArray(detail)) {
+    const text = detail.map(String).join(' ').trim();
+    return text || null;
+  }
+  return null;
+};
+
 const statusChip = (schedule: ChannelPriceSchedule) => {
-  if (!schedule.isEnabled)
+  if (!schedule.isEnabled) {
+    if (schedule.temporaryPrice == null) {
+      return (
+        <Chip
+          size="small"
+          label="Szkic"
+          color="default"
+          title="Cena tymczasowa nieuzupełniona — harmonogram jest nieaktywny"
+        />
+      );
+    }
     return <Chip size="small" label="Wyłączona" color="default" />;
+  }
   if (schedule.consecutiveFailures > 0) {
     return (
       <Chip
@@ -212,8 +233,7 @@ export const PriceSchedulesPage = () => {
   const [query, setQuery] = useState('');
   const [editedSchedule, setEditedSchedule] =
     useState<ChannelPriceSchedule | null>(null);
-  const [createLink, setCreateLink] = useState<ChannelProductLink | null>(null);
-  const [pickOfferOpen, setPickOfferOpen] = useState(false);
+  const [draftWizardOpen, setDraftWizardOpen] = useState(false);
   const [historySchedule, setHistorySchedule] =
     useState<ChannelPriceSchedule | null>(null);
   const [menuState, setMenuState] = useState<{
@@ -387,14 +407,40 @@ export const PriceSchedulesPage = () => {
     }
     return (
       `Wyłączyć harmonogram dla "${offer}" po zakończeniu bieżącego okna? ` +
-      `Cena tymczasowa ${formatPrice(
-        schedule.temporaryPrice,
-        schedule.currency,
-      )} będzie obowiązywać do końca okna, potem oferta wróci do ${formatPrice(
+      `Cena tymczasowa ${
+        schedule.temporaryPrice != null
+          ? formatPrice(schedule.temporaryPrice, schedule.currency)
+          : '—'
+      } będzie obowiązywać do końca okna, potem oferta wróci do ${formatPrice(
         schedule.originalPrice,
         schedule.currency,
       )}.`
     );
+  };
+
+  const bulkEnableConfirmText = () => {
+    const ids = confirmBulkEnableIds ?? [];
+    const count = ids.length;
+    const noun = scheduleNoun(count);
+    const drafts = ids.filter((id) =>
+      schedules.some(
+        (schedule) => schedule.id === id && schedule.temporaryPrice == null,
+      ),
+    ).length;
+    if (count > 0 && drafts === count) {
+      const missing = count === 1 ? 'Nie ma' : 'Nie mają';
+      return `Włączyć ${count} ${noun}? ${missing} ceny tymczasowej. Uzupełnij ją w edycji — bez niej włączenie się nie uda.`;
+    }
+    if (drafts > 0) {
+      const missing = drafts === 1 ? 'nie ma' : 'nie mają';
+      const skipped =
+        drafts === 1 ? 'nie zostanie włączony' : 'nie zostaną włączone';
+      return (
+        `Włączyć ${count} ${noun}? ${drafts} ${missing} ceny tymczasowej i ${skipped}. ` +
+        'Uzupełnij cenę w edycji. Przy pozostałych cena tymczasowa zastosuje się od razu, jeśli trwa okno.'
+      );
+    }
+    return `Włączyć ${count} ${noun}? Jeśli bieżący czas przypada w oknie, cena tymczasowa zostanie zastosowana od razu.`;
   };
 
   const handleEnable = async (schedule: ChannelPriceSchedule) => {
@@ -408,8 +454,11 @@ export const PriceSchedulesPage = () => {
       } else {
         notify('success', 'Harmonogram włączony');
       }
-    } catch {
-      notify('error', 'Nie udało się włączyć harmonogramu');
+    } catch (err) {
+      notify(
+        'error',
+        enableErrorMessage(err) || 'Nie udało się włączyć harmonogramu',
+      );
     }
   };
 
@@ -422,14 +471,22 @@ export const PriceSchedulesPage = () => {
       setSelectedIds([]);
       const completed = result.succeeded + result.applyPending;
       const total = completed + result.failed;
+      const reason =
+        result.errors.length === 0
+          ? ''
+          : result.errors.length === 1
+            ? `: ${result.errors[0]}`
+            : `: ${result.errors[0]} (+${result.errors.length - 1})`;
       if (completed === 0) {
-        notify('error', `Nie udało się włączyć (${result.failed})`);
+        notify('error', `Nie udało się włączyć (${result.failed})${reason}`);
         return;
       }
       const pendingPart = result.applyPending
         ? ` (w tym ${result.applyPending} z ponawianiem zmiany ceny)`
         : '';
-      const failedPart = result.failed ? `, ${result.failed} nieudane` : '';
+      const failedPart = result.failed
+        ? `, ${result.failed} nieudane${reason}`
+        : '';
       notify(
         result.failed || result.applyPending ? 'warning' : 'success',
         `Włączono ${completed} z ${total}${pendingPart}${failedPart}`,
@@ -510,7 +567,9 @@ export const PriceSchedulesPage = () => {
       headerName: 'Cena tymczasowa',
       width: 130,
       valueGetter: (_value, row) =>
-        formatPrice(row.temporaryPrice, row.currency),
+        row.temporaryPrice == null
+          ? '—'
+          : formatPrice(row.temporaryPrice, row.currency),
     },
     {
       field: 'originalPrice',
@@ -707,7 +766,7 @@ export const PriceSchedulesPage = () => {
         <Button
           variant="contained"
           startIcon={<AddIcon />}
-          onClick={() => setPickOfferOpen(true)}
+          onClick={() => setDraftWizardOpen(true)}
           sx={{ flexShrink: 0 }}
         >
           {'Zaplanuj zmianę ceny'}
@@ -959,11 +1018,7 @@ export const PriceSchedulesPage = () => {
       >
         <DialogTitle>{'Włączenie zaznaczonych harmonogramów'}</DialogTitle>
         <DialogContent>
-          <Typography variant="body2">
-            {`Włączyć ${confirmBulkEnableIds?.length ?? 0} ${scheduleNoun(
-              confirmBulkEnableIds?.length ?? 0,
-            )}? Jeśli bieżący czas przypada w oknie, cena tymczasowa zostanie zastosowana od razu.`}
-          </Typography>
+          <Typography variant="body2">{bulkEnableConfirmText()}</Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setConfirmBulkEnableIds(null)}>
@@ -1058,22 +1113,14 @@ export const PriceSchedulesPage = () => {
         </Dialog>
       )}
 
-      <SelectAllegroOfferForScheduleModal
-        open={pickOfferOpen}
-        onClose={() => setPickOfferOpen(false)}
-        onSelect={(link) => {
-          setPickOfferOpen(false);
-          setCreateLink(link);
+      <SchedulePriceDraftWizard
+        open={draftWizardOpen}
+        onClose={() => setDraftWizardOpen(false)}
+        onCreated={() => {
+          setTab('inactive');
+          setSelectedIds([]);
         }}
       />
-
-      {createLink && (
-        <SchedulePriceChangeModal
-          open={!!createLink}
-          onClose={() => setCreateLink(null)}
-          link={createLink}
-        />
-      )}
 
       {editedSchedule && (
         <SchedulePriceChangeModal

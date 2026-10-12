@@ -539,10 +539,11 @@ const ChannelOfferCard = ({ link, schedules }: ChannelOfferCardProps) => {
             />
             {schedule.isApplied && (
               <Typography variant="body2" color="text.secondary">
-                {`tymczasowa: ${formatPrice(
-                  schedule.temporaryPrice,
-                  schedule.currency,
-                )} · bazowa: ${formatPrice(
+                {`tymczasowa: ${
+                  schedule.temporaryPrice != null
+                    ? formatPrice(schedule.temporaryPrice, schedule.currency)
+                    : '—'
+                } · bazowa: ${formatPrice(
                   schedule.originalPrice,
                   schedule.currency,
                 )}`}

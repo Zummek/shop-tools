@@ -15,6 +15,8 @@ export interface BulkEnablePriceSchedulesResult {
   succeeded: number;
   applyPending: number;
   failed: number;
+  /** Distinct per-row reasons, in first-seen order. */
+  errors: string[];
 }
 
 const enableChunk = async (ids: number[]) => {
@@ -40,6 +42,7 @@ export const useBulkEnablePriceSchedules = () => {
       let succeeded = 0;
       let applyPending = 0;
       let failed = 0;
+      const errors: string[] = [];
 
       for (
         let i = 0;
@@ -57,12 +60,14 @@ export const useBulkEnablePriceSchedules = () => {
             else succeeded += 1;
           }
           failed += batch.errors.length;
+          for (const row of batch.errors) 
+            if (row.error && !errors.includes(row.error)) errors.push(row.error);
         } catch {
           failed += chunk.length;
         }
       }
 
-      return { succeeded, applyPending, failed };
+      return { succeeded, applyPending, failed, errors };
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: [priceSchedulesQueryKeyBase] });

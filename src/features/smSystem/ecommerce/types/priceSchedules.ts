@@ -35,8 +35,8 @@ export interface PriceScheduleEvent {
 export interface ChannelPriceSchedule {
   id: number;
   linkId: number;
-  /** cents */
-  temporaryPrice: number;
+  /** cents, or null while the schedule is still a draft */
+  temporaryPrice: number | null;
   /** cents; set on create (defaults to offer price), editable afterwards */
   originalPrice: number;
   currency: string;
@@ -103,6 +103,17 @@ export interface PriceScheduleBulkEnableResponse {
     ChannelPriceSchedule & { applyPending?: boolean; applyError?: string }
   >;
   errors: PriceScheduleRefreshPricesError[];
+}
+
+export interface PriceScheduleBulkCreateError {
+  /** Channel product link id that failed. */
+  id: number;
+  error: string;
+}
+
+export interface PriceScheduleBulkCreateResponse {
+  results: ChannelPriceSchedule[];
+  errors: PriceScheduleBulkCreateError[];
 }
 
 export interface PriceScheduleBulkDisableResponse {

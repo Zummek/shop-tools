@@ -27,6 +27,14 @@ export const formatPriceScheduleWindow = (window: PriceScheduleWindow) =>
 export const formatPriceScheduleWindows = (windows: PriceScheduleWindow[]) =>
   windows.map(formatPriceScheduleWindow).join(' · ');
 
+export const isPriceScheduleWindowValid = (window: PriceScheduleWindow) =>
+  !!window.startTime &&
+  !!window.endTime &&
+  !(
+    window.startWeekday === window.endWeekday &&
+    window.startTime === window.endTime
+  );
+
 export const formatPriceScheduleEventLabel = (event: PriceScheduleEvent) =>
   PRICE_SCHEDULE_EVENT_LABELS[event.event] ?? event.event;
 
@@ -103,5 +111,6 @@ export const isPriceScheduleChannelMismatch = (
   const expected = isPriceScheduleExpectingTemporary(schedule)
     ? schedule.temporaryPrice
     : schedule.originalPrice;
+  if (expected == null) return false;
   return Number(schedule.linkPrice) !== Number(expected);
 };

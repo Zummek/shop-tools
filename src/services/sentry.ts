@@ -55,25 +55,45 @@ const toError = (error: unknown): Error => {
   }
 };
 
+const MAX_RESPONSE_BODY = 500;
+
+const summarizeResponseBody = (data: unknown): string | undefined => {
+  if (data == null) return undefined;
+  let text: string;
+  try {
+    text = typeof data === 'string' ? data : JSON.stringify(data);
+  } catch {
+    return undefined;
+  }
+  if (!text) return undefined;
+  return text.length > MAX_RESPONSE_BODY
+    ? `${text.slice(0, MAX_RESPONSE_BODY)}…`
+    : text;
+};
+
 const getAxiosContext = (error: AxiosError) => ({
   method: error.config?.method,
   url: error.config?.url,
   status: error.response?.status,
   code: error.code,
   message: error.message,
+  responseBody: summarizeResponseBody(error.response?.data),
 });
 
-export const captureError = (error: unknown) => {
+export const captureError = (
+  error: unknown,
+  extra?: Record<string, unknown>,
+) => {
   const exception = isAxiosError(error) ? error : toError(error);
   const axiosContext = isAxiosError(error) ? getAxiosContext(error) : undefined;
 
   if (isDev || !sentryDsn) {
-    console.error('Sentry error:', exception, axiosContext);
+    console.error('Sentry error:', exception, axiosContext, extra);
     return;
   }
 
-  Sentry.captureException(
-    exception,
-    axiosContext ? { contexts: { axios: axiosContext } } : undefined,
-  );
+  Sentry.captureException(exception, {
+    ...(axiosContext ? { contexts: { axios: axiosContext } } : {}),
+    ...(extra ? { extra } : {}),
+  });
 };

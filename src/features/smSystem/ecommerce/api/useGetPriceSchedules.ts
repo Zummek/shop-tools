@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { keepPreviousData, QueryClient, useQuery } from '@tanstack/react-query';
 
 import { axiosInstance } from '../../../../services';
 import { ChannelPriceSchedule } from '../types/priceSchedules';
@@ -6,6 +6,34 @@ import { ChannelPriceSchedule } from '../types/priceSchedules';
 const endpoint = '/api/v1/ecommerce/price-schedules/';
 
 export const priceSchedulesQueryKeyBase = 'price-schedules';
+
+const emptySchedules: ChannelPriceSchedule[] = [];
+
+/**
+ * Refetch open lists after a successful write. A failed refetch must not
+ * reject: the write already succeeded, and the next poll will catch up.
+ */
+export const invalidatePriceScheduleQueries = (queryClient: QueryClient) =>
+  Promise.all([
+    queryClient
+      .invalidateQueries({
+        queryKey: [priceSchedulesQueryKeyBase],
+        refetchType: 'active',
+      })
+      .then(
+        () => undefined,
+        () => undefined,
+      ),
+    queryClient
+      .invalidateQueries({
+        queryKey: ['product-channel-links'],
+        refetchType: 'active',
+      })
+      .then(
+        () => undefined,
+        () => undefined,
+      ),
+  ]);
 
 interface Filters {
   productId?: number;
@@ -15,36 +43,38 @@ interface Filters {
 }
 
 export const useGetPriceSchedules = (filters: Filters = {}) => {
-  const { data, isLoading, isFetching, isPlaceholderData, refetch } = useQuery({
-    queryKey: [priceSchedulesQueryKeyBase, filters],
-    queryFn: async () => {
-      const response = await axiosInstance.get<ChannelPriceSchedule[]>(
-        endpoint,
-        {
-          params: {
-            product: filters.productId,
-            link: filters.linkId,
-            is_enabled:
-              filters.isEnabled === undefined
-                ? undefined
-                : String(filters.isEnabled),
-            query: filters.query || undefined,
+  const { data, isLoading, isFetching, isPlaceholderData, isError, refetch } =
+    useQuery({
+      queryKey: [priceSchedulesQueryKeyBase, filters],
+      queryFn: async () => {
+        const response = await axiosInstance.get<ChannelPriceSchedule[]>(
+          endpoint,
+          {
+            params: {
+              product: filters.productId,
+              link: filters.linkId,
+              is_enabled:
+                filters.isEnabled === undefined
+                  ? undefined
+                  : String(filters.isEnabled),
+              query: filters.query || undefined,
+            },
           },
-        },
-      );
-      return response.data;
-    },
-    placeholderData: keepPreviousData,
-    // The engine ticks every minute; keep open pages fresh around window
-    // boundaries.
-    refetchInterval: 60_000,
-  });
+        );
+        return response.data;
+      },
+      placeholderData: keepPreviousData,
+      // The engine ticks every minute; keep open pages fresh around window
+      // boundaries.
+      refetchInterval: 60_000,
+    });
 
   return {
-    schedules: data ?? [],
+    schedules: data ?? emptySchedules,
     isLoading,
     isFetching,
     isPlaceholderData,
+    isError,
     refetch,
   };
 };

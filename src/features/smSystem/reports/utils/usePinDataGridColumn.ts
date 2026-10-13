@@ -1,7 +1,7 @@
 import type { GridApi } from '@mui/x-data-grid';
 import { RefObject, useLayoutEffect } from 'react';
 
-import { pinDataGridColumnLeft } from './pinDataGridColumn';
+import { pinDataGridColumnLeft, pinDataGridColumns } from './pinDataGridColumn';
 
 const MAX_PIN_ATTEMPTS = 30;
 
@@ -35,6 +35,42 @@ export const usePinDataGridColumn = (
       cancelAnimationFrame(frame);
     };
   }, [apiRef, enabled, field]);
+};
+
+export const usePinDataGridColumns = (
+  apiRef: RefObject<GridApi>,
+  pinned: { left: string[]; right: string[] },
+  enabled = true,
+) => {
+  const leftKey = pinned.left.join('\0');
+  const rightKey = pinned.right.join('\0');
+
+  useLayoutEffect(() => {
+    if (!enabled) return undefined;
+    const left = leftKey ? leftKey.split('\0') : [];
+    const right = rightKey ? rightKey.split('\0') : [];
+    let cancelled = false;
+    let attempts = 0;
+    let frame = 0;
+
+    const tryPin = () => {
+      if (cancelled) return;
+      const api = apiRef.current;
+      if (api?.setState && api.state?.columns) {
+        pinDataGridColumns(api, { left, right });
+        return;
+      }
+      if (attempts >= MAX_PIN_ATTEMPTS) return;
+      attempts += 1;
+      frame = requestAnimationFrame(tryPin);
+    };
+
+    tryPin();
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(frame);
+    };
+  }, [apiRef, enabled, leftKey, rightKey]);
 };
 
 export const reportDataGridLayoutSx = {

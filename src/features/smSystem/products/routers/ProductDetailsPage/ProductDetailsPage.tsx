@@ -44,6 +44,7 @@ import { SchedulePriceChangeModal } from '../../../ecommerce/modals';
 import {
   isEndedChannelOffer,
   isPriceScheduleSnoozed,
+  notifyPriceScheduleFailure,
 } from '../../../ecommerce/utils';
 import { useGetProductDetails } from '../../api';
 import { formatPrice, productsListSearchString } from '../../utils';
@@ -433,8 +434,12 @@ const ChannelOfferCard = ({ link, schedules }: ChannelOfferCardProps) => {
       } else {
         notify('success', 'Harmonogram włączony');
       }
-    } catch {
-      notify('error', 'Nie udało się włączyć harmonogramu');
+    } catch (err) {
+      notifyPriceScheduleFailure(
+        notify,
+        err,
+        'Nie udało się włączyć harmonogramu',
+      );
     }
   };
 

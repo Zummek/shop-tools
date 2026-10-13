@@ -12,7 +12,6 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { isAxiosError } from 'axios';
 import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
 
@@ -31,6 +30,7 @@ import {
 import {
   formatPriceScheduleWindows,
   isPriceScheduleWindowValid,
+  notifyPriceScheduleFailure,
 } from '../../utils';
 import { PriceScheduleWindowsEditor } from '../PriceScheduleWindowsEditor/PriceScheduleWindowsEditor';
 
@@ -187,32 +187,12 @@ export const SchedulePriceChangeModal = ({
       }
       onClose();
     } catch (err) {
-      const data = (isAxiosError(err) ? err.response?.data : err) as
-        | Record<string, unknown>
-        | undefined;
-      const windowsError = Array.isArray(data?.windows)
-        ? data.windows.join(' ')
-        : null;
-      const linkError = Array.isArray(data?.linkId)
-        ? data.linkId.join(' ')
-        : null;
-      const originalError = Array.isArray(data?.originalPrice)
-        ? data.originalPrice.join(' ')
-        : null;
-      const applyModeError = Array.isArray(data?.applyMode)
-        ? data.applyMode.join(' ')
-        : null;
-      const originalApplyModeError = Array.isArray(data?.originalApplyMode)
-        ? data.originalApplyMode.join(' ')
-        : null;
-      setApiError(
-        windowsError ||
-          linkError ||
-          originalError ||
-          applyModeError ||
-          originalApplyModeError ||
-          'Nie udało się zapisać harmonogramu',
+      const parsed = notifyPriceScheduleFailure(
+        notify,
+        err,
+        'Nie udało się zapisać harmonogramu',
       );
+      setApiError(parsed.message || 'Nie udało się zapisać harmonogramu');
     }
   };
 

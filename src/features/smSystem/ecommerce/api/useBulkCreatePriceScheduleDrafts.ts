@@ -9,7 +9,7 @@ import {
   PriceScheduleWindow,
 } from '../types/priceSchedules';
 
-import { priceSchedulesQueryKeyBase } from './useGetPriceSchedules';
+import { invalidatePriceScheduleQueries } from './useGetPriceSchedules';
 
 const endpoint = '/api/v1/ecommerce/price-schedules/bulk-create/';
 
@@ -32,8 +32,7 @@ export const useBulkCreatePriceScheduleDrafts = () => {
     },
     onSuccess: (data) => {
       if (data.results.length === 0) return;
-      queryClient.invalidateQueries({ queryKey: [priceSchedulesQueryKeyBase] });
-      queryClient.invalidateQueries({ queryKey: ['product-channel-links'] });
+      return invalidatePriceScheduleQueries(queryClient);
     },
   });
 

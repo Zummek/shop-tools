@@ -7,7 +7,7 @@ import {
   PriceScheduleDisableMode,
 } from '../types/priceSchedules';
 
-import { priceSchedulesQueryKeyBase } from './useGetPriceSchedules';
+import { invalidatePriceScheduleQueries } from './useGetPriceSchedules';
 
 const endpoint = '/api/v1/ecommerce/price-schedules/bulk-disable/';
 const BULK_REQUEST_TIMEOUT_MS = 300_000;
@@ -79,10 +79,7 @@ export const useBulkDisablePriceSchedules = () => {
 
       return { succeeded, revertPending, failed };
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: [priceSchedulesQueryKeyBase] });
-      queryClient.invalidateQueries({ queryKey: ['product-channel-links'] });
-    },
+    onSettled: () => invalidatePriceScheduleQueries(queryClient),
   });
 
   return {

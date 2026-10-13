@@ -12,7 +12,6 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import { isAxiosError } from 'axios';
 import { useRef, useState } from 'react';
 
 import { modalStyle } from '../../../../../components';
@@ -25,8 +24,11 @@ import {
   PriceScheduleWindow,
 } from '../../types/priceSchedules';
 import {
+  conflictScheduleIdFromText,
   formatPriceScheduleWindows,
   isPriceScheduleWindowValid,
+  notifyPriceScheduleConflictText,
+  notifyPriceScheduleFailure,
 } from '../../utils';
 import { PriceScheduleWindowsEditor } from '../PriceScheduleWindowsEditor/PriceScheduleWindowsEditor';
 
@@ -104,7 +106,7 @@ export const BulkSchedulePriceDraftModal = ({
       if (result.errors.length === 0) {
         notify(
           'success',
-          `Utworzono ${result.results.length} ${draftNoun(result.results.length)}`,
+          `Utworzono ${result.results.length} ${draftNoun(result.results.length)}. Lista szkiców pokazuje nowe wpisy (bez filtra).`,
         );
         onClose();
         return;
@@ -112,22 +114,31 @@ export const BulkSchedulePriceDraftModal = ({
       const failedIds = new Set(result.errors.map((error) => error.id));
       onLinksChange(links.filter((link) => failedIds.has(link.id)));
       setRowErrors(result.errors);
-      if (result.results.length > 0) {
-        notify(
-          'warning',
-          `Utworzono ${result.results.length} ${draftNoun(
-            result.results.length,
-          )}. ${result.errors.length} nie udało się — szczegóły są na liście.`,
-        );
-      }
+      const conflictId = result.errors
+        .map((error) => conflictScheduleIdFromText(error.error))
+        .find((id) => id != null);
+      const summary =
+        result.results.length > 0
+          ? `Utworzono ${result.results.length} ${draftNoun(
+              result.results.length,
+            )}. ${result.errors.length} nie udało się — szczegóły są na liście.`
+          : `Nie udało się utworzyć ${result.errors.length} ${draftNoun(
+              result.errors.length,
+            )}.`;
+      notifyPriceScheduleConflictText(
+        notify,
+        result.results.length > 0 ? 'warning' : 'error',
+        conflictId == null
+          ? summary
+          : `${summary} Konflikt z harmonogramem #${conflictId}.`,
+      );
     } catch (err) {
-      const data = (isAxiosError(err) ? err.response?.data : undefined) as
-        | { windows?: unknown }
-        | undefined;
-      const windowsError = Array.isArray(data?.windows)
-        ? data.windows.filter((item) => typeof item === 'string').join(' ')
-        : null;
-      setFormError(windowsError || 'Nie udało się utworzyć harmonogramów');
+      const parsed = notifyPriceScheduleFailure(
+        notify,
+        err,
+        'Nie udało się utworzyć harmonogramów',
+      );
+      setFormError(parsed.message || 'Nie udało się utworzyć harmonogramów');
     } finally {
       submitLock.current = false;
     }

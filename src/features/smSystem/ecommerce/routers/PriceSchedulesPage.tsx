@@ -26,15 +26,29 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { DataGrid, GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
-import { isAxiosError } from 'axios';
+import {
+  DataGrid,
+  GRID_CHECKBOX_SELECTION_COL_DEF,
+  GridColDef,
+  GridPaginationModel,
+  GridRowSelectionModel,
+  useGridApiRef,
+} from '@mui/x-data-grid';
 import dayjs from 'dayjs';
-import { MouseEvent, useEffect, useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import {
+  MouseEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { useAppSelector, useNotify } from '../../../../hooks';
 import { Pages } from '../../../../utils';
 import { formatPrice } from '../../products/utils';
+import { usePinDataGridColumns } from '../../reports/utils/usePinDataGridColumn';
 import {
   ChannelPriceSchedule,
   ChannelProductLink,
@@ -50,25 +64,20 @@ import {
 } from '../api';
 import { SchedulePriceChangeModal, SchedulePriceDraftWizard } from '../modals';
 import {
+  applyPriceScheduleListParams,
   formatPriceScheduleEventLabel,
   formatPriceScheduleNextChange,
   formatPriceScheduleWindows,
   isPriceScheduleChannelMismatch,
   isPriceScheduleExpectingTemporary,
   isPriceScheduleSnoozed,
+  notifyPriceScheduleConflictText,
+  notifyPriceScheduleFailure,
+  parsePriceScheduleListParams,
+  resolveScheduleDeepLink,
 } from '../utils';
 
-const enableErrorMessage = (err: unknown) => {
-  if (!isAxiosError(err)) return null;
-  const detail = (err.response?.data as { detail?: unknown } | undefined)
-    ?.detail;
-  if (typeof detail === 'string' && detail.trim()) return detail;
-  if (Array.isArray(detail)) {
-    const text = detail.map(String).join(' ').trim();
-    return text || null;
-  }
-  return null;
-};
+const PAGE_SIZE = 25;
 
 const statusChip = (schedule: ChannelPriceSchedule) => {
   if (!schedule.isEnabled) {
@@ -226,13 +235,18 @@ const scheduleToLink = (
 
 export const PriceSchedulesPage = () => {
   const navigate = useNavigate();
+  const gridApiRef = useGridApiRef();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const listParams = parsePriceScheduleListParams(searchParams);
+  const { tab, query, page, scheduleId } = listParams;
   const { user } = useAppSelector((state) => state.smSystemUser);
   const { notify } = useNotify();
-  const [tab, setTab] = useState<'active' | 'inactive'>('active');
-  const [searchInput, setSearchInput] = useState('');
-  const [query, setQuery] = useState('');
+  const [searchInput, setSearchInput] = useState(query);
   const [editedSchedule, setEditedSchedule] =
     useState<ChannelPriceSchedule | null>(null);
+  const openedScheduleIdRef = useRef<number | null>(null);
+  const triedOtherTabForRef = useRef<number | null>(null);
+  const missingNoticeKeyRef = useRef<string | null>(null);
   const [draftWizardOpen, setDraftWizardOpen] = useState(false);
   const [historySchedule, setHistorySchedule] =
     useState<ChannelPriceSchedule | null>(null);
@@ -256,13 +270,37 @@ export const PriceSchedulesPage = () => {
   );
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
+  const replaceListParams = useCallback(
+    (next: Parameters<typeof applyPriceScheduleListParams>[1]) => {
+      setSearchParams(
+        (prev) => {
+          const params = applyPriceScheduleListParams(prev, next);
+          if (params.toString() === prev.toString()) return prev;
+          return params;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+
   const isActiveTab = tab === 'active';
-  const { schedules, isLoading, isPlaceholderData } = useGetPriceSchedules({
-    isEnabled: isActiveTab,
-    ...(query ? { query } : {}),
-  });
-  const visibleSchedules = schedules.filter(
-    (schedule) => schedule.isEnabled === isActiveTab,
+  const { schedules, isLoading, isFetching, isPlaceholderData, isError } =
+    useGetPriceSchedules({
+      isEnabled: isActiveTab,
+      ...(query ? { query } : {}),
+    });
+  const visibleSchedules = useMemo(
+    () => schedules.filter((schedule) => schedule.isEnabled === isActiveTab),
+    [schedules, isActiveTab],
+  );
+  usePinDataGridColumns(
+    gridApiRef,
+    {
+      left: [GRID_CHECKBOX_SELECTION_COL_DEF.field, 'offerName', 'productName'],
+      right: ['actions'],
+    },
+    visibleSchedules.length > 0,
   );
   const selectedSchedules = visibleSchedules.filter((schedule) =>
     selectedIds.includes(schedule.id),
@@ -293,9 +331,104 @@ export const PriceSchedulesPage = () => {
     isEnabling ||
     isDeleting;
   useEffect(() => {
-    const timeout = setTimeout(() => setQuery(searchInput.trim()), 300);
+    setSearchInput((current) => (current.trim() === query ? current : query));
+  }, [query]);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      const next = searchInput.trim();
+      if (next === query) return;
+      replaceListParams({ query: next, page: 0 });
+    }, 300);
     return () => clearTimeout(timeout);
-  }, [searchInput]);
+  }, [searchInput, query, replaceListParams]);
+
+  const openSchedule = useCallback(
+    (schedule: ChannelPriceSchedule) => {
+      openedScheduleIdRef.current = schedule.id;
+      setEditedSchedule(schedule);
+      replaceListParams({ scheduleId: schedule.id });
+    },
+    [replaceListParams],
+  );
+
+  const closeSchedule = useCallback(() => {
+    setEditedSchedule(null);
+    replaceListParams({ scheduleId: null });
+  }, [replaceListParams]);
+
+  useEffect(() => {
+    const action = resolveScheduleDeepLink({
+      scheduleId,
+      isLoading,
+      isPlaceholderData,
+      isFetching,
+      isError,
+      found: visibleSchedules.some((schedule) => schedule.id === scheduleId),
+      hasQuery: query.length > 0,
+      triedOtherTab: triedOtherTabForRef.current === scheduleId,
+    });
+
+    if (action === 'idle') {
+      openedScheduleIdRef.current = null;
+      triedOtherTabForRef.current = null;
+      missingNoticeKeyRef.current = null;
+      return;
+    }
+    if (action === 'wait' || scheduleId == null) return;
+
+    if (action === 'open') {
+      if (openedScheduleIdRef.current === scheduleId) return;
+      const found = visibleSchedules.find(
+        (schedule) => schedule.id === scheduleId,
+      );
+      if (!found) return;
+      openedScheduleIdRef.current = scheduleId;
+      setEditedSchedule(found);
+      return;
+    }
+
+    if (action === 'clear-filter') {
+      const noticeKey = `filter:${scheduleId}:${query}`;
+      if (missingNoticeKeyRef.current === noticeKey) return;
+      missingNoticeKeyRef.current = noticeKey;
+      notify(
+        'warning',
+        `Harmonogram #${scheduleId} nie jest na tej liście przy obecnym filtrze.`,
+        {
+          actionLabel: 'Wyczyść filtr',
+          onAction: () => replaceListParams({ query: '', page: 0 }),
+        },
+      );
+      return;
+    }
+
+    if (action === 'switch-tab') {
+      triedOtherTabForRef.current = scheduleId;
+      replaceListParams({
+        tab: tab === 'active' ? 'inactive' : 'active',
+        page: 0,
+      });
+      return;
+    }
+
+    const noticeKey = `missing:${scheduleId}`;
+    if (missingNoticeKeyRef.current === noticeKey) return;
+    missingNoticeKeyRef.current = noticeKey;
+    notify('error', `Nie znaleziono harmonogramu #${scheduleId}.`);
+    replaceListParams({ scheduleId: null });
+  }, [
+    isError,
+    isFetching,
+    isLoading,
+    isPlaceholderData,
+    notify,
+    query,
+    replaceListParams,
+    scheduleId,
+    tab,
+    visibleSchedules,
+  ]);
 
   if (!user?.permissions?.canAccessEcommerce)
     return <Navigate to={Pages.smSystem} replace />;
@@ -455,9 +588,10 @@ export const PriceSchedulesPage = () => {
         notify('success', 'Harmonogram włączony');
       }
     } catch (err) {
-      notify(
-        'error',
-        enableErrorMessage(err) || 'Nie udało się włączyć harmonogramu',
+      notifyPriceScheduleFailure(
+        notify,
+        err,
+        'Nie udało się włączyć harmonogramu',
       );
     }
   };
@@ -478,7 +612,11 @@ export const PriceSchedulesPage = () => {
             ? `: ${result.errors[0]}`
             : `: ${result.errors[0]} (+${result.errors.length - 1})`;
       if (completed === 0) {
-        notify('error', `Nie udało się włączyć (${result.failed})${reason}`);
+        notifyPriceScheduleConflictText(
+          notify,
+          'error',
+          `Nie udało się włączyć (${result.failed})${reason}`,
+        );
         return;
       }
       const pendingPart = result.applyPending
@@ -487,12 +625,16 @@ export const PriceSchedulesPage = () => {
       const failedPart = result.failed
         ? `, ${result.failed} nieudane${reason}`
         : '';
-      notify(
-        result.failed || result.applyPending ? 'warning' : 'success',
-        `Włączono ${completed} z ${total}${pendingPart}${failedPart}`,
+      const summary = `Włączono ${completed} z ${total}${pendingPart}${failedPart}`;
+      if (result.failed)
+        notifyPriceScheduleConflictText(notify, 'warning', summary);
+      else notify(result.applyPending ? 'warning' : 'success', summary);
+    } catch (err) {
+      notifyPriceScheduleFailure(
+        notify,
+        err,
+        'Nie udało się włączyć zaznaczonych harmonogramów',
       );
-    } catch {
-      notify('error', 'Nie udało się włączyć zaznaczonych harmonogramów');
     }
   };
 
@@ -707,7 +849,7 @@ export const PriceSchedulesPage = () => {
             <Button
               size="small"
               disabled={isMutationBusy}
-              onClick={() => setEditedSchedule(schedule)}
+              onClick={() => openSchedule(schedule)}
             >
               {'Edytuj'}
             </Button>
@@ -776,8 +918,9 @@ export const PriceSchedulesPage = () => {
       <Tabs
         value={tab}
         onChange={(_event, value: 'active' | 'inactive') => {
-          setTab(value);
           setSelectedIds([]);
+          setEditedSchedule(null);
+          replaceListParams({ tab: value, page: 0, scheduleId: null });
         }}
         sx={{ borderBottom: 1, borderColor: 'divider' }}
       >
@@ -866,7 +1009,7 @@ export const PriceSchedulesPage = () => {
         </Typography>
       ) : (
         <DataGrid
-          key={tab}
+          apiRef={gridApiRef}
           rows={visibleSchedules}
           columns={columns}
           loading={isLoading}
@@ -879,9 +1022,13 @@ export const PriceSchedulesPage = () => {
           onRowSelectionModelChange={(ids: GridRowSelectionModel) =>
             setSelectedIds(ids as number[])
           }
-          pageSizeOptions={[25]}
+          pageSizeOptions={[PAGE_SIZE]}
+          paginationModel={{ page, pageSize: PAGE_SIZE }}
+          onPaginationModelChange={(model: GridPaginationModel) => {
+            if (model.page === page) return;
+            replaceListParams({ page: model.page });
+          }}
           initialState={{
-            pagination: { paginationModel: { page: 0, pageSize: 25 } },
             sorting: {
               sortModel: [{ field: 'productName', sort: 'asc' }],
             },
@@ -1117,15 +1264,22 @@ export const PriceSchedulesPage = () => {
         open={draftWizardOpen}
         onClose={() => setDraftWizardOpen(false)}
         onCreated={() => {
-          setTab('inactive');
           setSelectedIds([]);
+          setSearchInput('');
+          setEditedSchedule(null);
+          replaceListParams({
+            tab: 'inactive',
+            query: '',
+            page: 0,
+            scheduleId: null,
+          });
         }}
       />
 
       {editedSchedule && (
         <SchedulePriceChangeModal
           open={!!editedSchedule}
-          onClose={() => setEditedSchedule(null)}
+          onClose={closeSchedule}
           link={scheduleToLink(editedSchedule)}
           schedule={editedSchedule}
         />

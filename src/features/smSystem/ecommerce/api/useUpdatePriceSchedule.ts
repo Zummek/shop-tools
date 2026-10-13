@@ -9,7 +9,7 @@ import {
   UpdatePriceSchedulePayload,
 } from '../types/priceSchedules';
 
-import { priceSchedulesQueryKeyBase } from './useGetPriceSchedules';
+import { invalidatePriceScheduleQueries } from './useGetPriceSchedules';
 
 const endpoint = (id: number) => `/api/v1/ecommerce/price-schedules/${id}/`;
 
@@ -31,10 +31,7 @@ export const useUpdatePriceSchedule = () => {
 
       return response.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [priceSchedulesQueryKeyBase] });
-      queryClient.invalidateQueries({ queryKey: ['product-channel-links'] });
-    },
+    onSuccess: () => invalidatePriceScheduleQueries(queryClient),
   });
 
   return {

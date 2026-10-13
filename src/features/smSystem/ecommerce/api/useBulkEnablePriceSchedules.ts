@@ -1,12 +1,17 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { axiosInstance } from '../../../../services';
+import {
+  axiosInstance,
+  captureError,
+  throwAxiosErrorFromResponse,
+} from '../../../../services';
 import {
   PRICE_SCHEDULE_BULK_MAX_IDS,
   PriceScheduleBulkEnableResponse,
 } from '../types/priceSchedules';
+import { parsePriceScheduleApiError } from '../utils/priceScheduleErrors';
 
-import { priceSchedulesQueryKeyBase } from './useGetPriceSchedules';
+import { invalidatePriceScheduleQueries } from './useGetPriceSchedules';
 
 const endpoint = '/api/v1/ecommerce/price-schedules/bulk-enable/';
 const BULK_REQUEST_TIMEOUT_MS = 300_000;
@@ -25,9 +30,7 @@ const enableChunk = async (ids: number[]) => {
     { ids },
     { timeout: BULK_REQUEST_TIMEOUT_MS },
   );
-  if (response.status >= 400) 
-    throw new Error(`Bulk enable failed (${response.status})`);
-  
+  if (response.status >= 400) throwAxiosErrorFromResponse(response);
   return response.data;
 };
 
@@ -44,15 +47,8 @@ export const useBulkEnablePriceSchedules = () => {
       let failed = 0;
       const errors: string[] = [];
 
-      for (
-        let i = 0;
-        i < uniqueIds.length;
-        i += PRICE_SCHEDULE_BULK_MAX_IDS
-      ) {
-        const chunk = uniqueIds.slice(
-          i,
-          i + PRICE_SCHEDULE_BULK_MAX_IDS,
-        );
+      for (let i = 0; i < uniqueIds.length; i += PRICE_SCHEDULE_BULK_MAX_IDS) {
+        const chunk = uniqueIds.slice(i, i + PRICE_SCHEDULE_BULK_MAX_IDS);
         try {
           const batch = await enableChunk(chunk);
           for (const row of batch.results) {
@@ -60,19 +56,21 @@ export const useBulkEnablePriceSchedules = () => {
             else succeeded += 1;
           }
           failed += batch.errors.length;
-          for (const row of batch.errors) 
-            if (row.error && !errors.includes(row.error)) errors.push(row.error);
-        } catch {
+          for (const row of batch.errors)
+            if (row.error && !errors.includes(row.error))
+              errors.push(row.error);
+        } catch (err) {
+          const parsed = parsePriceScheduleApiError(err);
+          if (!parsed.known) captureError(err);
+          if (parsed.message && !errors.includes(parsed.message))
+            errors.push(parsed.message);
           failed += chunk.length;
         }
       }
 
       return { succeeded, applyPending, failed, errors };
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: [priceSchedulesQueryKeyBase] });
-      queryClient.invalidateQueries({ queryKey: ['product-channel-links'] });
-    },
+    onSettled: () => invalidatePriceScheduleQueries(queryClient),
   });
 
   return {

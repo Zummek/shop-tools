@@ -39,3 +39,29 @@ export const pinDataGridColumnLeft = <
   api.resize?.();
   return true;
 };
+
+const sameFields = (current: string[] | undefined, next: string[]) =>
+  Array.isArray(current) &&
+  current.length === next.length &&
+  current.every((field, index) => field === next[index]);
+
+/** Community DataGrid has no `pinnedColumns` prop; write the state directly. */
+export const pinDataGridColumns = <
+  TState extends { pinnedColumns?: GridPinnedColumnFields },
+>(
+  api: PinableGridApi<TState>,
+  pinned: { left: string[]; right: string[] },
+) => {
+  const current = api.state.pinnedColumns;
+  if (
+    sameFields(current?.left, pinned.left) &&
+    sameFields(current?.right, pinned.right)
+  )
+    return false;
+  api.setState((state) => ({
+    ...state,
+    pinnedColumns: { left: [...pinned.left], right: [...pinned.right] },
+  }));
+  api.resize?.();
+  return true;
+};

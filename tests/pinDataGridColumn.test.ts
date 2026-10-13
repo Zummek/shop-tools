@@ -5,6 +5,7 @@ import {
   isColumnPinnedLeft,
   nextPinnedColumnsState,
   pinDataGridColumnLeft,
+  pinDataGridColumns,
 } from '../src/features/smSystem/reports/utils/pinDataGridColumn.ts';
 
 test('isColumnPinnedLeft requires exactly the given field on the left', () => {
@@ -44,5 +45,35 @@ test('pinDataGridColumnLeft writes left pin and calls resize', () => {
   assert.deepEqual(pinned, nextPinnedColumnsState('name'));
   assert.equal(resized, 1);
   assert.equal(pinDataGridColumnLeft(api, 'name'), false);
+  assert.equal(resized, 1);
+});
+
+test('pinDataGridColumns sets left and right and skips a no-op', () => {
+  let pinned = { left: [] as string[], right: [] as string[] };
+  let resized = 0;
+  const api = {
+    state: { pinnedColumns: pinned },
+    setState: (
+      updater: (state: { pinnedColumns: typeof pinned }) => {
+        pinnedColumns: typeof pinned;
+      },
+    ) => {
+      const next = updater({ pinnedColumns: pinned });
+      pinned = next.pinnedColumns;
+      api.state.pinnedColumns = pinned;
+    },
+    resize: () => {
+      resized += 1;
+    },
+  };
+  const next = {
+    left: ['__check__', 'offerName', 'productName'],
+    right: ['actions'],
+  };
+
+  assert.equal(pinDataGridColumns(api, next), true);
+  assert.deepEqual(pinned, next);
+  assert.equal(resized, 1);
+  assert.equal(pinDataGridColumns(api, next), false);
   assert.equal(resized, 1);
 });

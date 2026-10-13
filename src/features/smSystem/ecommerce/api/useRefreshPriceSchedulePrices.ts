@@ -6,7 +6,7 @@ import {
   PriceScheduleRefreshPricesResponse,
 } from '../types/priceSchedules';
 
-import { priceSchedulesQueryKeyBase } from './useGetPriceSchedules';
+import { invalidatePriceScheduleQueries } from './useGetPriceSchedules';
 
 const endpoint = '/api/v1/ecommerce/price-schedules/refresh-prices/';
 
@@ -65,10 +65,7 @@ export const useRefreshPriceSchedulePrices = () => {
 
       return { results, errors };
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: [priceSchedulesQueryKeyBase] });
-      queryClient.invalidateQueries({ queryKey: ['product-channel-links'] });
-    },
+    onSettled: () => invalidatePriceScheduleQueries(queryClient),
   });
 
   return {

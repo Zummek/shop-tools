@@ -297,7 +297,7 @@ export const PriceSchedulesPage = () => {
   usePinDataGridColumns(
     gridApiRef,
     {
-      left: [GRID_CHECKBOX_SELECTION_COL_DEF.field, 'offerName', 'productName'],
+      left: [GRID_CHECKBOX_SELECTION_COL_DEF.field, 'offerName'],
       right: ['actions'],
     },
     visibleSchedules.length > 0,

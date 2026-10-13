@@ -56,9 +56,10 @@ export const useBulkEnablePriceSchedules = () => {
             else succeeded += 1;
           }
           failed += batch.errors.length;
-          for (const row of batch.errors)
+          for (const row of batch.errors) {
             if (row.error && !errors.includes(row.error))
               errors.push(row.error);
+          }
         } catch (err) {
           const parsed = parsePriceScheduleApiError(err);
           if (!parsed.known) captureError(err);

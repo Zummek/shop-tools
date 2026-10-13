@@ -1,7 +1,6 @@
+import { AxiosError } from 'axios';
 import assert from 'node:assert/strict';
 import test from 'node:test';
-
-import { AxiosError } from 'axios';
 
 import {
   conflictScheduleIdFromText,

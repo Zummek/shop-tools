@@ -53,7 +53,8 @@ export const parsePriceScheduleApiError = (
 
   const message = messagesFromPriceScheduleBody(err.response?.data).join(' ');
   const text = message.trim() || null;
-  const known = err.response?.status === 400 && text != null;
+  const status = err.response?.status;
+  const known = (status === 400 && text != null) || status === 401;
 
   return {
     message: text,

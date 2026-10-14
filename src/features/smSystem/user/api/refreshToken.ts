@@ -1,3 +1,5 @@
+import { AxiosRequestConfig } from 'axios';
+
 import { axiosInstance } from '../../../../services';
 
 interface RefreshTokenPayload {
@@ -20,12 +22,18 @@ interface RefreshTokenProcessedResponse {
 
 const endpoint = '/api/v1/auth/token/refresh/';
 
+export const skipSessionLogoutOnRefresh = {
+  skipSessionLogout: true,
+} as AxiosRequestConfig & { skipSessionLogout: true };
+
 export const refreshToken = async ({
   refreshToken,
 }: RefreshTokenPayload): Promise<RefreshTokenProcessedResponse> => {
-  const response = await axiosInstance.post<RefreshTokenResponse>(endpoint, {
-    refresh: refreshToken,
-  });
+  const response = await axiosInstance.post<RefreshTokenResponse>(
+    endpoint,
+    { refresh: refreshToken },
+    skipSessionLogoutOnRefresh,
+  );
 
   return {
     accessToken: response.data.access,

@@ -52,6 +52,9 @@ test('parsePriceScheduleApiError reads detail and ignores unknown failures', () 
   assert.equal(unknown.known, false);
   assert.equal(unknown.message, null);
 
+  const expired = parsePriceScheduleApiError(axiosError(401, {}));
+  assert.equal(expired.known, true);
+
   assert.equal(parsePriceScheduleApiError(new Error('nope')).known, false);
 });
 

@@ -5,6 +5,12 @@ import { ReactNode, useEffect } from 'react';
 
 import { useLogoutUser } from '../features/smSystem/user/hooks';
 import { useRefreshToken } from '../features/smSystem/user/hooks/useRefreshToken';
+import {
+  parsePersistedSession,
+  PERSIST_ROOT_KEY,
+  shouldAdoptPersistedTokens,
+} from '../features/smSystem/user/persistedSession';
+import { setTokens } from '../features/smSystem/user/store';
 import { useAppSelector, useNotify } from '../hooks';
 
 import { isMarketplaceIntegrationRequest } from './authRequestUtils';
@@ -19,6 +25,7 @@ interface AxiosInterceptorsProviderProps {
 type APIError = AxiosError & {
   config: AxiosRequestConfig & {
     _retry?: boolean;
+    skipSessionLogout?: boolean;
   };
 };
 
@@ -61,6 +68,38 @@ export const AxiosInterceptorsProvider = ({
   }, [notify]);
 
   useEffect(() => {
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== PERSIST_ROOT_KEY) return;
+
+      const stored = parsePersistedSession(event.newValue);
+      if (!stored) return;
+
+      const current = store.getState().smSystemUser as {
+        accessToken: string | null;
+        refreshToken: string | null;
+        user: unknown;
+      };
+
+      if (!stored.accessToken && !stored.refreshToken) {
+        if (current.accessToken || current.user) logoutUser(false);
+        return;
+      }
+
+      if (shouldAdoptPersistedTokens(current.refreshToken, stored)) {
+        store.dispatch(
+          setTokens({
+            accessToken: stored.accessToken,
+            refreshToken: stored.refreshToken,
+          }),
+        );
+      }
+    };
+
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [logoutUser, store]);
+
+  useEffect(() => {
     const responseInterceptor = async (response: AxiosResponse) => {
       return response;
     };
@@ -70,7 +109,7 @@ export const AxiosInterceptorsProvider = ({
       const httpCode = get(error, 'response.status');
 
       if (httpCode === 401 && isRefreshTokenRequest(originalRequest?.url)) {
-        logoutUser(isCurrentSessionExist);
+        if (!originalRequest?.skipSessionLogout) logoutUser(isCurrentSessionExist);
         throw error;
       }
 

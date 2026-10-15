@@ -7,6 +7,22 @@ import { SalesExportQuery } from './useGetEcommerceSalesExport';
 
 const endpoint = '/api/v1/ecommerce/sales-export/file/';
 
+const downloadErrorMessage = async (data: unknown): Promise<string> => {
+  const fallback = 'Nie udało się pobrać pliku';
+  if (!(data instanceof Blob)) return fallback;
+  try {
+    const parsed = JSON.parse(await data.text()) as {
+      detail?: string;
+      sync_gaps?: string[];
+    };
+    if (parsed.sync_gaps?.length)
+      return 'Nie można pobrać pliku. Zamówienia z wybranych kanałów nie są zsynchronizowane dla całego zakresu.';
+    return parsed.detail || fallback;
+  } catch {
+    return fallback;
+  }
+};
+
 export const useDownloadEcommerceSalesExport = () => {
   const { notify } = useNotify();
   const [isPending, setIsPending] = useState(false);
@@ -24,7 +40,7 @@ export const useDownloadEcommerceSalesExport = () => {
         responseType: 'blob',
       });
       if (res.status >= 400) {
-        notify('error', 'Nie udało się pobrać pliku');
+        notify('error', await downloadErrorMessage(res.data));
         return false;
       }
 

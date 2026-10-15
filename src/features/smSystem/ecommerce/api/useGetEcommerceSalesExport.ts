@@ -47,6 +47,7 @@ export interface SalesExportPreview {
   };
   lines: SalesExportLine[];
   skipped: SalesExportSkipped[];
+  syncGaps: string[];
 }
 
 export interface SalesExportQuery {

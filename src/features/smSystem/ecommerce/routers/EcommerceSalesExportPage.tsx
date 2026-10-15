@@ -277,8 +277,14 @@ export const EcommerceSalesExportPage = () => {
   };
 
   const summary = preview?.summary;
+  const syncGaps = preview?.syncGaps ?? [];
   const canDownload =
-    !!query && !!summary && summary.linesCount > 0 && !isPending && !isLoading;
+    !!query &&
+    !!summary &&
+    summary.linesCount > 0 &&
+    syncGaps.length === 0 &&
+    !isPending &&
+    !isLoading;
 
   return (
     <Stack spacing={2}>
@@ -455,6 +461,20 @@ export const EcommerceSalesExportPage = () => {
               </Paper>
             ))}
           </Stack>
+
+          {syncGaps.length > 0 && (
+            <Alert severity="warning">
+              {`Nie można pobrać pliku. Zamówienia z ${syncGaps
+                .map(orderChannelLabel)
+                .join(', ')} nie są zsynchronizowane dla każdego dnia tego zakresu. `}
+              <Link component={RouterLink} to={Pages.smSystemEcommerceOrders}>
+                {'Zaimportuj zamówienia'}
+              </Link>
+              {
+                ' tak, żeby import objął cały zakres i został zrobiony po jego ostatnim dniu. Potem wróć tutaj i kliknij Pokaż jeszcze raz.'
+              }
+            </Alert>
+          )}
 
           <Box>
             <LoadingButton

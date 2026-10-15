@@ -2,6 +2,7 @@ import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
 import BarChartOutlinedIcon from '@mui/icons-material/BarChartOutlined';
 import CableOutlinedIcon from '@mui/icons-material/CableOutlined';
 import FactCheckOutlinedIcon from '@mui/icons-material/FactCheckOutlined';
+import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
 import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined';
 import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined';
@@ -111,6 +112,12 @@ export const navSections: NavSection[] = [
         icon: <ShoppingCartOutlinedIcon />,
         permission: 'canAccessEcommerce',
         activePaths: [Pages.smSystemEcommerceOrderDetails],
+      },
+      {
+        label: 'Eksport do PC Market',
+        path: Pages.smSystemEcommercePcMarketExport,
+        icon: <FileDownloadOutlinedIcon />,
+        permission: 'canAccessEcommerce',
       },
       {
         label: 'Zaplanowane zmiany cen',

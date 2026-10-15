@@ -17,6 +17,7 @@ import { AlertsListPage } from './features/smSystem/alerts/routers/AlertsListPag
 import { DeliveryGroupsPage } from './features/smSystem/ecommerce/routers/DeliveryGroupsPage';
 import { EcommerceOrderDetailsPage } from './features/smSystem/ecommerce/routers/EcommerceOrderDetailsPage';
 import { EcommerceOrdersListPage } from './features/smSystem/ecommerce/routers/EcommerceOrdersListPage';
+import { EcommerceSalesExportPage } from './features/smSystem/ecommerce/routers/EcommerceSalesExportPage';
 import { PriceSchedulesPage } from './features/smSystem/ecommerce/routers/PriceSchedulesPage';
 import { EcommerceIntegrationsPage } from './features/smSystem/ecommerce/routers/integrations/EcommerceIntegrationsPage';
 import { IntegrationsAllegroPanel } from './features/smSystem/ecommerce/routers/integrations/IntegrationsAllegroPanel';
@@ -217,6 +218,10 @@ const router = sentryCreateHashRouter(
             {
               path: 'orders/:orderId',
               element: <EcommerceOrderDetailsPage />,
+            },
+            {
+              path: 'pcmarket-export',
+              element: <EcommerceSalesExportPage />,
             },
             {
               path: 'price-schedules',

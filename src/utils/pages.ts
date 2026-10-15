@@ -24,6 +24,7 @@ export enum Pages {
   smSystemPriceTagsGroups = '/sm-system/price-tags/groups',
   smSystemPriceTagsGroupDetails = '/sm-system/price-tags/groups/:groupId',
   smSystemEcommerceOrders = '/sm-system/ecommerce/orders',
+  smSystemEcommercePcMarketExport = '/sm-system/ecommerce/pcmarket-export',
   smSystemEcommerceOrderDetails = '/sm-system/ecommerce/orders/:orderId',
   smSystemEcommerceIntegrations = '/sm-system/ecommerce/integrations',
   smSystemEcommerceIntegrationsAllegro = '/sm-system/ecommerce/integrations/allegro',

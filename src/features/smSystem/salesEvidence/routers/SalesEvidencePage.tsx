@@ -211,7 +211,8 @@ export const SalesEvidencePage = () => {
     data?.blockers.filter(
       (blocker) =>
         !SETUP_BLOCKERS.has(blocker.code) &&
-        blocker.code !== 'review_not_empty',
+        blocker.code !== 'review_not_empty' &&
+        blocker.code !== 'period_not_synced',
     ) ?? [];
   const monthMissing = (data?.monthDaysWithoutDocument ?? []).filter(
     (entry) => entry.channel === channel,
@@ -348,6 +349,10 @@ export const SalesEvidencePage = () => {
               <Alert severity="error">
                 {`Nie udało się pobrać danych z ${channelLabel}: ${syncState.run.error} Sprawdź połączenie z kanałem w ustawieniach integracji i spróbuj ponownie.`}
               </Alert>
+            ) : null}
+            {syncState.run?.status === 'done' &&
+            syncState.run.result?.warning ? (
+              <Alert severity="warning">{syncState.run.result.warning}</Alert>
             ) : null}
             {data?.uncoveredDays.length ? (
               <Alert severity="warning">

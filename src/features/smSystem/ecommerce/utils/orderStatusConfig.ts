@@ -90,7 +90,13 @@ export const isWooStatusInSync = (
 };
 
 const WOO_TERMINAL = new Set(['completed', 'cancelled', 'refunded', 'failed']);
-const ALLEGRO_TERMINAL = new Set(['sent', 'picked_up', 'cancelled']);
+const ALLEGRO_TERMINAL = new Set([
+  'sent',
+  'picked_up',
+  'cancelled',
+  'auto_cancelled',
+  'buyer_cancelled',
+]);
 const ERLI_TERMINAL = new Set([
   'sent',
   'delivered',
@@ -117,6 +123,9 @@ const ALLEGRO_STATUS_LABELS: Record<string, string> = {
   sent: 'Wysłane',
   picked_up: 'Odebrane',
   cancelled: 'Anulowane',
+  filled_in: 'Płatność rozpoczęta',
+  auto_cancelled: 'Anulowane automatycznie',
+  buyer_cancelled: 'Kupujący anulował',
 };
 
 const ERLI_STATUS_LABELS: Record<string, string> = {

@@ -103,6 +103,7 @@ export interface EvidenceBlocker {
     | 'period_not_ended'
     | 'overlap'
     | 'review_not_empty'
+    | 'period_not_synced'
     | 'invalid_period';
   message: string;
   missingFields?: string[];
@@ -274,7 +275,7 @@ export interface SyncRun {
   periodFrom: string;
   periodTo: string;
   error: string;
-  result: { orders?: number; refunds?: number; ok?: boolean };
+  result: { orders?: number; refunds?: number; ok?: boolean; warning?: string };
   startedAt: string | null;
   finishedAt: string | null;
 }

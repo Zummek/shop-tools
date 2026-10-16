@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 
 import {
   axiosInstance,
@@ -6,6 +6,10 @@ import {
 } from '../../../../services';
 
 const endpoint = '/api/v1/ecommerce/sales-export/preview/';
+
+export const ecommerceSalesExportPreviewQueryKey = [
+  'ecommerce-sales-export-preview',
+];
 
 export interface SalesExportQuantities {
   allegro: number;
@@ -35,40 +39,87 @@ export interface SalesExportSkipped {
   quantities: SalesExportQuantities;
 }
 
+export interface SalesExportChannel {
+  channel: string;
+  coveredUntil: string | null;
+  gap: boolean;
+}
+
+export interface SalesExportOutside {
+  orderId: number;
+  orderItemId: number;
+  channel: string;
+  orderExternalId: string;
+  orderDate: string;
+  productId: number;
+  internalId: string;
+  name: string;
+  ean: string;
+  quantity: number;
+}
+
+export interface SalesExportCorrection {
+  orderId: number;
+  orderItemId: number;
+  productId: number;
+  channel: string;
+  orderExternalId: string;
+  name: string;
+  internalId: string;
+  exportedPieces: number;
+  currentPieces: number;
+  reason: 'canceled' | 'quantity' | 'product';
+}
+
+export interface SalesExportPending {
+  orderId: number;
+  orderItemId: number;
+  channel: string;
+  orderExternalId: string;
+  status: string;
+  orderDate: string;
+  offerName: string;
+  quantity: number;
+}
+
 export interface SalesExportPreview {
-  startDate: string;
-  endDate: string;
+  needsStart: boolean;
+  suggestedStart: string | null;
+  exportedUntil: string | null;
+  coverageFloor: string | null;
+  watermark: string | null;
+  windowUntil: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  truncated: boolean;
+  blockedReason: 'needs_start' | 'no_channels' | 'sync_gap' | null;
+  channels: SalesExportChannel[];
+  syncGaps: string[];
+  canDownload: boolean;
+  revision: string | null;
   sources: string[];
   summary: {
     ordersCount: number;
     linesCount: number;
     piecesCount: number;
     skippedCount: number;
+    outsideCount: number;
+    correctionsCount: number;
+    pendingCount: number;
   };
   lines: SalesExportLine[];
+  outsideRange: SalesExportOutside[];
   skipped: SalesExportSkipped[];
-  syncGaps: string[];
+  corrections: SalesExportCorrection[];
+  pending: SalesExportPending[];
+  pendingTruncated: boolean;
 }
 
-export interface SalesExportQuery {
-  startDate: string;
-  endDate: string;
-  sources: string[];
-}
-
-export const useGetEcommerceSalesExport = (query: SalesExportQuery | null) => {
+export const useGetEcommerceSalesExport = () => {
   const { data, isLoading, isFetching, isError } = useQuery({
-    queryKey: ['ecommerce-sales-export', query],
-    enabled: query !== null,
-    placeholderData: keepPreviousData,
+    queryKey: ecommerceSalesExportPreviewQueryKey,
     queryFn: async () => {
-      const response = await axiosInstance.get<SalesExportPreview>(endpoint, {
-        params: {
-          startDate: query!.startDate,
-          endDate: query!.endDate,
-          sources: query!.sources.join(','),
-        },
-      });
+      const response = await axiosInstance.get<SalesExportPreview>(endpoint);
       if (response.status >= 400) throwAxiosErrorFromResponse(response);
       return response.data;
     },

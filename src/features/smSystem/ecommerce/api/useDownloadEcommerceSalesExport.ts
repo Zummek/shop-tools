@@ -1,11 +1,37 @@
+import { useQueryClient } from '@tanstack/react-query';
+import { isAxiosError } from 'axios';
 import { useState } from 'react';
 
 import { useNotify } from '../../../../hooks';
 import { axiosInstance } from '../../../../services';
 
-import { SalesExportQuery } from './useGetEcommerceSalesExport';
+import { ecommerceSalesExportPreviewQueryKey } from './useGetEcommerceSalesExport';
+import { ecommerceSalesExportHistoryQueryKey } from './useGetEcommerceSalesExportHistory';
 
 const endpoint = '/api/v1/ecommerce/sales-export/file/';
+
+const saveBlob = (data: Blob, fileName: string) => {
+  const file = new Blob([data], { type: 'text/plain' });
+  const element = document.createElement('a');
+  element.href = URL.createObjectURL(file);
+  element.download = fileName;
+  document.body.appendChild(element);
+  element.click();
+  element.remove();
+  URL.revokeObjectURL(element.href);
+};
+
+const fileNameFromHeader = (
+  disposition: string | undefined,
+  fallbackName: string,
+) => {
+  const fromHeader = disposition
+    ?.split('filename=')[1]
+    ?.split(';')[0]
+    ?.replace(/"/g, '')
+    .trim();
+  return fromHeader || fallbackName;
+};
 
 const downloadErrorMessage = async (data: unknown): Promise<string> => {
   const fallback = 'Nie udało się pobrać pliku';
@@ -16,7 +42,7 @@ const downloadErrorMessage = async (data: unknown): Promise<string> => {
       sync_gaps?: string[];
     };
     if (parsed.sync_gaps?.length)
-      return 'Nie można pobrać pliku. Zamówienia z wybranych kanałów nie są zsynchronizowane dla całego zakresu.';
+      return 'Nie można pobrać pliku. Synchronizacja nie pokrywa zakresu od bieżącej granicy.';
     return parsed.detail || fallback;
   } catch {
     return fallback;
@@ -25,44 +51,50 @@ const downloadErrorMessage = async (data: unknown): Promise<string> => {
 
 export const useDownloadEcommerceSalesExport = () => {
   const { notify } = useNotify();
+  const queryClient = useQueryClient();
   const [isPending, setIsPending] = useState(false);
 
-  const download = async (query: SalesExportQuery): Promise<boolean> => {
-    const fallbackName = `SM-ecommerce-${query.startDate.replace(/-/g, '')}-${query.endDate.replace(/-/g, '')}.txt`;
+  const refreshLists = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: ecommerceSalesExportPreviewQueryKey,
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ecommerceSalesExportHistoryQueryKey,
+      }),
+    ]);
+  };
+
+  const download = async (
+    revision: string,
+    fallbackName: string,
+  ): Promise<boolean> => {
     try {
       setIsPending(true);
-      const res = await axiosInstance.get(endpoint, {
-        params: {
-          startDate: query.startDate,
-          endDate: query.endDate,
-          sources: query.sources.join(','),
-        },
-        responseType: 'blob',
-      });
+      const res = await axiosInstance.post(
+        endpoint,
+        { revision },
+        { responseType: 'blob' },
+      );
       if (res.status >= 400) {
         notify('error', await downloadErrorMessage(res.data));
         return false;
       }
-
       const disposition = res.headers['contentDisposition'] as
         | string
         | undefined;
-      const fromHeader = disposition
-        ?.split('filename=')[1]
-        ?.split(';')[0]
-        ?.replace(/"/g, '')
-        .trim();
-      const fileName = fromHeader || fallbackName;
-      const file = new Blob([res.data], { type: 'text/plain' });
-      const element = document.createElement('a');
-      element.href = URL.createObjectURL(file);
-      element.download = fileName;
-      document.body.appendChild(element);
-      element.click();
-      element.remove();
-      URL.revokeObjectURL(element.href);
+      saveBlob(res.data, fileNameFromHeader(disposition, fallbackName));
+      await refreshLists();
       return true;
-    } catch {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 409) {
+        notify(
+          'error',
+          'Podgląd się zmienił. Odśwież podgląd i pobierz plik jeszcze raz.',
+        );
+        await refreshLists();
+        return false;
+      }
       notify('error', 'Nie udało się pobrać pliku');
       return false;
     } finally {
@@ -70,5 +102,32 @@ export const useDownloadEcommerceSalesExport = () => {
     }
   };
 
-  return { download, isPending };
+  const downloadHistory = async (
+    id: number,
+    fallbackName: string,
+  ): Promise<boolean> => {
+    try {
+      setIsPending(true);
+      const res = await axiosInstance.get(
+        `/api/v1/ecommerce/sales-export/history/${id}/file/`,
+        { responseType: 'blob' },
+      );
+      if (res.status >= 400) {
+        notify('error', 'Nie udało się pobrać zapisanego pliku');
+        return false;
+      }
+      const disposition = res.headers['contentDisposition'] as
+        | string
+        | undefined;
+      saveBlob(res.data, fileNameFromHeader(disposition, fallbackName));
+      return true;
+    } catch {
+      notify('error', 'Nie udało się pobrać zapisanego pliku');
+      return false;
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  return { download, downloadHistory, isPending };
 };

@@ -1,11 +1,14 @@
 import { Alert, Box, Button, Stack, Typography } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
+import { useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { useCallback, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { useAppSelector, useNotify } from '../../../../hooks';
 import { Pages } from '../../../../utils';
+import { salesEvidenceKeys } from '../../salesEvidence/api';
+import { OrderEvidencePanel } from '../../salesEvidence/components/OrderEvidencePanel';
 import {
   useGetEcommerceOrderDetails,
   useUpdateEcommerceOrder,
@@ -32,6 +35,7 @@ export const EcommerceOrderDetailsPage = () => {
   );
   const { orderId: rawOrderId } = useParams<{ orderId: string }>();
   const id = Number(rawOrderId);
+  const queryClient = useQueryClient();
 
   const { ecommerceOrder, isLoading } = useGetEcommerceOrderDetails({ id });
   const { updateEcommerceOrderItem } = useUpdateEcommerceOrderItem();
@@ -61,6 +65,7 @@ export const EcommerceOrderDetailsPage = () => {
       componentIndex: payload.componentIndex,
     });
     notify('success', 'Produkt został zaktualizowany');
+    void queryClient.invalidateQueries({ queryKey: salesEvidenceKeys.order(id) });
     return response.orderItems.find((item) => item.id === payload.orderItemId);
   };
 
@@ -154,6 +159,7 @@ export const EcommerceOrderDetailsPage = () => {
           onRefreshChannelStatus={() => void handleRefreshChannelStatus()}
         />
       )}
+      {ecommerceOrder && <OrderEvidencePanel orderId={id} />}
       {weakMatchCount > 0 && (
         <Alert severity={unmatchedCount > 0 ? 'error' : 'warning'}>
           {[

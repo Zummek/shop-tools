@@ -21,6 +21,8 @@ export enum Pages {
   smSystemUnfulfilledOrdersByTransfersReport = '/sm-system/unfulfilled-orders-by-transfers',
   smSystemChannelMarginReport = '/sm-system/reports/channel-margin',
   smSystemAllegroPriceSim = '/sm-system/reports/allegro-price-sim',
+  smSystemSalesEvidence = '/sm-system/reports/sales-evidence',
+  smSystemCompanySettings = '/sm-system/company',
   smSystemPriceTagsGroups = '/sm-system/price-tags/groups',
   smSystemPriceTagsGroupDetails = '/sm-system/price-tags/groups/:groupId',
   smSystemEcommerceOrders = '/sm-system/ecommerce/orders',

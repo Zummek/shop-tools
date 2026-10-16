@@ -605,7 +605,7 @@ export const ChannelMarginReportPage = () => {
               <CoverageChip
                 color="warning"
                 label={`FX→PLN (NBP): ${data.coverage.fxLinesConverted} linii`}
-                tooltip="Linie w walucie obcej przeliczone kursem średnim NBP (tabela A) z dnia zamówienia."
+                tooltip="Linie w walucie obcej przeliczone kursem średnim NBP (tabela A) z ostatniego dnia roboczego przed dniem zamówienia."
               />
             ) : null}
             {data.coverage.fxLinesMissingRate ? (

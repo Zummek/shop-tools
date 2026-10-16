@@ -22,6 +22,7 @@ interface LoginResponse {
       canAccessEcommerce: boolean;
       canViewPurchasePrices: boolean;
       canViewAlerts: boolean;
+      canManageSalesEvidence?: boolean;
     };
     organization: {
       id: number;

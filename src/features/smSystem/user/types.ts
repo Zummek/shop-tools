@@ -12,6 +12,7 @@ export interface CurrentUser {
     canAccessEcommerce: boolean;
     canViewPurchasePrices: boolean;
     canViewAlerts: boolean;
+    canManageSalesEvidence?: boolean;
   };
   organization: {
     id: number;

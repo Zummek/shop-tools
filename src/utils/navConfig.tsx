@@ -1,5 +1,6 @@
 import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
 import BarChartOutlinedIcon from '@mui/icons-material/BarChartOutlined';
+import BusinessOutlinedIcon from '@mui/icons-material/BusinessOutlined';
 import CableOutlinedIcon from '@mui/icons-material/CableOutlined';
 import FactCheckOutlinedIcon from '@mui/icons-material/FactCheckOutlined';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
@@ -19,7 +20,9 @@ import { Pages } from './pages';
 export type NavPermission =
   | 'canAccessEcommerce'
   | 'canViewPurchasePrices'
-  | 'canViewAlerts';
+  | 'canViewAlerts'
+  | 'canManageSalesEvidence'
+  | 'canViewSalesEvidence';
 
 export interface NavItem {
   label: string;
@@ -154,7 +157,19 @@ export const navSections: NavSection[] = [
         activePaths: [
           Pages.smSystemChannelMarginReport,
           Pages.smSystemAllegroPriceSim,
+          Pages.smSystemSalesEvidence,
         ],
+      },
+    ],
+  },
+  {
+    title: 'Firma',
+    items: [
+      {
+        label: 'Firma i rozliczenia',
+        path: Pages.smSystemCompanySettings,
+        icon: <BusinessOutlinedIcon />,
+        permission: 'canViewSalesEvidence',
       },
     ],
   },
@@ -181,10 +196,19 @@ export const getActiveNavItem = (pathname: string): NavItem | undefined =>
     .flatMap((section) => section.items)
     .find((item) => isNavItemActive(item, pathname));
 
-export const filterNavSectionsByPermissions = (
+export const canViewSalesEvidence = (
   permissions?: Partial<Record<NavPermission, boolean>>,
-): NavSection[] =>
-  navSections
+): boolean =>
+  !!permissions?.canViewPurchasePrices || !!permissions?.canManageSalesEvidence;
+
+export const filterNavSectionsByPermissions = (
+  userPermissions?: Partial<Record<NavPermission, boolean>>,
+): NavSection[] => {
+  const permissions = {
+    ...userPermissions,
+    canViewSalesEvidence: canViewSalesEvidence(userPermissions),
+  };
+  return navSections
     .map((section) => ({
       ...section,
       items: section.items.filter(
@@ -192,3 +216,4 @@ export const filterNavSectionsByPermissions = (
       ),
     }))
     .filter((section) => section.items.length > 0);
+};

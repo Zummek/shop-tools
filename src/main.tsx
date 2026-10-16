@@ -47,6 +47,8 @@ import { RemanentsPage } from './features/smSystem/remanents/routers/RemanentsPa
 import { AllegroPriceSimPage } from './features/smSystem/reports/routers/AllegroPriceSimPage';
 import { ChannelMarginReportPage } from './features/smSystem/reports/routers/ChannelMarginReportPage';
 import { ReportsPage } from './features/smSystem/reports/routers/ReportsPage';
+import { CompanySettingsPage } from './features/smSystem/salesEvidence/routers/CompanySettingsPage';
+import { SalesEvidencePage } from './features/smSystem/salesEvidence/routers/SalesEvidencePage';
 import { TransfersPage } from './features/smSystem/transfers/routers/TransfersPage';
 import { LoginPage } from './features/smSystem/user/routes/LoginPage';
 import {
@@ -130,6 +132,14 @@ const router = sentryCreateHashRouter(
         {
           path: 'reports/allegro-price-sim',
           element: <AllegroPriceSimPage />,
+        },
+        {
+          path: 'reports/sales-evidence',
+          element: <SalesEvidencePage />,
+        },
+        {
+          path: 'company',
+          element: <CompanySettingsPage />,
         },
         {
           path: 'suppliers-orders',

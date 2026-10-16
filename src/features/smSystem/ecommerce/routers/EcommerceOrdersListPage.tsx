@@ -18,7 +18,7 @@ import {
 } from '@mui/material';
 import { DataGrid, GridColDef, GridRowParams } from '@mui/x-data-grid';
 import dayjs from 'dayjs';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { useNotify } from '../../../../hooks';
@@ -227,7 +227,6 @@ export const EcommerceOrdersListPage = () => {
     deliveryGroupIds,
     deliveryIds,
     setDeliveryFilters,
-    dataUpdatedAt,
   } = useGetEcommerceOrders();
   const { deliveryMethods } = useGetDeliveryMethods();
   const { allegroConnection } = useGetAllegroConnection();
@@ -281,6 +280,8 @@ export const EcommerceOrdersListPage = () => {
     });
     setDeliveryFilters(nextGroupIds, nextDeliveryIds);
   };
+
+  const paginationModel = useMemo(() => ({ page, pageSize }), [page, pageSize]);
 
   const deliveryFilterLabel = () => {
     if (selectedDeliveryOptionIds.length === 0) return 'Wszystkie';
@@ -359,7 +360,6 @@ export const EcommerceOrdersListPage = () => {
       </Box>
       <Box height={500} width="100%">
         <DataGrid
-          key={`${orderSource}-${needsProductReview}-${deliveryGroupIds.join(',')}-${deliveryIds.join(',')}-${dataUpdatedAt}`}
           sx={{
             '& .MuiDataGrid-columnHeaderTitle': {
               whiteSpace: 'normal',
@@ -383,11 +383,10 @@ export const EcommerceOrdersListPage = () => {
           columns={columns}
           pageSizeOptions={[pageSize]}
           loading={isLoading}
-          paginationModel={{
-            page,
-            pageSize,
+          paginationModel={paginationModel}
+          onPaginationModelChange={(model) => {
+            if (model.page !== page) setPage(model.page);
           }}
-          onPaginationModelChange={(model) => setPage(model.page)}
           paginationMode="server"
           disableColumnSorting
           disableRowSelectionOnClick

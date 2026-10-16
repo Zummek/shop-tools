@@ -1,5 +1,5 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import { axiosInstance } from '../../../../services';
@@ -42,76 +42,115 @@ const parseCsvInts = (value: string | null): number[] =>
     .map((item) => Number(item))
     .filter((item) => Number.isInteger(item) && item > 0);
 
+const parseOrderSource = (value: string | null): OrderSourceFilter =>
+  value === 'allegro' || value === 'woocommerce' || value === 'erli'
+    ? value
+    : '';
+
+const parsePage = (value: string | null): number => {
+  const parsed = value ? Number(value) : 1;
+  if (!Number.isInteger(parsed) || parsed < 1) return 0;
+  return parsed - 1;
+};
+
+const replaceSearchParams = (
+  setSearchParams: ReturnType<typeof useSearchParams>[1],
+  update: (params: URLSearchParams) => void,
+) => {
+  setSearchParams(
+    (prev) => {
+      const params = new URLSearchParams(prev);
+      update(params);
+      if (params.toString() === prev.toString()) return prev;
+      return params;
+    },
+    { replace: true },
+  );
+};
+
+const readListParams = (params: URLSearchParams) => ({
+  page: parsePage(params.get('page')),
+  orderSource: parseOrderSource(params.get('orderSource')),
+  needsProductReview:
+    params.get('needsProductReview') === '1' ||
+    params.get('needsProductReview') === 'true',
+  deliveryGroupIds: parseCsvInts(params.get('deliveryGroupIds')),
+  deliveryIds: parseCsv(params.get('deliveryIds')),
+});
+
 export const useGetEcommerceOrders = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const pageParam = searchParams.get('page');
-  const sourceParam = searchParams.get('orderSource');
-  const needsReviewParam = searchParams.get('needsProductReview');
-  const initialPage = pageParam ? Number(pageParam) - 1 : 0;
-  const initialSource: OrderSourceFilter =
-    sourceParam === 'allegro' ||
-    sourceParam === 'woocommerce' ||
-    sourceParam === 'erli'
-      ? sourceParam
-      : '';
-  const initialNeedsReview =
-    needsReviewParam === '1' || needsReviewParam === 'true';
-  const initialDeliveryGroupIds = parseCsvInts(
-    searchParams.get('deliveryGroupIds'),
-  );
-  const initialDeliveryIds = parseCsv(searchParams.get('deliveryIds'));
-
-  const [page, setPage] = useState(initialPage);
   const [query, setQuery] = useState<string>('');
-  const [orderSource, setOrderSourceState] =
-    useState<OrderSourceFilter>(initialSource);
-  const [needsProductReview, setNeedsProductReviewState] =
-    useState(initialNeedsReview);
-  const [deliveryGroupIds, setDeliveryGroupIdsState] = useState<number[]>(
-    initialDeliveryGroupIds,
-  );
-  const [deliveryIds, setDeliveryIdsState] =
-    useState<string[]>(initialDeliveryIds);
-
-  useEffect(() => {
-    const pageParam = searchParams.get('page');
-    const newPage = pageParam ? Number(pageParam) - 1 : 0;
-    if (newPage !== page && newPage >= 0) setPage(newPage);
-  }, [searchParams, page]);
-
-  useEffect(() => {
-    const params: Record<string, string> = {};
-    if (page > 0) params.page = (page + 1).toString();
-    if (orderSource) params.orderSource = orderSource;
-    if (needsProductReview) params.needsProductReview = '1';
-    if (deliveryGroupIds.length)
-      params.deliveryGroupIds = deliveryGroupIds.join(',');
-    if (deliveryIds.length) params.deliveryIds = deliveryIds.join(',');
-    setSearchParams(params, { replace: true });
-  }, [
+  const {
     page,
     orderSource,
     needsProductReview,
     deliveryGroupIds,
     deliveryIds,
-    setSearchParams,
-  ]);
+  } = readListParams(searchParams);
 
-  const setOrderSource = (source: OrderSourceFilter) => {
-    setOrderSourceState(source);
-    setPage(0);
-  };
+  const setPage = useCallback(
+    (nextPage: number) => {
+      const normalized = Number.isFinite(nextPage)
+        ? Math.max(0, Math.floor(nextPage))
+        : 0;
+      replaceSearchParams(setSearchParams, (params) => {
+        if (readListParams(params).page === normalized) return;
+        if (normalized <= 0) params.delete('page');
+        else params.set('page', String(normalized + 1));
+      });
+    },
+    [setSearchParams],
+  );
 
-  const setNeedsProductReview = (value: boolean) => {
-    setNeedsProductReviewState(value);
-    setPage(0);
-  };
+  const setOrderSource = useCallback(
+    (source: OrderSourceFilter) => {
+      replaceSearchParams(setSearchParams, (params) => {
+        if (readListParams(params).orderSource === source) return;
+        if (source) params.set('orderSource', source);
+        else params.delete('orderSource');
+        params.delete('page');
+      });
+    },
+    [setSearchParams],
+  );
 
-  const setDeliveryFilters = (groupIds: number[], methodIds: string[]) => {
-    setDeliveryGroupIdsState(groupIds);
-    setDeliveryIdsState(methodIds);
-    setPage(0);
-  };
+  const setNeedsProductReview = useCallback(
+    (value: boolean) => {
+      replaceSearchParams(setSearchParams, (params) => {
+        if (readListParams(params).needsProductReview === value) return;
+        if (value) params.set('needsProductReview', '1');
+        else params.delete('needsProductReview');
+        params.delete('page');
+      });
+    },
+    [setSearchParams],
+  );
+
+  const setDeliveryFilters = useCallback(
+    (groupIds: number[], methodIds: string[]) => {
+      const nextGroups = groupIds.filter(
+        (id) => Number.isInteger(id) && id > 0,
+      );
+      const nextMethods = methodIds.map((id) => id.trim()).filter(Boolean);
+      replaceSearchParams(setSearchParams, (params) => {
+        const current = readListParams(params);
+        if (
+          current.deliveryGroupIds.join(',') === nextGroups.join(',') &&
+          current.deliveryIds.join(',') === nextMethods.join(',')
+        )
+          return;
+        if (nextGroups.length)
+          params.set('deliveryGroupIds', nextGroups.join(','));
+        else params.delete('deliveryGroupIds');
+        if (nextMethods.length)
+          params.set('deliveryIds', nextMethods.join(','));
+        else params.delete('deliveryIds');
+        params.delete('page');
+      });
+    },
+    [setSearchParams],
+  );
 
   const getEcommerceOrdersRequest = async () => {
     const response = await axiosInstance.get<Response>(endpoint, {
@@ -128,7 +167,7 @@ export const useGetEcommerceOrders = () => {
     return response.data;
   };
 
-  const { data, isLoading, isFetching, dataUpdatedAt } = useQuery({
+  const { data, isLoading, isFetching } = useQuery({
     queryKey: [
       getEcommerceOrdersQueryKeyBase,
       query,
@@ -163,6 +202,5 @@ export const useGetEcommerceOrders = () => {
     deliveryGroupIds,
     deliveryIds,
     setDeliveryFilters,
-    dataUpdatedAt,
   };
 };

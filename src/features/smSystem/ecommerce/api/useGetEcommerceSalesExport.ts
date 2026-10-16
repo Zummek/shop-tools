@@ -92,7 +92,7 @@ export interface SalesExportPreview {
   startDate: string | null;
   endDate: string | null;
   truncated: boolean;
-  blockedReason: 'needs_start' | 'no_channels' | 'sync_gap' | null;
+  blockedReason: 'needs_start' | 'no_channels' | 'sync_gap' | 'empty' | null;
   channels: SalesExportChannel[];
   syncGaps: string[];
   canDownload: boolean;

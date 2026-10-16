@@ -385,9 +385,11 @@ export const EcommerceSalesExportPage = () => {
           <Paper variant="outlined" sx={{ p: 2 }}>
             <Stack spacing={2} sx={{ alignItems: 'flex-start' }}>
               <Typography variant="body1">
-                {rangeIsOpen
-                  ? `Plik obejmie sprzedaż od ${formatExportMoment(preview.exportedUntil)} do ${formatExportMoment(preview.windowUntil)}.`
-                  : `Żeby pobrać sprzedaż po ${formatExportMoment(preview.exportedUntil)}, zsynchronizuj zamówienia.`}
+                {preview.blockedReason === 'empty'
+                  ? `Od ${formatExportMoment(preview.exportedUntil)} do ${formatExportMoment(preview.windowUntil)} nie ma sztuk do zdjęcia ze stanu.`
+                  : rangeIsOpen
+                    ? `Plik obejmie sprzedaż od ${formatExportMoment(preview.exportedUntil)} do ${formatExportMoment(preview.windowUntil)}.`
+                    : `Żeby pobrać sprzedaż po ${formatExportMoment(preview.exportedUntil)}, zsynchronizuj zamówienia.`}
               </Typography>
 
               {preview.truncated && (
@@ -467,14 +469,6 @@ export const EcommerceSalesExportPage = () => {
           {(syncResult?.statusRefreshDeferred ?? 0) > 0 && (
             <Alert severity="info">
               {`Zostało ${syncResult?.statusRefreshDeferred} zamówień do sprawdzenia. Zsynchronizuj jeszcze raz przed pobraniem pliku.`}
-            </Alert>
-          )}
-
-          {canDownload && summary?.linesCount === 0 && (
-            <Alert severity="info">
-              {
-                'W tym okresie nie ma sztuk do zdjęcia. Pobranie i tak go zamknie.'
-              }
             </Alert>
           )}
 
@@ -606,7 +600,7 @@ export const EcommerceSalesExportPage = () => {
               <Typography variant="h6">{'Oczekujące'}</Typography>
               <Typography variant="body2">
                 {
-                  'Te zamówienia nie są jeszcze wysłane. Gdy dostaną status Wysłane, sztuki wejdą do kolejnego pliku.'
+                  'To zamówienia bez płatności i bez pobrania. Opłacone, za pobraniem i wysłane są już w pliku.'
                 }
                 {preview.pendingTruncated
                   ? ` Pokazane są pierwsze zamówienia z ${preview.summary.pendingCount}.`

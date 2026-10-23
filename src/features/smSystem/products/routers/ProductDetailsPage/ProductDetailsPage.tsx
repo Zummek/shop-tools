@@ -114,7 +114,7 @@ export const ProductDetailsPage = () => {
   } = useGetProductChannelLinks(productId);
   const { schedules } = useGetPriceSchedules({ productId });
   const [tab, setTab] = useState<'warehouse' | 'channels' | 'sales'>(
-    'warehouse',
+    searchParams.get('tab') === 'sales' ? 'sales' : 'warehouse',
   );
 
   const schedulesByLinkId = useMemo(() => {
@@ -248,7 +248,12 @@ export const ProductDetailsPage = () => {
 
       {tab === 'warehouse' && <ProductWarehouseTab product={product} />}
 
-      {tab === 'sales' && <ProductSalesTab productId={product.id} />}
+      {tab === 'sales' && (
+        <ProductSalesTab
+          key={`${product.id}:${searchParams.get('start_date') ?? ''}:${searchParams.get('end_date') ?? ''}:${searchParams.getAll('channel').join(',')}`}
+          productId={product.id}
+        />
+      )}
 
       {tab === 'channels' && (
         <Stack spacing={2}>

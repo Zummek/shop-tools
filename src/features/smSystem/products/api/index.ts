@@ -5,4 +5,5 @@ export * from './useGetProductDetails';
 export * from './useGetProductHistory';
 export * from './useGetProductDaySales';
 export * from './useGetProductChannelSales';
+export * from './useGetProductSalesOverview';
 export * from './useUpdateProduct';

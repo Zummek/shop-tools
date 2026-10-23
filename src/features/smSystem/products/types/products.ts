@@ -56,6 +56,11 @@ export interface Product {
   channels?: ProductSalesChannel[];
 }
 
+export interface ProductSalesListItem extends Product {
+  units: number;
+  previousUnits: number;
+}
+
 export interface ProductReportPurchase {
   unitNetCents: number;
   source: string;

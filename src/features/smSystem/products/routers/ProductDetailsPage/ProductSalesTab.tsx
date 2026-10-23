@@ -1,6 +1,3 @@
-import TrendingDownIcon from '@mui/icons-material/TrendingDown';
-import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import {
   Alert,
   Box,
@@ -16,12 +13,12 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Typography,
-  useTheme,
 } from '@mui/material';
 import { BarChart } from '@mui/x-charts/BarChart';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from 'dayjs';
 import { useMemo, useState, type MouseEvent } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 import { useGetProductChannelLinks } from '../../../ecommerce/api';
 import { ChannelProductLink } from '../../../ecommerce/types/channelLinks';
@@ -31,16 +28,21 @@ import {
   orderChannelLabel,
 } from '../../../ecommerce/utils';
 import { useGetProductChannelSales } from '../../api';
+import { SalesDelta } from '../../components/SalesDelta';
 import {
   ProductChannelSales,
   ProductChannelSalesChannel,
   ProductSalesChannel,
 } from '../../types';
-import { formatPrice } from '../../utils';
+import { formatPrice, parseProductListChannels } from '../../utils';
+import {
+  formatSalesIso,
+  rangeForPreset,
+  resolveSalesRange,
+  salesRangeError,
+  type SalesPreset as Preset,
+} from '../../utils/salesPeriod';
 
-const MAX_PERIOD_DAYS = 93;
-
-type Preset = 7 | 30 | 90;
 type ChartMetric = 'units' | 'revenue';
 type ChannelFocus = 'all' | ProductSalesChannel;
 type ChannelListing = 'active' | 'ended' | 'none';
@@ -53,86 +55,6 @@ const listingForChannel = (
   if (onChannel.length === 0) return 'none';
   if (onChannel.some((link) => !isEndedChannelOffer(link))) return 'active';
   return 'ended';
-};
-
-const warsawToday = () =>
-  new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Europe/Warsaw',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(new Date());
-
-const addIsoDays = (iso: string, days: number) => {
-  const [year, month, day] = iso.split('-').map(Number);
-  const utc = new Date(Date.UTC(year, month - 1, day));
-  utc.setUTCDate(utc.getUTCDate() + days);
-  return utc.toISOString().slice(0, 10);
-};
-
-const inclusiveDays = (start: string, end: string) => {
-  const [startYear, startMonth, startDay] = start.split('-').map(Number);
-  const [endYear, endMonth, endDay] = end.split('-').map(Number);
-  const startUtc = Date.UTC(startYear, startMonth - 1, startDay);
-  const endUtc = Date.UTC(endYear, endMonth - 1, endDay);
-  return Math.round((endUtc - startUtc) / 86400000) + 1;
-};
-
-const rangeForPreset = (days: Preset) => {
-  const end = warsawToday();
-  return { start: addIsoDays(end, -(days - 1)), end };
-};
-
-const formatIso = (iso: string) => dayjs(iso).format('DD.MM.YYYY');
-
-const salesDeltaLabel = (current: number, previous: number): string | null => {
-  if (previous === 0) return current > 0 ? 'nowa sprzedaż' : null;
-  const delta = ((current - previous) / previous) * 100;
-  const rounded = Math.round(delta * 10) / 10;
-  const sign = rounded > 0 ? '+' : '';
-  return `${sign}${rounded.toString().replace('.', ',')}%`;
-};
-
-const SalesDelta = ({
-  current,
-  previous,
-}: {
-  current: number;
-  previous: number;
-}) => {
-  const theme = useTheme();
-  const label = salesDeltaLabel(current, previous);
-  if (label === null) {
-    return (
-      <Stack direction="row" alignItems="center" spacing={0.5}>
-        <TrendingFlatIcon fontSize="small" color="disabled" />
-        <Typography variant="body2" color="text.secondary">
-          {'—'}
-        </Typography>
-      </Stack>
-    );
-  }
-  const isUp = current > previous;
-  const isDown = current < previous;
-  const color = isUp
-    ? theme.palette.success.main
-    : isDown
-      ? theme.palette.error.main
-      : theme.palette.text.secondary;
-  return (
-    <Stack direction="row" alignItems="center" spacing={0.5} sx={{ color }}>
-      {isUp ? (
-        <TrendingUpIcon fontSize="small" />
-      ) : isDown ? (
-        <TrendingDownIcon fontSize="small" />
-      ) : (
-        <TrendingFlatIcon fontSize="small" />
-      )}
-      <Typography variant="body2" fontWeight={600}>
-        {label}
-      </Typography>
-    </Stack>
-  );
 };
 
 const sumChannels = (channels: ProductChannelSalesChannel[]) =>
@@ -255,26 +177,34 @@ const ChannelCard = ({
   </Paper>
 );
 
-const visibleChannels = (sales: ProductChannelSales, focus: ChannelFocus) =>
-  focus === 'all'
-    ? sales.channels
-    : sales.channels.filter((channel) => channel.channel === focus);
+const visibleChannels = (
+  sales: ProductChannelSales,
+  focus: ChannelFocus,
+  scope: readonly string[],
+) => {
+  if (focus !== 'all')
+    return sales.channels.filter((channel) => channel.channel === focus);
+  if (scope.length === 0) return sales.channels;
+  return sales.channels.filter((channel) => scope.includes(channel.channel));
+};
 
 export const ProductSalesTab = ({ productId }: { productId: number }) => {
-  const initial = rangeForPreset(30);
-  const [preset, setPreset] = useState<Preset | null>(30);
+  const [searchParams] = useSearchParams();
+  const fromUrl = resolveSalesRange(
+    searchParams.get('start_date'),
+    searchParams.get('end_date'),
+  );
+  const initial = fromUrl.rangeError ? resolveSalesRange(null, null) : fromUrl;
+  const listedChannels = parseProductListChannels(searchParams);
+  const [preset, setPreset] = useState<Preset | null>(initial.preset);
   const [startDate, setStartDate] = useState(initial.start);
   const [endDate, setEndDate] = useState(initial.end);
-  const [focus, setFocus] = useState<ChannelFocus>('all');
+  const [focus, setFocus] = useState<ChannelFocus>(
+    listedChannels.length === 1 ? listedChannels[0] : 'all',
+  );
   const [metric, setMetric] = useState<ChartMetric>('revenue');
 
-  const periodDays = inclusiveDays(startDate, endDate);
-  const rangeError =
-    endDate < startDate
-      ? 'Data końcowa nie może być wcześniejsza niż początkowa.'
-      : periodDays > MAX_PERIOD_DAYS
-        ? `Zakres może mieć co najwyżej ${MAX_PERIOD_DAYS} dni.`
-        : null;
+  const rangeError = salesRangeError(startDate, endDate);
 
   const {
     channelLinks,
@@ -290,7 +220,7 @@ export const ProductSalesTab = ({ productId }: { productId: number }) => {
 
   const chart = useMemo(() => {
     if (!sales) return null;
-    const rows = visibleChannels(sales, focus);
+    const rows = visibleChannels(sales, focus, listedChannels);
     const labels = (rows[0]?.daily ?? []).map((point) =>
       dayjs(point.date).format('DD.MM'),
     );
@@ -300,7 +230,7 @@ export const ProductSalesTab = ({ productId }: { productId: number }) => {
       ),
     );
     return { rows, labels, hasData };
-  }, [sales, focus, metric]);
+  }, [sales, focus, listedChannels, metric]);
 
   const applyPreset = (days: Preset) => {
     const next = rangeForPreset(days);
@@ -318,7 +248,7 @@ export const ProductSalesTab = ({ productId }: { productId: number }) => {
 
   const tableRows = useMemo(() => {
     if (!sales) return [];
-    const rows = visibleChannels(sales, focus);
+    const rows = visibleChannels(sales, focus, listedChannels);
     const days = rows[0]?.daily ?? [];
     return days
       .map((point, index) => {
@@ -337,9 +267,18 @@ export const ProductSalesTab = ({ productId }: { productId: number }) => {
         return { date: point.date, units, revenueCents, ordersCount };
       })
       .filter((row) => row.units > 0 || row.revenueCents > 0);
-  }, [sales, focus]);
+  }, [sales, focus, listedChannels]);
 
-  const totals = sales ? sumChannels(sales.channels) : null;
+  const scopedChannels = sales
+    ? visibleChannels(sales, 'all', listedChannels)
+    : [];
+  const totals = sales ? sumChannels(scopedChannels) : null;
+  const focusChoices =
+    listedChannels.length > 0
+      ? ORDER_CHANNELS.filter((channel) =>
+          listedChannels.includes(channel.source),
+        )
+      : ORDER_CHANNELS;
 
   return (
     <Stack spacing={2}>
@@ -384,7 +323,7 @@ export const ProductSalesTab = ({ productId }: { productId: number }) => {
 
       {sales ? (
         <Typography variant="body2" color="text.secondary">
-          {`Porównanie z ${formatIso(sales.previousStartDate)} – ${formatIso(sales.previousEndDate)}`}
+          {`Porównanie z ${formatSalesIso(sales.previousStartDate)} – ${formatSalesIso(sales.previousEndDate)}`}
         </Typography>
       ) : null}
 
@@ -422,7 +361,7 @@ export const ProductSalesTab = ({ productId }: { productId: number }) => {
       ) : (
         <Stack spacing={2} sx={{ opacity: isFetching ? 0.6 : 1 }}>
           <Stack direction="row" spacing={2} useFlexGap flexWrap="wrap">
-            {sales.channels.map((channel) => {
+            {scopedChannels.map((channel) => {
               const meta = ORDER_CHANNELS.find(
                 (item) => item.source === channel.channel,
               );
@@ -464,7 +403,7 @@ export const ProductSalesTab = ({ productId }: { productId: number }) => {
               onChange={handleFocus}
             >
               <ToggleButton value="all">{'Wszystkie'}</ToggleButton>
-              {ORDER_CHANNELS.map((channel) => (
+              {focusChoices.map((channel) => (
                 <ToggleButton key={channel.source} value={channel.source}>
                   {channel.label}
                 </ToggleButton>
@@ -571,7 +510,7 @@ export const ProductSalesTab = ({ productId }: { productId: number }) => {
               ) : (
                 tableRows.map((row) => (
                   <TableRow key={row.date}>
-                    <TableCell>{formatIso(row.date)}</TableCell>
+                    <TableCell>{formatSalesIso(row.date)}</TableCell>
                     <TableCell align="right">{row.units}</TableCell>
                     <TableCell align="right">
                       {formatPrice(row.revenueCents, sales.currency)}

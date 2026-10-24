@@ -31,9 +31,15 @@ const salesDirection = (current: number, previous: number): SalesDirection => {
 export const SalesPeriodFigure = ({
   units,
   previous,
+  formatValue,
+  unitLabel = 'szt.',
+  extraTip,
 }: {
   units: number;
   previous: number;
+  formatValue?: (value: number) => string;
+  unitLabel?: string;
+  extraTip?: string;
 }) => {
   const theme = useTheme();
   const direction = salesDirection(units, previous);
@@ -50,19 +56,22 @@ export const SalesPeriodFigure = ({
       : direction === 'down'
         ? TrendingDownIcon
         : TrendingFlatIcon;
-  const tip =
+  const show = (value: number) =>
+    formatValue ? formatValue(value) : String(value);
+  const unit = unitLabel ? ` ${unitLabel}` : '';
+  const comparison =
     direction === 'up' && previous === 0
-      ? 'Nowa sprzedaż. W poprzednim okresie: 0.'
-      : `Poprzedni okres: ${previous} szt.${percent ? `, zmiana ${percent}` : ''}`;
+      ? `Nowa sprzedaż. W poprzednim okresie: ${show(0)}${unit}.`
+      : `Poprzedni okres: ${show(previous)}${unit}${percent ? `, zmiana ${percent}` : ''}`;
+  const tip = [direction === 'none' ? '' : comparison, extraTip]
+    .filter(Boolean)
+    .join(' ');
 
   return (
-    <Tooltip
-      title={direction === 'none' ? '' : tip}
-      disableHoverListener={direction === 'none'}
-    >
+    <Tooltip title={tip} disableHoverListener={!tip}>
       <Stack spacing={0} alignItems="flex-end" sx={{ lineHeight: 1.15 }}>
         <Typography variant="body2" fontWeight={600} component="span">
-          {units}
+          {show(units)}
         </Typography>
         {direction === 'none' ? null : (
           <Stack
@@ -77,8 +86,12 @@ export const SalesPeriodFigure = ({
                 {percent}
               </Typography>
             ) : null}
-            <Typography variant="caption" component="span" color="text.secondary">
-              {`(${previous})`}
+            <Typography
+              variant="caption"
+              component="span"
+              color="text.secondary"
+            >
+              {`(${show(previous)})`}
             </Typography>
           </Stack>
         )}

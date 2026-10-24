@@ -1,4 +1,7 @@
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {
   Alert,
   Box,
@@ -25,7 +28,7 @@ import {
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { useAppSelector } from '../../../../../hooks';
@@ -34,6 +37,8 @@ import {
   throwAxiosErrorFromResponse,
 } from '../../../../../services';
 import { Pages } from '../../../../../utils';
+import { AlertType } from '../../../alerts/types';
+import { alertTypeLabels } from '../../../alerts/utils';
 import { ListResponse } from '../../../app/types';
 import { ORDER_CHANNELS, orderChannelLabel } from '../../../ecommerce/utils';
 import {
@@ -42,9 +47,29 @@ import {
 } from '../../../reports/utils/usePinDataGridColumn';
 import { useGetProductSalesOverview } from '../../api';
 import { SalesPeriodFigure } from '../../components/SalesDelta';
-import { ProductBranch, ProductSalesListItem } from '../../types';
-import { ProductListChannel, productsListSearchString } from '../../utils';
+import {
+  ChannelListing,
+  ProductAlertSeverity,
+  ProductBranch,
+  ProductSalesChannel,
+  ProductSalesListItem,
+} from '../../types';
+import {
+  CoverWithinDays,
+  formatPrice,
+  ProductListChannel,
+  productsListSearchString,
+} from '../../utils';
 import { formatSalesIso } from '../../utils/salesPeriod';
+
+const SALES_CHANNEL_OPTIONS = [
+  ...ORDER_CHANNELS,
+  { source: 'receipt' as const, label: 'Paragony' },
+];
+
+const salesChannelLabel = (source: string) =>
+  SALES_CHANNEL_OPTIONS.find((channel) => channel.source === source)?.label ??
+  orderChannelLabel(source);
 
 const STOCK_BRANCH_STORAGE_KEY = 'sm.products.stockBranchId';
 
@@ -65,12 +90,54 @@ const formatStock = (value: number | string) => {
   return numeric.toLocaleString('pl-PL', { maximumFractionDigits: 3 });
 };
 
+const ALERT_SEVERITY_COLOR: Record<
+  ProductAlertSeverity,
+  'error' | 'warning' | 'info'
+> = {
+  critical: 'error',
+  warning: 'warning',
+  info: 'info',
+};
+
+const alertTooltip = (types: string[]) =>
+  types
+    .map((type) =>
+      type in alertTypeLabels ? alertTypeLabels[type as AlertType] : type,
+    )
+    .join(', ');
+
+const LISTING_LABEL: Record<ChannelListing, string> = {
+  active: '',
+  ended: 'zakończona',
+  none: 'brak oferty',
+};
+
 const nameColumn: GridColDef<ProductSalesListItem> = {
   field: 'name',
   headerName: 'Nazwa',
   width: 280,
   minWidth: 180,
-  sortable: false,
+  renderCell: (params) => (
+    <Stack
+      direction="row"
+      alignItems="center"
+      spacing={0.75}
+      sx={{ minWidth: 0, width: '100%' }}
+    >
+      {params.row.alertSeverity ? (
+        <Tooltip title={alertTooltip(params.row.alertTypes)}>
+          <WarningAmberIcon
+            fontSize="small"
+            color={ALERT_SEVERITY_COLOR[params.row.alertSeverity]}
+            aria-label={alertTooltip(params.row.alertTypes)}
+          />
+        </Tooltip>
+      ) : null}
+      <Typography variant="body2" noWrap sx={{ minWidth: 0 }}>
+        {params.row.name}
+      </Typography>
+    </Stack>
+  ),
 };
 
 const skuColumn: GridColDef<ProductSalesListItem> = {
@@ -104,14 +171,142 @@ const trailingColumns: GridColDef<ProductSalesListItem>[] = [
   {
     field: 'channels',
     headerName: 'Kanały',
-    width: 160,
+    width: 240,
+    minWidth: 160,
     sortable: false,
-    valueGetter: (_value, row) =>
-      (row.channels || [])
-        .map((channel) => orderChannelLabel(channel))
-        .join(', '),
+    renderCell: (params) => (
+      <ChannelListingsCell listings={params.row.channelListings} />
+    ),
   },
 ];
+
+const ChannelListingsCell = ({
+  listings,
+}: {
+  listings: Partial<Record<ProductSalesChannel, ChannelListing>> | undefined;
+}) => {
+  const entries = (['allegro', 'woocommerce', 'erli'] as const).flatMap(
+    (channel) => {
+      const listing = listings?.[channel];
+      if (!listing || listing === 'none') return [];
+      return [[channel, listing] as const];
+    },
+  );
+  if (entries.length === 0) return '—';
+  const text = entries
+    .map(([channel, listing]) => {
+      const name = orderChannelLabel(channel);
+      const suffix = LISTING_LABEL[listing];
+      return suffix ? `${name} (${suffix})` : name;
+    })
+    .join(', ');
+  return (
+    <Tooltip title={text}>
+      <Typography variant="body2" noWrap sx={{ width: '100%' }}>
+        {entries.map(([channel, listing], index) => {
+          const suffix = LISTING_LABEL[listing];
+          return (
+            <Box
+              component="span"
+              key={channel}
+              sx={{
+                color: listing === 'ended' ? 'warning.main' : 'text.primary',
+              }}
+            >
+              {index > 0 ? ', ' : ''}
+              {orderChannelLabel(channel)}
+              {suffix ? ` (${suffix})` : ''}
+            </Box>
+          );
+        })}
+      </Typography>
+    </Tooltip>
+  );
+};
+
+const SortArrow = ({ direction }: { direction: 'asc' | 'desc' }) =>
+  direction === 'asc' ? (
+    <ArrowUpwardIcon sx={{ fontSize: 14 }} />
+  ) : (
+    <ArrowDownwardIcon sx={{ fontSize: 14 }} />
+  );
+
+const SalesColumnHeader = ({
+  ordering,
+  onUnits,
+  onDelta,
+}: {
+  ordering: 'units' | '-units' | 'delta' | '-delta' | null;
+  onUnits: () => void;
+  onDelta: () => void;
+}) => {
+  const unitsActive = ordering === 'units' || ordering === '-units';
+  const deltaActive = ordering === 'delta' || ordering === '-delta';
+  return (
+    <Box
+      role="button"
+      tabIndex={0}
+      aria-pressed={unitsActive}
+      onClick={onUnits}
+      onKeyDown={(event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        onUnits();
+      }}
+      sx={{
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-end',
+        justifyContent: 'center',
+        px: 1,
+        cursor: 'pointer',
+        color: unitsActive ? 'primary.main' : 'inherit',
+        fontWeight: unitsActive ? 700 : 500,
+      }}
+    >
+      <Stack direction="row" alignItems="center" spacing={0.25}>
+        <span>{'Sprzedaż szt.'}</span>
+        {unitsActive ? (
+          <SortArrow direction={ordering === 'units' ? 'asc' : 'desc'} />
+        ) : null}
+      </Stack>
+      <Stack direction="row" alignItems="center" spacing={0.75}>
+        <Box
+          component="span"
+          role="button"
+          tabIndex={0}
+          aria-pressed={deltaActive}
+          onClick={(event) => {
+            event.stopPropagation();
+            onDelta();
+          }}
+          onKeyDown={(event) => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+            event.stopPropagation();
+            onDelta();
+          }}
+          sx={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 0.25,
+            fontSize: '0.75rem',
+            lineHeight: 1.2,
+            fontWeight: deltaActive ? 700 : 500,
+            color: deltaActive ? 'primary.main' : 'text.secondary',
+          }}
+        >
+          {'zmiana'}
+          {deltaActive ? (
+            <SortArrow direction={ordering === 'delta' ? 'asc' : 'desc'} />
+          ) : null}
+        </Box>
+      </Stack>
+    </Box>
+  );
+};
 
 const actionColumn: GridColDef<ProductSalesListItem> = {
   field: 'action',
@@ -142,6 +337,18 @@ export const ProductsListPage = () => {
   const [searchParams] = useSearchParams();
   const { user } = useAppSelector((state) => state.smSystemUser);
   const canViewPurchases = !!user?.permissions?.canViewPurchasePrices;
+  const [branchId, setBranchId] = useState<number | null>(readStoredBranchId);
+  const { data: branches } = useQuery({
+    queryKey: ['organization-branches', 'product-stock'],
+    queryFn: async ({ signal }) => {
+      const response = await axiosInstance.get<ListResponse<StockBranch>>(
+        '/api/v1/organizations/branches/',
+        { params: { pageSize: 1000 }, signal },
+      );
+      if (response.status >= 400) throwAxiosErrorFromResponse(response);
+      return response.data.results;
+    },
+  });
   const {
     products,
     totalCount,
@@ -169,21 +376,10 @@ export const ProductsListPage = () => {
     setSoldOnly,
     ordering,
     setOrdering,
-  } = useGetProductSalesOverview({ canViewPurchases });
-
-  const { data: branches } = useQuery({
-    queryKey: ['organization-branches', 'product-stock'],
-    queryFn: async ({ signal }) => {
-      const response = await axiosInstance.get<ListResponse<StockBranch>>(
-        '/api/v1/organizations/branches/',
-        { params: { pageSize: 1000 }, signal },
-      );
-      if (response.status >= 400) throwAxiosErrorFromResponse(response);
-      return response.data.results;
-    },
-  });
-
-  const [branchId, setBranchId] = useState<number | null>(readStoredBranchId);
+    coverWithin,
+    setCoverWithin,
+    currency,
+  } = useGetProductSalesOverview({ canViewPurchases, branchId });
 
   useEffect(() => {
     if (!branches?.length) return;
@@ -204,7 +400,15 @@ export const ProductsListPage = () => {
     if (!products.length || !api?.autosizeColumns) return undefined;
     const frame = requestAnimationFrame(() => {
       void api.autosizeColumns({
-        columns: ['internalId', 'vat', 'units', 'stock'],
+        columns: [
+          'internalId',
+          'vat',
+          'units',
+          'revenueCents',
+          'ordersCount',
+          'stock',
+          'daysOfCover',
+        ],
         includeHeaders: true,
         includeOutliers: true,
         expand: false,
@@ -214,29 +418,173 @@ export const ProductsListPage = () => {
   }, [apiRef, products, selectedBranch?.name]);
 
   const sortModel = useMemo<GridSortModel>(() => {
-    if (ordering === 'units' || ordering === '-units') {
+    if (ordering === 'name' || ordering === '-name')
+      return [{ field: 'name', sort: ordering === '-name' ? 'desc' : 'asc' }];
+    if (ordering === 'revenue' || ordering === '-revenue') {
       return [
-        { field: 'units', sort: ordering.startsWith('-') ? 'desc' : 'asc' },
+        {
+          field: 'revenueCents',
+          sort: ordering.startsWith('-') ? 'desc' : 'asc',
+        },
+      ];
+    }
+    if (branchId != null && (ordering === 'cover' || ordering === '-cover')) {
+      return [
+        {
+          field: 'daysOfCover',
+          sort: ordering.startsWith('-') ? 'desc' : 'asc',
+        },
       ];
     }
     return [];
-  }, [ordering]);
+  }, [branchId, ordering]);
+
+  const cycleSalesOrdering = useCallback(
+    (kind: 'units' | 'delta') => {
+      const descending = kind === 'units' ? '-units' : '-delta';
+      const ascending = kind === 'units' ? 'units' : 'delta';
+      if (ordering === descending) setOrdering(ascending);
+      else if (ordering === ascending) setOrdering(null);
+      else setOrdering(descending);
+    },
+    [ordering, setOrdering],
+  );
+
+  const periodDays = dayjs(endDate).diff(dayjs(startDate), 'day') + 1;
+  const salesChannelKey = channels.join(',');
 
   const columns = useMemo(() => {
+    const selectedChannels = salesChannelKey ? salesChannelKey.split(',') : [];
+    const receiptSelected = selectedChannels.includes('receipt');
+    const ecommerceSelected =
+      selectedChannels.length === 0 ||
+      selectedChannels.some((channel) => channel !== 'receipt');
+    const documentCount =
+      receiptSelected && ecommerceSelected
+        ? {
+            headerName: 'Liczba zamówień i paragonów',
+            caption: 'zamówień i paragonów',
+            unitLabel: 'zamówień i paragonów',
+            description:
+              'Ile zamówień z kanałów i paragonów wybranego sklepu zawierało ten produkt.',
+            width: 176,
+          }
+        : receiptSelected
+          ? {
+              headerName: 'Liczba paragonów',
+              caption: 'paragonów',
+              unitLabel: 'paragonów',
+              description:
+                'Ile paragonów wybranego sklepu zawierało ten produkt.',
+              width: 132,
+            }
+          : {
+              headerName: 'Liczba zamówień',
+              caption: 'zamówień',
+              unitLabel: 'zamówień',
+              description:
+                'Ile zamówień z wybranych kanałów zawierało ten produkt.',
+              width: 124,
+            };
     const salesColumns: GridColDef<ProductSalesListItem>[] = [
       {
         field: 'units',
-        headerName: 'Sprzedaż',
+        headerName: 'Sprzedaż szt.',
         description:
-          'Sztuki sprzedane w wybranym okresie. Pod liczbą: zmiana i wynik poprzedniego okresu w nawiasie.',
-        width: 108,
-        minWidth: 88,
+          'Sztuki sprzedane w wybranym okresie. Kliknięcie nagłówka sortuje po sztukach. Napis „zmiana” sortuje po zmianie wobec poprzedniego okresu.',
+        width: 156,
+        minWidth: 120,
         align: 'right',
         headerAlign: 'right',
+        sortable: false,
+        renderHeader: () => (
+          <SalesColumnHeader
+            ordering={
+              ordering === 'units' ||
+              ordering === '-units' ||
+              ordering === 'delta' ||
+              ordering === '-delta'
+                ? ordering
+                : null
+            }
+            onUnits={() => cycleSalesOrdering('units')}
+            onDelta={() => cycleSalesOrdering('delta')}
+          />
+        ),
         renderCell: (params) => (
           <SalesPeriodFigure
             units={params.row.units}
             previous={params.row.previousUnits}
+          />
+        ),
+      },
+      {
+        field: 'revenueCents',
+        headerName: 'Wartość sprzedaży',
+        description:
+          'Wartość brutto sprzedaży z wybranych kanałów. Paczka Allegro liczy sztuki, a przychód zostaje przy ofercie.',
+        width: 148,
+        minWidth: 120,
+        align: 'right',
+        headerAlign: 'right',
+        renderHeader: () => (
+          <Stack alignItems="flex-end" spacing={0} sx={{ lineHeight: 1.15 }}>
+            <span>{'Wartość'}</span>
+            <Box
+              component="span"
+              sx={{
+                fontSize: '0.75rem',
+                fontWeight: 500,
+                color: 'text.secondary',
+              }}
+            >
+              {'sprzedaży'}
+            </Box>
+          </Stack>
+        ),
+        renderCell: (params) => (
+          <SalesPeriodFigure
+            units={params.row.revenueCents}
+            previous={params.row.previousRevenueCents}
+            formatValue={(value) => formatPrice(value, currency)}
+            unitLabel=""
+            extraTip={
+              params.row.fxMissingLines > 0
+                ? 'Część pozycji nie weszła do kwoty.'
+                : undefined
+            }
+          />
+        ),
+      },
+      {
+        field: 'ordersCount',
+        headerName: documentCount.headerName,
+        description: documentCount.description,
+        width: documentCount.width,
+        minWidth: 108,
+        align: 'right',
+        headerAlign: 'right',
+        sortable: false,
+        renderHeader: () => (
+          <Stack alignItems="flex-end" spacing={0} sx={{ lineHeight: 1.15 }}>
+            <span>{'Liczba'}</span>
+            <Box
+              component="span"
+              sx={{
+                fontSize: '0.75rem',
+                fontWeight: 500,
+                color: 'text.secondary',
+              }}
+            >
+              {documentCount.caption}
+            </Box>
+          </Stack>
+        ),
+        renderCell: (params) => (
+          <SalesPeriodFigure
+            units={params.row.ordersCount}
+            previous={params.row.previousOrdersCount}
+            unitLabel={documentCount.unitLabel}
           />
         ),
       },
@@ -281,6 +629,49 @@ export const ProductsListPage = () => {
           );
         },
       },
+      {
+        field: 'daysOfCover',
+        headerName: 'Dni zapasu',
+        description: selectedBranch
+          ? `Na ile dni starczy stan w sklepie ${selectedBranch.name} przy sprzedaży paragonowej z wybranego okresu`
+          : 'Wybierz sklep, żeby policzyć zapas w dniach',
+        width: 118,
+        minWidth: 100,
+        align: 'right',
+        headerAlign: 'right',
+        sortable: branchId != null,
+        renderCell: (params) => {
+          if (branchId == null || !selectedBranch) return '—';
+          const days = params.row.daysOfCover;
+          const entry = stockOnBranch(params.row.branches, branchId);
+          const stockText = entry ? formatStock(entry.stock) : '—';
+          const soldText = formatStock(params.row.storeUnitsSold);
+          const title =
+            days == null
+              ? `Brak sprzedaży paragonowej w ${selectedBranch.name} przez ${periodDays} dni. Stan: ${stockText}.`
+              : `Stan ${stockText} w ${selectedBranch.name} starczy na ${days.toLocaleString('pl-PL', { maximumFractionDigits: 1 })} dni przy ${soldText} szt. na paragonach (${periodDays} dni).`;
+          const label =
+            days == null
+              ? '—'
+              : days.toLocaleString('pl-PL', { maximumFractionDigits: 1 });
+          return (
+            <Tooltip title={title}>
+              <Box
+                component="span"
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'flex-end',
+                  height: '100%',
+                  width: '100%',
+                }}
+              >
+                {label}
+              </Box>
+            </Tooltip>
+          );
+        },
+      },
     ];
     const manualColumn: GridColDef<ProductSalesListItem> = {
       field: 'manualPurchaseNetPrice',
@@ -299,7 +690,17 @@ export const ProductsListPage = () => {
       ...(canViewPurchases && missingPurchaseCost ? [manualColumn] : []),
       actionColumn,
     ];
-  }, [branchId, canViewPurchases, missingPurchaseCost, selectedBranch]);
+  }, [
+    branchId,
+    canViewPurchases,
+    currency,
+    cycleSalesOrdering,
+    missingPurchaseCost,
+    ordering,
+    periodDays,
+    salesChannelKey,
+    selectedBranch,
+  ]);
 
   if (!user?.permissions?.canAccessEcommerce)
     return <Navigate to={Pages.smSystem} replace />;
@@ -360,10 +761,10 @@ export const ProductsListPage = () => {
               setChannels(next);
             }}
             renderValue={(selected) =>
-              selected.map((channel) => orderChannelLabel(channel)).join(', ')
+              selected.map((channel) => salesChannelLabel(channel)).join(', ')
             }
           >
-            {ORDER_CHANNELS.map((channel) => (
+            {SALES_CHANNEL_OPTIONS.map((channel) => (
               <MenuItem key={channel.source} value={channel.source}>
                 {channel.label}
               </MenuItem>
@@ -421,6 +822,29 @@ export const ProductsListPage = () => {
                 {branch.name}
               </MenuItem>
             ))}
+          </Select>
+        </FormControl>
+        <FormControl
+          size="small"
+          sx={{ minWidth: 140 }}
+          disabled={branchId == null}
+        >
+          <InputLabel id="product-cover-within-label">{'Zapas do'}</InputLabel>
+          <Select
+            labelId="product-cover-within-label"
+            label="Zapas do"
+            value={coverWithin == null ? '' : String(coverWithin)}
+            onChange={(event) => {
+              const raw = event.target.value;
+              setCoverWithin(
+                raw === '' ? null : (Number(raw) as CoverWithinDays),
+              );
+            }}
+          >
+            <MenuItem value="">{'Dowolny'}</MenuItem>
+            <MenuItem value="7">{'7 dni'}</MenuItem>
+            <MenuItem value="14">{'14 dni'}</MenuItem>
+            <MenuItem value="30">{'30 dni'}</MenuItem>
           </Select>
         </FormControl>
         <FormControlLabel
@@ -490,11 +914,32 @@ export const ProductsListPage = () => {
         sortModel={sortModel}
         onSortModelChange={(model) => {
           const next = model[0];
-          if (!next?.sort || next.field !== 'units') {
+          if (!next?.sort) {
+            const unitsOrDelta =
+              ordering === 'units' ||
+              ordering === '-units' ||
+              ordering === 'delta' ||
+              ordering === '-delta';
+            const coverWaitingForBranch =
+              branchId == null &&
+              (ordering === 'cover' || ordering === '-cover');
+            if (unitsOrDelta || coverWaitingForBranch) return;
             setOrdering(null);
             return;
           }
-          setOrdering(next.sort === 'desc' ? '-units' : 'units');
+          if (next.field === 'name') {
+            setOrdering(next.sort === 'desc' ? '-name' : 'name');
+            return;
+          }
+          if (next.field === 'revenueCents') {
+            setOrdering(next.sort === 'desc' ? '-revenue' : 'revenue');
+            return;
+          }
+          if (next.field === 'daysOfCover') {
+            setOrdering(next.sort === 'desc' ? '-cover' : 'cover');
+            return;
+          }
+          setOrdering(null);
         }}
         onRowClick={handleRowClick}
         pageSizeOptions={[25]}
@@ -503,8 +948,17 @@ export const ProductsListPage = () => {
         paginationModel={{ page, pageSize: 25 }}
         onPaginationModelChange={(model) => setPage(model.page)}
         rowHeight={64}
+        columnHeaderHeight={64}
         apiRef={apiRef}
         sx={{
+          '& .MuiDataGrid-columnHeader[data-field="units"]': {
+            padding: 0,
+          },
+          '& .MuiDataGrid-columnHeader[data-field="units"] .MuiDataGrid-columnHeaderTitleContainer, & .MuiDataGrid-columnHeader[data-field="units"] .MuiDataGrid-columnHeaderTitleContainerContent':
+            {
+              width: '100%',
+              height: '100%',
+            },
           '& .MuiDataGrid-row': { cursor: 'pointer' },
           '& .MuiDataGrid-cell': {
             display: 'flex',

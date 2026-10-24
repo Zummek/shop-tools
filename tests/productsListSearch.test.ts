@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  exclusiveSalesChannels,
   parseProductsListFilters,
   productsListSearchString,
 } from '../src/features/smSystem/products/utils/productsListSearch.ts';
@@ -18,6 +19,11 @@ test('parseProductsListFilters reads query, page, and purchase filters', () => {
     missingPurchaseCost: true,
     manualUnset: true,
     channels: [],
+    startDate: null,
+    endDate: null,
+    soldOnly: false,
+    ordering: null,
+    coverWithin: null,
   });
 });
 
@@ -49,6 +55,32 @@ test('productsListSearchString omits defaults', () => {
   assert.equal(productsListSearchString(new URLSearchParams('page=1')), '');
 });
 
+test('productsListSearchString keeps cover, ordering, and dates', () => {
+  const search = productsListSearchString(
+    new URLSearchParams(
+      'cover_within=14&ordering=-delta&sold=1&start_date=2026-05-01&end_date=2026-05-10',
+    ),
+  );
+  const params = new URLSearchParams(search);
+  assert.equal(params.get('cover_within'), '14');
+  assert.equal(params.get('ordering'), '-delta');
+  assert.equal(params.get('sold'), '1');
+  assert.equal(params.get('start_date'), '2026-05-01');
+  assert.equal(params.get('end_date'), '2026-05-10');
+});
+
+test('parse keeps name ordering and drops unknown values', () => {
+  const filters = parseProductsListFilters(
+    new URLSearchParams('cover_within=3&ordering=-name'),
+  );
+  assert.equal(filters.coverWithin, null);
+  assert.equal(filters.ordering, '-name');
+  const unknown = parseProductsListFilters(
+    new URLSearchParams('ordering=price'),
+  );
+  assert.equal(unknown.ordering, null);
+});
+
 test('productsListSearchString keeps known sales channels in catalog order', () => {
   const search = productsListSearchString(
     new URLSearchParams('channel=erli&channel=allegro&channel=shop&query=a'),
@@ -56,4 +88,27 @@ test('productsListSearchString keeps known sales channels in catalog order', () 
   const params = new URLSearchParams(search);
   assert.equal(params.get('query'), 'a');
   assert.deepEqual(params.getAll('channel'), ['allegro', 'erli']);
+});
+
+test('exclusiveSalesChannels keeps till receipts off online channels', () => {
+  assert.deepEqual(
+    exclusiveSalesChannels(['allegro'], ['allegro', 'receipt']),
+    ['receipt'],
+  );
+  assert.deepEqual(
+    exclusiveSalesChannels(['receipt'], ['receipt', 'woocommerce']),
+    ['woocommerce'],
+  );
+  assert.deepEqual(
+    exclusiveSalesChannels(['allegro', 'receipt'], ['allegro', 'receipt']),
+    ['allegro'],
+  );
+});
+
+test('productsListSearchString keeps receipts after ecommerce channels', () => {
+  const search = productsListSearchString(
+    new URLSearchParams('channel=receipt&channel=woocommerce'),
+  );
+  const params = new URLSearchParams(search);
+  assert.deepEqual(params.getAll('channel'), ['woocommerce', 'receipt']);
 });

@@ -9,9 +9,11 @@ import {
 import { ListResponse } from '../../app/types';
 import { ProductSalesListItem } from '../types';
 import {
+  CoverWithinDays,
+  exclusiveSalesChannels,
+  parseCoverWithin,
   parseProductsListFilters,
   parseSalesOrdering,
-  PRODUCT_LIST_CHANNELS,
   ProductListChannel,
   SalesOrdering,
 } from '../utils';
@@ -32,6 +34,7 @@ export interface ProductSalesOverviewResponse
   endDate: string;
   previousStartDate: string;
   previousEndDate: string;
+  currency: string;
 }
 
 const useDebouncedValue = <T>(value: T, delayMs: number): T => {
@@ -60,10 +63,15 @@ const replaceSearchParams = (
   );
 };
 
+const coverOrdering = (ordering: SalesOrdering | null) =>
+  ordering === 'cover' || ordering === '-cover';
+
 export const useGetProductSalesOverview = ({
   canViewPurchases = false,
+  branchId = null,
 }: {
   canViewPurchases?: boolean;
+  branchId?: number | null;
 } = {}) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const urlFilters = parseProductsListFilters(searchParams);
@@ -72,9 +80,12 @@ export const useGetProductSalesOverview = ({
   const missingPurchaseCost =
     canViewPurchases && urlFilters.missingPurchaseCost;
   const manualUnset = missingPurchaseCost && urlFilters.manualUnset;
-  const channels = urlFilters.channels;
+  const rawChannels = urlFilters.channels;
+  const channels = exclusiveSalesChannels(rawChannels, rawChannels);
   const soldOnly = urlFilters.soldOnly;
   const ordering = urlFilters.ordering;
+  const coverWithin = urlFilters.coverWithin;
+  const needsBranch = coverWithin != null || coverOrdering(ordering);
   const range = resolveSalesRange(urlFilters.startDate, urlFilters.endDate);
   const requestQuery = useDebouncedValue(query, searchDebounceMs);
   const previous = range.rangeError
@@ -136,12 +147,10 @@ export const useGetProductSalesOverview = ({
 
   const setChannels = useCallback(
     (value: ProductListChannel[]) => {
-      const next = PRODUCT_LIST_CHANNELS.filter((channel) =>
-        value.includes(channel),
-      );
       replaceSearchParams(setSearchParams, (params) => {
-        const current = parseProductsListFilters(params).channels.join(',');
-        if (current === next.join(',')) return;
+        const current = parseProductsListFilters(params).channels;
+        const next = exclusiveSalesChannels(current, value);
+        if (current.join(',') === next.join(',')) return;
         params.delete('channel');
         for (const channel of next) params.append('channel', channel);
         params.delete('page');
@@ -149,6 +158,13 @@ export const useGetProductSalesOverview = ({
     },
     [setSearchParams],
   );
+
+  const rawChannelKey = rawChannels.join(',');
+  const channelKey = channels.join(',');
+  useEffect(() => {
+    if (rawChannelKey === channelKey) return;
+    setChannels(rawChannelKey.split(',') as ProductListChannel[]);
+  }, [channelKey, rawChannelKey, setChannels]);
 
   const setSalesDates = useCallback(
     (start: string, end: string) => {
@@ -204,6 +220,19 @@ export const useGetProductSalesOverview = ({
     [setSearchParams],
   );
 
+  const setCoverWithin = useCallback(
+    (value: CoverWithinDays | null) => {
+      replaceSearchParams(setSearchParams, (params) => {
+        const current = parseCoverWithin(params.get('cover_within'));
+        if (current === value) return;
+        if (value) params.set('cover_within', String(value));
+        else params.delete('cover_within');
+        params.delete('page');
+      });
+    },
+    [setSearchParams],
+  );
+
   const setOrdering = useCallback(
     (value: SalesOrdering | null) => {
       replaceSearchParams(setSearchParams, (params) => {
@@ -229,8 +258,10 @@ export const useGetProductSalesOverview = ({
       range.end,
       soldOnly,
       ordering,
+      coverWithin,
+      branchId,
     ],
-    enabled: range.rangeError === null,
+    enabled: range.rangeError === null && (!needsBranch || branchId != null),
     queryFn: async ({ signal }) => {
       const response = await axiosInstance.get<ProductSalesOverviewResponse>(
         endpoint,
@@ -247,6 +278,9 @@ export const useGetProductSalesOverview = ({
             endDate: range.end,
             sold: soldOnly ? 1 : undefined,
             ordering: ordering ?? undefined,
+            branchId: branchId ?? undefined,
+            coverWithin:
+              branchId != null && coverWithin != null ? coverWithin : undefined,
           },
           paramsSerializer: { indexes: null },
         },
@@ -285,5 +319,8 @@ export const useGetProductSalesOverview = ({
     setSoldOnly,
     ordering,
     setOrdering,
+    coverWithin,
+    setCoverWithin,
+    currency: data?.currency ?? 'PLN',
   };
 };

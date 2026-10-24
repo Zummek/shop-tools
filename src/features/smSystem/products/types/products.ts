@@ -56,9 +56,23 @@ export interface Product {
   channels?: ProductSalesChannel[];
 }
 
+export type ChannelListing = 'active' | 'ended' | 'none';
+
+export type ProductAlertSeverity = 'info' | 'warning' | 'critical';
+
 export interface ProductSalesListItem extends Product {
   units: number;
   previousUnits: number;
+  revenueCents: number;
+  previousRevenueCents: number;
+  ordersCount: number;
+  previousOrdersCount: number;
+  fxMissingLines: number;
+  daysOfCover: number | null;
+  storeUnitsSold: number;
+  alertSeverity: ProductAlertSeverity | null;
+  alertTypes: string[];
+  channelListings: Partial<Record<ProductSalesChannel, ChannelListing>>;
 }
 
 export interface ProductReportPurchase {

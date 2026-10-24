@@ -1,4 +1,4 @@
-import { parseIsoDateParam } from './salesPeriod';
+import { parseIsoDateParam } from './salesPeriod.ts';
 
 const FLAG = '1';
 
@@ -6,11 +6,36 @@ export const PRODUCT_LIST_CHANNELS = [
   'allegro',
   'woocommerce',
   'erli',
+  'receipt',
 ] as const;
 
 export type ProductListChannel = (typeof PRODUCT_LIST_CHANNELS)[number];
 
-export const SALES_ORDERINGS = ['units', '-units', 'delta', '-delta'] as const;
+export const SALES_ORDERINGS = [
+  'name',
+  '-name',
+  'units',
+  '-units',
+  'delta',
+  '-delta',
+  'revenue',
+  '-revenue',
+  'cover',
+  '-cover',
+] as const;
+
+export const COVER_WITHIN_DAYS = [7, 14, 30] as const;
+
+export type CoverWithinDays = (typeof COVER_WITHIN_DAYS)[number];
+
+export const parseCoverWithin = (
+  value: string | null,
+): CoverWithinDays | null => {
+  const parsed = Number(value);
+  return COVER_WITHIN_DAYS.includes(parsed as CoverWithinDays)
+    ? (parsed as CoverWithinDays)
+    : null;
+};
 
 export type SalesOrdering = (typeof SALES_ORDERINGS)[number];
 
@@ -27,6 +52,21 @@ export const parseProductListChannels = (
   PRODUCT_LIST_CHANNELS.filter((channel) =>
     searchParams.getAll('channel').some((value) => value === channel),
   );
+
+export const exclusiveSalesChannels = (
+  current: readonly ProductListChannel[],
+  next: readonly ProductListChannel[],
+): ProductListChannel[] => {
+  const normalized = PRODUCT_LIST_CHANNELS.filter((channel) =>
+    next.includes(channel),
+  );
+  const addedReceipt =
+    normalized.includes('receipt') && !current.includes('receipt');
+  if (addedReceipt) return ['receipt'];
+  if (normalized.includes('receipt') && normalized.length > 1)
+    return normalized.filter((channel) => channel !== 'receipt');
+  return normalized;
+};
 
 export const parseProductsListPage = (
   searchParams: URLSearchParams,
@@ -50,6 +90,7 @@ export const parseProductsListFilters = (searchParams: URLSearchParams) => {
     endDate: parseIsoDateParam(searchParams.get('end_date')),
     soldOnly: searchParams.get('sold') === FLAG,
     ordering: parseSalesOrdering(searchParams.get('ordering')),
+    coverWithin: parseCoverWithin(searchParams.get('cover_within')),
   };
 };
 
@@ -82,6 +123,9 @@ export const productsListSearchString = (
 
   const ordering = parseSalesOrdering(searchParams.get('ordering'));
   if (ordering) next.set('ordering', ordering);
+
+  const coverWithin = parseCoverWithin(searchParams.get('cover_within'));
+  if (coverWithin) next.set('cover_within', String(coverWithin));
 
   const serialized = next.toString();
   return serialized ? `?${serialized}` : '';

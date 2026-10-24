@@ -195,7 +195,9 @@ export const ProductSalesTab = ({ productId }: { productId: number }) => {
     searchParams.get('end_date'),
   );
   const initial = fromUrl.rangeError ? resolveSalesRange(null, null) : fromUrl;
-  const listedChannels = parseProductListChannels(searchParams);
+  const listedChannels = parseProductListChannels(searchParams).filter(
+    (channel): channel is ProductSalesChannel => channel !== 'receipt',
+  );
   const [preset, setPreset] = useState<Preset | null>(initial.preset);
   const [startDate, setStartDate] = useState(initial.start);
   const [endDate, setEndDate] = useState(initial.end);

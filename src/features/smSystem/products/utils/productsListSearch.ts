@@ -26,6 +26,17 @@ export const SALES_ORDERINGS = [
 
 export const COVER_WITHIN_DAYS = [7, 14, 30] as const;
 
+export const LISTING_FILTERS = ['missing', 'zero', 'below_stock'] as const;
+
+export type ListingFilter = (typeof LISTING_FILTERS)[number];
+
+export const parseListingFilter = (
+  value: string | null,
+): ListingFilter | null =>
+  LISTING_FILTERS.includes(value as ListingFilter)
+    ? (value as ListingFilter)
+    : null;
+
 export type CoverWithinDays = (typeof COVER_WITHIN_DAYS)[number];
 
 export const parseCoverWithin = (
@@ -91,6 +102,7 @@ export const parseProductsListFilters = (searchParams: URLSearchParams) => {
     soldOnly: searchParams.get('sold') === FLAG,
     ordering: parseSalesOrdering(searchParams.get('ordering')),
     coverWithin: parseCoverWithin(searchParams.get('cover_within')),
+    listing: parseListingFilter(searchParams.get('listing')),
   };
 };
 
@@ -126,6 +138,9 @@ export const productsListSearchString = (
 
   const coverWithin = parseCoverWithin(searchParams.get('cover_within'));
   if (coverWithin) next.set('cover_within', String(coverWithin));
+
+  const listing = parseListingFilter(searchParams.get('listing'));
+  if (listing) next.set('listing', listing);
 
   const serialized = next.toString();
   return serialized ? `?${serialized}` : '';

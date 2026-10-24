@@ -11,7 +11,9 @@ import { ProductSalesListItem } from '../types';
 import {
   CoverWithinDays,
   exclusiveSalesChannels,
+  ListingFilter,
   parseCoverWithin,
+  parseListingFilter,
   parseProductsListFilters,
   parseSalesOrdering,
   ProductListChannel,
@@ -85,6 +87,7 @@ export const useGetProductSalesOverview = ({
   const soldOnly = urlFilters.soldOnly;
   const ordering = urlFilters.ordering;
   const coverWithin = urlFilters.coverWithin;
+  const listing = urlFilters.listing;
   const needsBranch = coverWithin != null || coverOrdering(ordering);
   const range = resolveSalesRange(urlFilters.startDate, urlFilters.endDate);
   const requestQuery = useDebouncedValue(query, searchDebounceMs);
@@ -220,6 +223,19 @@ export const useGetProductSalesOverview = ({
     [setSearchParams],
   );
 
+  const setListing = useCallback(
+    (value: ListingFilter | null) => {
+      replaceSearchParams(setSearchParams, (params) => {
+        const current = parseListingFilter(params.get('listing'));
+        if (current === value) return;
+        if (value) params.set('listing', value);
+        else params.delete('listing');
+        params.delete('page');
+      });
+    },
+    [setSearchParams],
+  );
+
   const setCoverWithin = useCallback(
     (value: CoverWithinDays | null) => {
       replaceSearchParams(setSearchParams, (params) => {
@@ -259,6 +275,7 @@ export const useGetProductSalesOverview = ({
       soldOnly,
       ordering,
       coverWithin,
+      listing,
       branchId,
     ],
     enabled: range.rangeError === null && (!needsBranch || branchId != null),
@@ -281,6 +298,7 @@ export const useGetProductSalesOverview = ({
             branchId: branchId ?? undefined,
             coverWithin:
               branchId != null && coverWithin != null ? coverWithin : undefined,
+            listing: listing ?? undefined,
           },
           paramsSerializer: { indexes: null },
         },
@@ -321,6 +339,8 @@ export const useGetProductSalesOverview = ({
     setOrdering,
     coverWithin,
     setCoverWithin,
+    listing,
+    setListing,
     currency: data?.currency ?? 'PLN',
   };
 };

@@ -84,6 +84,61 @@ const channelDisplayName = (channel: string) => {
   return channel.toUpperCase();
 };
 
+const SUMMARY_CHANNELS = ['allegro', 'woocommerce', 'erli'] as const;
+
+const offerCountLabel = (count: number) => {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  if (count === 1) return '1 oferta';
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14))
+    return `${count} oferty`;
+  return `${count} ofert`;
+};
+
+const channelSummaryLine = (channel: string, links: ChannelProductLink[]) => {
+  const active = links.filter((link) => !isEndedChannelOffer(link));
+  const name = channelDisplayName(channel);
+  if (active.length === 0) return `${name}: zakończone`;
+  const unknown = active.some((link) => link.stockAvailable == null);
+  if (unknown) return `${name}: ${offerCountLabel(active.length)}, stan —`;
+  const stock = active.reduce(
+    (sum, link) => sum + (link.stockAvailable ?? 0),
+    0,
+  );
+  const pieces = active.reduce(
+    (sum, link) =>
+      sum + (link.stockAvailable ?? 0) * (link.unitsInOffer || 1),
+    0,
+  );
+  const piecesText = pieces !== stock ? ` (${pieces} szt.)` : '';
+  return `${name}: ${offerCountLabel(active.length)}, stan ${stock}${piecesText}`;
+};
+
+const ChannelStockSummary = ({ links }: { links: ChannelProductLink[] }) => {
+  const present = new Set(links.map((link) => link.channel));
+  const known = new Set<string>(SUMMARY_CHANNELS);
+  const ordered = [
+    ...SUMMARY_CHANNELS.filter((channel) => present.has(channel)),
+    ...Array.from(present).filter((channel) => !known.has(channel)),
+  ];
+  if (ordered.length === 0) return null;
+  return (
+    <Stack direction="row" flexWrap="wrap" gap={1}>
+      {ordered.map((channel) => (
+        <Chip
+          key={channel}
+          size="small"
+          variant="outlined"
+          label={channelSummaryLine(
+            channel,
+            links.filter((link) => link.channel === channel),
+          )}
+        />
+      ))}
+    </Stack>
+  );
+};
+
 const statusColor = (status?: string | null) => {
   if (!status) return 'default' as const;
   if (status === 'ACTIVE' || status === 'publish' || status === 'active')
@@ -273,6 +328,7 @@ export const ProductDetailsPage = () => {
             </Typography>
           ) : (
             <Stack spacing={2}>
+              <ChannelStockSummary links={channelLinks} />
               {activeLinks.length === 0 && endedLinks.length > 0 && (
                 <Typography color="text.secondary">
                   {'Brak aktywnych ofert — zakończone poniżej.'}

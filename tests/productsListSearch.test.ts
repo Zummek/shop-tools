@@ -24,6 +24,7 @@ test('parseProductsListFilters reads query, page, and purchase filters', () => {
     soldOnly: false,
     ordering: null,
     coverWithin: null,
+    listing: null,
   });
 });
 
@@ -103,6 +104,20 @@ test('exclusiveSalesChannels keeps till receipts off online channels', () => {
     exclusiveSalesChannels(['allegro', 'receipt'], ['allegro', 'receipt']),
     ['allegro'],
   );
+});
+
+test('parse drops an unknown listing and the search string keeps a known one', () => {
+  assert.equal(
+    parseProductsListFilters(new URLSearchParams('listing=nope')).listing,
+    null,
+  );
+  const search = productsListSearchString(
+    new URLSearchParams('listing=zero&tab=channels&query=mleko'),
+  );
+  const params = new URLSearchParams(search);
+  assert.equal(params.get('listing'), 'zero');
+  assert.equal(params.get('query'), 'mleko');
+  assert.equal(params.get('tab'), null);
 });
 
 test('productsListSearchString keeps receipts after ecommerce channels', () => {

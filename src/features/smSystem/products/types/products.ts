@@ -56,7 +56,25 @@ export interface Product {
   channels?: ProductSalesChannel[];
 }
 
-export type ChannelListing = 'active' | 'ended' | 'none';
+export type ChannelListingStatus = 'active' | 'ended' | 'none';
+
+export interface ChannelListingOffer {
+  offerName: string;
+  externalOfferId: string;
+  marketplace: string | null;
+  stockAvailable: number | null;
+  unitsInOffer: number;
+  ended: boolean;
+  lastSyncedAt: string | null;
+}
+
+export interface ChannelListing {
+  status: ChannelListingStatus;
+  stockAvailable: number | null;
+  pieces: number | null;
+  channelStock: number | string | null;
+  offers: ChannelListingOffer[];
+}
 
 export type ProductAlertSeverity = 'info' | 'warning' | 'critical';
 

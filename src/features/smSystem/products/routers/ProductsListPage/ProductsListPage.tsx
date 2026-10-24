@@ -49,6 +49,7 @@ import { useGetProductSalesOverview } from '../../api';
 import { SalesPeriodFigure } from '../../components/SalesDelta';
 import {
   ChannelListing,
+  ChannelListingOffer,
   ProductAlertSeverity,
   ProductBranch,
   ProductSalesChannel,
@@ -57,6 +58,7 @@ import {
 import {
   CoverWithinDays,
   formatPrice,
+  ListingFilter,
   ProductListChannel,
   productsListSearchString,
 } from '../../utils';
@@ -106,10 +108,70 @@ const alertTooltip = (types: string[]) =>
     )
     .join(', ');
 
-const LISTING_LABEL: Record<ChannelListing, string> = {
-  active: '',
-  ended: 'zakończona',
-  none: 'brak oferty',
+const LISTING_CHANNELS = ['allegro', 'woocommerce', 'erli'] as const;
+
+const LISTING_FILTER_OPTIONS: { value: ListingFilter; label: string }[] = [
+  { value: 'missing', label: 'Brak aktywnej oferty' },
+  { value: 'zero', label: 'Wystawione 0' },
+  { value: 'below_stock', label: 'Mniej niż magazyn kanału' },
+];
+
+const channelStockNumber = (value: number | string | null | undefined) => {
+  if (value == null || value === '') return null;
+  const numeric = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(numeric) ? numeric : null;
+};
+
+const listingWarns = (listing: ChannelListing) => {
+  if (listing.status === 'ended') return true;
+  const warehouse = channelStockNumber(listing.channelStock);
+  return (
+    listing.status === 'active' &&
+    listing.pieces != null &&
+    warehouse != null &&
+    listing.pieces < warehouse
+  );
+};
+
+const listingCellLabel = (
+  channel: ProductSalesChannel,
+  listing: ChannelListing,
+) => {
+  const name = orderChannelLabel(channel);
+  if (listing.status === 'ended') return `${name} (zakończona)`;
+  if (listing.status === 'active' && listing.stockAvailable != null)
+    return `${name} ${listing.stockAvailable}`;
+  return name;
+};
+
+const offerTooltipLine = (offer: ChannelListingOffer) => {
+  const parts = [offer.offerName || offer.externalOfferId];
+  if (offer.ended) parts.push('zakończona');
+  parts.push(
+    offer.stockAvailable == null ? 'stan —' : `stan ${offer.stockAvailable}`,
+  );
+  if (offer.unitsInOffer > 1) parts.push(`${offer.unitsInOffer} szt. w ofercie`);
+  if (offer.marketplace) parts.push(offer.marketplace);
+  if (offer.lastSyncedAt)
+    parts.push(dayjs(offer.lastSyncedAt).format('DD.MM.YYYY HH:mm'));
+  return parts.join(' · ');
+};
+
+const listingTooltip = (
+  channel: ProductSalesChannel,
+  listing: ChannelListing,
+) => {
+  const lines = [orderChannelLabel(channel)];
+  const multipack = listing.offers.some(
+    (offer) => !offer.ended && offer.unitsInOffer > 1,
+  );
+  if (multipack && listing.pieces != null)
+    lines.push(`Sztuki fizyczne: ${listing.pieces}`);
+  const warehouse = channelStockNumber(listing.channelStock);
+  if (warehouse != null)
+    lines.push(`Magazyn kanału: ${formatStock(listing.channelStock ?? 0)}`);
+  for (const offer of listing.offers) lines.push(offerTooltipLine(offer));
+  return lines.join('\n');
 };
 
 const nameColumn: GridColDef<ProductSalesListItem> = {
@@ -152,8 +214,10 @@ const trailingColumns: GridColDef<ProductSalesListItem>[] = [
   {
     field: 'channels',
     headerName: 'Kanały',
+    description:
+      'Suma stanu aktywnych ofert. Sztuki zestawu i magazyn kanału są w podpowiedzi.',
     flex: 1,
-    minWidth: 160,
+    minWidth: 200,
     sortable: false,
     renderCell: (params) => (
       <ChannelListingsCell listings={params.row.channelListings} />
@@ -166,40 +230,36 @@ const ChannelListingsCell = ({
 }: {
   listings: Partial<Record<ProductSalesChannel, ChannelListing>> | undefined;
 }) => {
-  const entries = (['allegro', 'woocommerce', 'erli'] as const).flatMap(
-    (channel) => {
-      const listing = listings?.[channel];
-      if (!listing || listing === 'none') return [];
-      return [[channel, listing] as const];
-    },
-  );
+  const entries = LISTING_CHANNELS.flatMap((channel) => {
+    const listing = listings?.[channel];
+    if (!listing || listing.status === 'none') return [];
+    return [[channel, listing] as const];
+  });
   if (entries.length === 0) return '—';
   const text = entries
-    .map(([channel, listing]) => {
-      const name = orderChannelLabel(channel);
-      const suffix = LISTING_LABEL[listing];
-      return suffix ? `${name} (${suffix})` : name;
-    })
-    .join(', ');
+    .map(([channel, listing]) => listingTooltip(channel, listing))
+    .join('\n\n');
   return (
-    <Tooltip title={text}>
+    <Tooltip
+      title={
+        <Box component="span" sx={{ whiteSpace: 'pre-line', display: 'block' }}>
+          {text}
+        </Box>
+      }
+    >
       <Typography variant="body2" noWrap sx={{ width: '100%' }}>
-        {entries.map(([channel, listing], index) => {
-          const suffix = LISTING_LABEL[listing];
-          return (
-            <Box
-              component="span"
-              key={channel}
-              sx={{
-                color: listing === 'ended' ? 'warning.main' : 'text.primary',
-              }}
-            >
-              {index > 0 ? ', ' : ''}
-              {orderChannelLabel(channel)}
-              {suffix ? ` (${suffix})` : ''}
-            </Box>
-          );
-        })}
+        {entries.map(([channel, listing], index) => (
+          <Box
+            component="span"
+            key={channel}
+            sx={{
+              color: listingWarns(listing) ? 'warning.main' : 'text.primary',
+            }}
+          >
+            {index > 0 ? ', ' : ''}
+            {listingCellLabel(channel, listing)}
+          </Box>
+        ))}
       </Typography>
     </Tooltip>
   );
@@ -359,6 +419,8 @@ export const ProductsListPage = () => {
     setOrdering,
     coverWithin,
     setCoverWithin,
+    listing,
+    setListing,
     currency,
   } = useGetProductSalesOverview({ canViewPurchases, branchId });
 
@@ -746,6 +808,27 @@ export const ProductsListPage = () => {
             {SALES_CHANNEL_OPTIONS.map((channel) => (
               <MenuItem key={channel.source} value={channel.source}>
                 {channel.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <FormControl size="small" sx={{ minWidth: 220 }}>
+          <InputLabel id="product-listing-filter-label">
+            {'Wystawienie'}
+          </InputLabel>
+          <Select
+            labelId="product-listing-filter-label"
+            label="Wystawienie"
+            value={listing ?? ''}
+            onChange={(event) => {
+              const raw = event.target.value;
+              setListing(raw === '' ? null : (raw as ListingFilter));
+            }}
+          >
+            <MenuItem value="">{'Wszystkie'}</MenuItem>
+            {LISTING_FILTER_OPTIONS.map((option) => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
               </MenuItem>
             ))}
           </Select>

@@ -70,7 +70,10 @@ test('formatPln groups thousands and keeps grosze', () => {
 
 test('dates and periods', () => {
   assert.equal(formatDay('2026-09-14'), '14.09.2026');
-  assert.equal(formatPeriod('2026-09-01', '2026-09-30'), '01.09.2026 – 30.09.2026');
+  assert.equal(
+    formatPeriod('2026-09-01', '2026-09-30'),
+    '01.09.2026 – 30.09.2026',
+  );
   assert.equal(formatPeriod('2026-09-05', '2026-09-05'), '05.09.2026');
   assert.equal(formatMoment('2026-09-30T22:30:00Z'), '01.10.2026 00:30');
   assert.equal(sameMonth('2026-09-01', '2026-09-30'), true);
@@ -80,14 +83,29 @@ test('dates and periods', () => {
 });
 
 test('previousMonthRange crosses the year', () => {
-  assert.deepEqual(previousMonthRange('2026-10-16'), ['2026-09-01', '2026-09-30']);
-  assert.deepEqual(previousMonthRange('2027-01-03'), ['2026-12-01', '2026-12-31']);
-  assert.deepEqual(previousMonthRange('2028-03-01'), ['2028-02-01', '2028-02-29']);
+  assert.deepEqual(previousMonthRange('2026-10-16'), [
+    '2026-09-01',
+    '2026-09-30',
+  ]);
+  assert.deepEqual(previousMonthRange('2027-01-03'), [
+    '2026-12-01',
+    '2026-12-31',
+  ]);
+  assert.deepEqual(previousMonthRange('2028-03-01'), [
+    '2028-02-01',
+    '2028-02-29',
+  ]);
 });
 
 test('file names follow the document number', () => {
-  assert.equal(documentFileName('DW/ALL/2026/09/1', 'pdf'), 'DW_ALL_2026_09_1.pdf');
-  assert.equal(documentFileName('DW-K/ERL/2026/09/2', 'xlsx'), 'DW-K_ERL_2026_09_2.xlsx');
+  assert.equal(
+    documentFileName('DW/ALL/2026/09/1', 'pdf'),
+    'DW_ALL_2026_09_1.pdf',
+  );
+  assert.equal(
+    documentFileName('DW-K/ERL/2026/09/2', 'xlsx'),
+    'DW-K_ERL_2026_09_2.xlsx',
+  );
 });
 
 test('Polish plurals', () => {

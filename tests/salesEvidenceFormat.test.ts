@@ -13,12 +13,52 @@ import {
   monthName,
   parseEvidenceSearch,
   previousMonthRange,
+  refundPlaceLabel,
+  refundText,
   sameMonth,
   sharesSumTo100,
   warsawToday,
+  type RefundTextInput,
 } from '../src/features/smSystem/salesEvidence/utils/format.ts';
 
 const nbsp = (text: string) => text.replace(/\u00a0/g, ' ');
+
+const refund = (
+  place: RefundTextInput['place'],
+  reason = '',
+  extra: Partial<RefundTextInput> = {},
+): RefundTextInput => ({
+  id: 1,
+  date: '2026-09-07',
+  amount: -5160,
+  currency: 'PLN',
+  place,
+  reason,
+  documentNumber: '',
+  issued: false,
+  review: [],
+  ...extra,
+});
+
+test('refund text matches the settlement wording', () => {
+  const parked = refund('register', 'before_evidence');
+  assert.equal(
+    refundPlaceLabel(parked),
+    'na kasie: zwrot do sprzedaży sprzed pierwszego dowodu (zwrot)',
+  );
+  assert.equal(
+    nbsp(refundText(parked)),
+    'Zwrot -51,60 zł z 07.09.2026 — na kasie: zwrot do sprzedaży sprzed pierwszego dowodu (zwrot).',
+  );
+  assert.equal(
+    refundPlaceLabel(refund('rows')),
+    'wejdzie do dowodu za cały wrzesień 2026 jako kwota ujemna',
+  );
+  assert.equal(
+    refundPlaceLabel(refund('rows', '', { issued: true })),
+    'ujęty w dowodzie jako kwota ujemna',
+  );
+});
 
 test('formatPln groups thousands and keeps grosze', () => {
   assert.equal(nbsp(formatPln(1390925)), '13 909,25 zł');

@@ -20,6 +20,8 @@ import {
   formatMoment,
   monthName,
   monthRangeOf,
+  refundNeedsAttention,
+  refundText,
 } from '../utils/format';
 
 const evidenceHref = (channel: string, day: string | null | undefined) => {
@@ -98,6 +100,28 @@ export const OrderEvidencePanel = ({ orderId }: { orderId: number }) => {
             }
           </Typography>
         </Box>
+
+        {(data.refunds ?? []).map((refund) => (
+          <Alert
+            key={refund.id}
+            severity={refundNeedsAttention(refund) ? 'warning' : 'info'}
+          >
+            <Typography variant="body2">
+              {refundText(refund)}
+              {refund.place === 'review' && refund.review[0]?.detail
+                ? ` ${refund.review[0].detail}`
+                : ''}
+              {data.canViewEvidence ? (
+                <>
+                  {' '}
+                  <Link href={evidenceHref(data.channel, refund.date)}>
+                    {'Pokaż w dowodzie'}
+                  </Link>
+                </>
+              ) : null}
+            </Typography>
+          </Alert>
+        ))}
 
         {evaluation ? (
           <Typography variant="body2">

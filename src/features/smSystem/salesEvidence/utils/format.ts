@@ -1,5 +1,59 @@
 const WARSAW = 'Europe/Warsaw';
 
+export interface RefundTextInput {
+  date: string;
+  amount: number;
+  currency: string;
+  place: 'register' | 'outside' | 'rows' | 'review' | 'pending' | 'ignored';
+  reason: string;
+  documentNumber: string;
+  issued: boolean;
+  review: { title?: string; detail?: string }[];
+}
+
+/** Same wording as the „Na kasie” / „Poza dowodem” table. */
+const SIDE_REASON_LABELS: Record<string, string> = {
+  cod: 'pobranie – paragon na kasie',
+  receipt: 'oznaczone „paragon wystawiony na kasie”',
+  before_evidence: 'zwrot do sprzedaży sprzed pierwszego dowodu',
+  invoice: 'faktura',
+  oss: 'sprzedaż do UE w procedurze OSS',
+  export: 'eksport poza UE',
+  already_issued: 'ujęte w innym dowodzie',
+};
+
+const reasonLabel = (refund: RefundTextInput): string => {
+  if (refund.reason === 'already_issued' && refund.documentNumber)
+    return `ujęte w dowodzie ${refund.documentNumber}`;
+  return SIDE_REASON_LABELS[refund.reason] ?? refund.reason;
+};
+
+/** Short state, the same words as in the evidence settlement. */
+export const refundPlaceLabel = (refund: RefundTextInput): string => {
+  if (refund.place === 'ignored') return 'pominięty w dowodach';
+  if (refund.place === 'register')
+    return `na kasie: ${reasonLabel(refund)} (zwrot)`;
+  if (refund.place === 'outside')
+    return `poza dowodem: ${reasonLabel(refund)} (zwrot)`;
+  if (refund.place === 'rows') {
+    return refund.issued
+      ? 'ujęty w dowodzie jako kwota ujemna'
+      : `wejdzie do dowodu za cały ${monthName(refund.date)} jako kwota ujemna`;
+  }
+  if (refund.place === 'review')
+    return refund.review[0]?.title || 'wymaga wyjaśnienia';
+  if (refund.reason === 'sale_review') return 'czeka na wyjaśnienie sprzedaży';
+  return 'nie wchodzi do dowodu tego miesiąca';
+};
+
+export const refundText = (refund: RefundTextInput): string => {
+  const money = formatMoney(refund.amount, refund.currency);
+  return `Zwrot ${money} z ${formatDay(refund.date)} — ${refundPlaceLabel(refund)}.`;
+};
+
+export const refundNeedsAttention = (refund: RefundTextInput): boolean =>
+  refund.place === 'review' || refund.reason === 'sale_review';
+
 /** 1234567 -> "12 345,67 zł" (grosze in, Polish formatting out). */
 export const formatPln = (cents: number, suffix = ' zł'): string => {
   const sign = cents < 0 ? '-' : '';

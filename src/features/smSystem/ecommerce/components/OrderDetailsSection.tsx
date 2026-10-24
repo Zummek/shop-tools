@@ -23,6 +23,13 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { LabelData } from '../../../../components';
 import { useAppSelector } from '../../../../hooks';
 import { formatPrice } from '../../products/utils';
+import { useOrderEvidenceStatus } from '../../salesEvidence/api';
+import {
+  formatDay,
+  formatMoney,
+  refundNeedsAttention,
+  refundPlaceLabel,
+} from '../../salesEvidence/utils/format';
 import {
   EcommerceOrderDetails,
   EcommerceOrderItem,
@@ -129,6 +136,8 @@ export const OrderDetailsSection = ({
   const branchId = useAppSelector(
     (state) => state.smSystemUser.user?.defaultBranch?.id ?? null,
   );
+  const { data: evidenceStatus } = useOrderEvidenceStatus(ecommerceOrder.id);
+  const refunds = evidenceStatus?.refunds ?? [];
 
   const internalOrderValue = ecommerceOrder.orderItems.reduce(
     (total, item) => total + internalLineValue(item, branchId),
@@ -264,6 +273,38 @@ export const OrderDetailsSection = ({
                     size="small"
                     sx={{ width: 'fit-content' }}
                   />
+                </Stack>
+              )}
+              {refunds.length > 0 && (
+                <Stack spacing={0.5} sx={{ minWidth: 220, maxWidth: 420 }}>
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    fontWeight={500}
+                  >
+                    {refunds.length > 1 ? 'Zwroty' : 'Zwrot'}
+                  </Typography>
+                  {refunds.map((refund) => (
+                    <Typography
+                      key={refund.id}
+                      variant="body2"
+                      color={
+                        refundNeedsAttention(refund)
+                          ? 'warning.main'
+                          : 'text.primary'
+                      }
+                    >
+                      {`${formatMoney(refund.amount, refund.currency)} · ${formatDay(refund.date)}`}
+                      <Typography
+                        component="span"
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ display: 'block' }}
+                      >
+                        {refundPlaceLabel(refund)}
+                      </Typography>
+                    </Typography>
+                  ))}
                 </Stack>
               )}
             </Stack>

@@ -280,6 +280,25 @@ export interface SyncRun {
   finishedAt: string | null;
 }
 
+export interface OrderRefundReview {
+  key: string;
+  kind: string;
+  title: string;
+  detail: string;
+}
+
+export interface OrderRefundStatus {
+  id: number;
+  date: string;
+  amount: number;
+  currency: string;
+  place: 'register' | 'outside' | 'rows' | 'review' | 'pending' | 'ignored';
+  reason: string;
+  documentNumber: string;
+  issued: boolean;
+  review: OrderRefundReview[];
+}
+
 export interface OrderEvidenceStatus {
   orderId: number;
   channelSupported: boolean;
@@ -309,6 +328,7 @@ export interface OrderEvidenceStatus {
   shippedAt: string | null;
   deliveryCountryCode: string | null;
   canViewEvidence: boolean;
+  refunds: OrderRefundStatus[];
   evaluation?: {
     status: 'register' | 'outside' | 'rows' | 'review' | 'undated';
     reason: string;

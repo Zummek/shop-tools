@@ -80,6 +80,9 @@ export interface SalesExportPending {
   orderDate: string;
   offerName: string;
   quantity: number;
+  reason: string;
+  paymentMethod: string;
+  externalStatus: string;
 }
 
 export interface SalesExportPreview {

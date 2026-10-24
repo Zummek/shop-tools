@@ -6,3 +6,4 @@ export * from './priceScheduleErrors';
 export * from './priceScheduleErrorFeedback';
 export * from './priceScheduleListSearch';
 export * from './salesExportHistory';
+export * from './pendingWaitLabel';

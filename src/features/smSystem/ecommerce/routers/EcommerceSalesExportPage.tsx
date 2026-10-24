@@ -9,6 +9,7 @@ import {
   Link,
   Paper,
   Stack,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
@@ -39,6 +40,7 @@ import {
   formatHistoryLabel,
   orderChannelLabel,
   orderStatusConfig,
+  pendingWaitLabel,
 } from '../utils';
 
 const gridSx = {
@@ -167,8 +169,25 @@ const outsideColumns: GridColDef<SalesExportOutside>[] = [
   { field: 'quantity', headerName: 'Sztuki', width: 90, type: 'number' },
 ];
 
+const orderDetailsHref = (orderId: number) =>
+  `#${Pages.smSystemEcommerceOrderDetails.replace(':orderId', String(orderId))}`;
+
 const pendingColumns: GridColDef<SalesExportPending>[] = [
-  { field: 'orderExternalId', headerName: 'Nr zamówienia', width: 160 },
+  {
+    field: 'orderExternalId',
+    headerName: 'Nr zamówienia',
+    width: 160,
+    renderCell: ({ row }) => (
+      <Link
+        href={orderDetailsHref(row.orderId)}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(event) => event.stopPropagation()}
+      >
+        {row.orderExternalId || '—'}
+      </Link>
+    ),
+  },
   {
     field: 'channel',
     headerName: 'Kanał',
@@ -189,6 +208,20 @@ const pendingColumns: GridColDef<SalesExportPending>[] = [
   },
   { field: 'offerName', headerName: 'Oferta', flex: 1, minWidth: 180 },
   { field: 'quantity', headerName: 'Ilość', width: 90, type: 'number' },
+  {
+    field: 'reason',
+    headerName: 'Dlaczego czeka',
+    flex: 1.2,
+    minWidth: 260,
+    valueGetter: (_value, row) => pendingWaitLabel(row),
+    renderCell: ({ value }) => (
+      <Tooltip title={value || ''}>
+        <Typography variant="body2" noWrap sx={{ width: '100%' }}>
+          {value}
+        </Typography>
+      </Tooltip>
+    ),
+  },
 ];
 
 const historyFileName = (row: SalesExportRecord) =>
@@ -600,7 +633,7 @@ export const EcommerceSalesExportPage = () => {
               <Typography variant="h6">{'Oczekujące'}</Typography>
               <Typography variant="body2">
                 {
-                  'To zamówienia bez płatności i bez pobrania. Opłacone, za pobraniem i wysłane są już w pliku.'
+                  'To zamówienia bez płatności i bez pobrania. Opłacone, za pobraniem i wysłane są już w pliku. Kolumna „Dlaczego czeka” mówi, na czym stanęło konkretne zamówienie.'
                 }
                 {preview.pendingTruncated
                   ? ` Pokazane są pierwsze zamówienia z ${preview.summary.pendingCount}.`

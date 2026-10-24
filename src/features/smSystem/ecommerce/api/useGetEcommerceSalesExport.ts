@@ -58,6 +58,32 @@ export interface SalesExportOutside {
   quantity: number;
 }
 
+export type SalesExportEvidenceReason =
+  | 'receipt'
+  | 'invoice'
+  | 'cod'
+  | 'oss'
+  | 'export'
+  | 'invoice_buyer_unknown'
+  | 'missing_country'
+  | 'wsto_unset';
+
+export interface SalesExportEvidenceRules {
+  codTreatment: 'on_register' | 'in_evidence';
+  consumerInvoiceTreatment: 'exclude' | 'include';
+  wstoMode: 'unset' | 'pl_vat' | 'oss';
+}
+
+export interface SalesExportExcluded {
+  orderId: number;
+  channel: string;
+  orderExternalId: string;
+  orderDate: string;
+  quantity: number;
+  reason: SalesExportEvidenceReason;
+  disposition: 'exclude' | 'hold';
+}
+
 export interface SalesExportCorrection {
   orderId: number;
   orderItemId: number;
@@ -68,7 +94,7 @@ export interface SalesExportCorrection {
   internalId: string;
   exportedPieces: number;
   currentPieces: number;
-  reason: 'canceled' | 'quantity' | 'product';
+  reason: 'canceled' | 'quantity' | 'product' | SalesExportEvidenceReason;
 }
 
 export interface SalesExportPending {
@@ -109,13 +135,18 @@ export interface SalesExportPreview {
     outsideCount: number;
     correctionsCount: number;
     pendingCount: number;
+    excludedCount: number;
   };
   lines: SalesExportLine[];
   outsideRange: SalesExportOutside[];
   skipped: SalesExportSkipped[];
   corrections: SalesExportCorrection[];
+  correctionsTruncated: boolean;
   pending: SalesExportPending[];
   pendingTruncated: boolean;
+  excluded: SalesExportExcluded[];
+  excludedTruncated: boolean;
+  evidenceRules: SalesExportEvidenceRules;
 }
 
 export const useGetEcommerceSalesExport = () => {

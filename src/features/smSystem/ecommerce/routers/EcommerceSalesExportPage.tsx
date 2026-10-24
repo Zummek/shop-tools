@@ -22,6 +22,9 @@ import { useAppSelector } from '../../../../hooks';
 import { Pages } from '../../../../utils';
 import {
   SalesExportCorrection,
+  SalesExportEvidenceReason,
+  SalesExportEvidenceRules,
+  SalesExportExcluded,
   SalesExportLine,
   SalesExportOutside,
   SalesExportPending,
@@ -62,10 +65,41 @@ const skipReasonLabel = (reason: SalesExportSkipped['reason']) => {
   return 'Brak produktu w katalogu';
 };
 
+const evidenceReasonLabel = (reason: SalesExportEvidenceReason | string) => {
+  if (reason === 'receipt') return 'Paragon na kasie';
+  if (reason === 'invoice') return 'Faktura poza dowodem';
+  if (reason === 'cod') return 'Pobranie na kasie';
+  if (reason === 'oss') return 'Sprzedaż OSS';
+  if (reason === 'export') return 'Eksport poza UE';
+  if (reason === 'invoice_buyer_unknown') return 'Faktura, NIP nieznany';
+  if (reason === 'missing_country') return 'Brak kraju dostawy';
+  if (reason === 'wsto_unset') return 'Sprzedaż do UE bez rozliczenia';
+  return reason;
+};
+
 const correctionReasonLabel = (reason: SalesExportCorrection['reason']) => {
   if (reason === 'canceled') return 'Anulowane';
   if (reason === 'quantity') return 'Mniejsza liczba sztuk';
-  return 'Inny produkt';
+  if (reason === 'product') return 'Inny produkt';
+  return evidenceReasonLabel(reason);
+};
+
+const evidenceRulesText = (rules: SalesExportEvidenceRules) => {
+  const cod =
+    rules.codTreatment === 'in_evidence'
+      ? 'Pobrania wchodzą do pliku.'
+      : 'Pobrania zostają na kasie, poza plikiem.';
+  const invoices =
+    rules.consumerInvoiceTreatment === 'include'
+      ? 'Faktura bez NIP wchodzi do pliku. Faktura z NIP zostaje poza plikiem.'
+      : 'Faktury, także bez NIP, zostają poza plikiem.';
+  const wsto =
+    rules.wstoMode === 'oss'
+      ? 'Sprzedaż do innych krajów UE jest w OSS i zostaje poza plikiem.'
+      : rules.wstoMode === 'pl_vat'
+        ? 'Sprzedaż do innych krajów UE wchodzi do pliku z polskim VAT.'
+        : 'Sprzedaż do innych krajów UE czeka, dopóki w ustawieniach firmy nie wybierzesz rozliczenia.';
+  return `${cod} ${invoices} ${wsto} Paragon na kasie zawsze zostaje poza plikiem.`;
 };
 
 const skippedName = (row: SalesExportSkipped) => {
@@ -172,6 +206,52 @@ const outsideColumns: GridColDef<SalesExportOutside>[] = [
 const orderDetailsHref = (orderId: number) =>
   `#${Pages.smSystemEcommerceOrderDetails.replace(':orderId', String(orderId))}`;
 
+const excludedColumns: GridColDef<SalesExportExcluded>[] = [
+  {
+    field: 'orderExternalId',
+    headerName: 'Nr zamówienia',
+    width: 160,
+    renderCell: ({ row }) => (
+      <Link
+        href={orderDetailsHref(row.orderId)}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(event) => event.stopPropagation()}
+      >
+        {row.orderExternalId || '—'}
+      </Link>
+    ),
+  },
+  {
+    field: 'channel',
+    headerName: 'Kanał',
+    width: 130,
+    valueFormatter: (value: string) => orderChannelLabel(value),
+  },
+  {
+    field: 'orderDate',
+    headerName: 'Data zamówienia',
+    width: 170,
+    valueFormatter: (value: string) => formatExportMoment(value),
+  },
+  {
+    field: 'reason',
+    headerName: 'Powód',
+    flex: 1,
+    minWidth: 220,
+    valueFormatter: (value: SalesExportExcluded['reason']) =>
+      evidenceReasonLabel(value),
+  },
+  {
+    field: 'disposition',
+    headerName: 'Status',
+    width: 140,
+    valueFormatter: (value: SalesExportExcluded['disposition']) =>
+      value === 'hold' ? 'Wstrzymane' : 'Poza plikiem',
+  },
+  { field: 'quantity', headerName: 'Sztuki', width: 90, type: 'number' },
+];
+
 const pendingColumns: GridColDef<SalesExportPending>[] = [
   {
     field: 'orderExternalId',
@@ -268,7 +348,7 @@ export const EcommerceSalesExportPage = () => {
       {
         field: 'reason',
         headerName: 'Co się zmieniło',
-        width: 180,
+        width: 240,
         valueFormatter: (value: SalesExportCorrection['reason']) =>
           correctionReasonLabel(value),
       },
@@ -352,9 +432,17 @@ export const EcommerceSalesExportPage = () => {
         <Typography variant="h5">{'Eksport do PC Market'}</Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
           {
-            'Suma sztuk z wysłanych zamówień. Plik wgrywa się jako rozchód, ilości są dodatnie. Drugi import tego samego pliku zdejmie stan drugi raz.'
+            'Suma sztuk ze sprzedaży, która wchodzi do dowodu bezrachunkowego. Plik wgrywa się jako rozchód, ilości są dodatnie. Drugi import tego samego pliku zdejmie stan drugi raz.'
           }
         </Typography>
+        {preview?.evidenceRules && (
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            {evidenceRulesText(preview.evidenceRules)}{' '}
+            <Link component={RouterLink} to={Pages.smSystemCompanySettings}>
+              {'Ustawienia firmy'}
+            </Link>
+          </Typography>
+        )}
       </Box>
 
       {history.length > 0 && (
@@ -512,6 +600,7 @@ export const EcommerceSalesExportPage = () => {
                 ['Linie w pliku', summary.linesCount],
                 ['Sztuki', summary.piecesCount],
                 ['Pominięte', summary.skippedCount],
+                ['Poza plikiem', summary.excludedCount],
               ].map(([label, value]) => (
                 <Paper
                   key={label}
@@ -572,6 +661,33 @@ export const EcommerceSalesExportPage = () => {
             </Stack>
           )}
 
+          {(preview.excluded.length > 0 ||
+            preview.summary.excludedCount > 0) && (
+            <Stack spacing={1}>
+              <Typography variant="h6">{'Poza plikiem'}</Typography>
+              <Typography variant="body2">
+                {
+                  'Wstrzymane wejdą do późniejszego pliku, gdy da się je zaliczyć do dowodu. Lista pokazuje zamówienia, których ten plik jeszcze nie zdjął, od najnowszych.'
+                }
+                {preview.excludedTruncated
+                  ? ` Pokazane są pierwsze zamówienia z ${preview.summary.excludedCount}.`
+                  : ''}
+              </Typography>
+              <Box height={Math.min(120 + preview.excluded.length * 52, 420)}>
+                <DataGrid
+                  sx={gridSx}
+                  rows={preview.excluded}
+                  columns={excludedColumns}
+                  getRowId={(row) => row.orderId}
+                  disableRowSelectionOnClick
+                  hideFooter={preview.excluded.length <= 25}
+                  pageSizeOptions={[25, 50]}
+                  localeText={{ noRowsLabel: 'Brak zamówień poza plikiem' }}
+                />
+              </Box>
+            </Stack>
+          )}
+
           {skippedRows.length > 0 && (
             <Stack spacing={1}>
               <Typography variant="h6">{'Pominięte'}</Typography>
@@ -608,8 +724,11 @@ export const EcommerceSalesExportPage = () => {
               <Typography variant="h6">{'Korekty'}</Typography>
               <Typography variant="body2">
                 {
-                  'To już zeszło w pliku, a bieżący stan jest inny. Plik nie zawiera ujemnej ilości. Korekta znika po odhaczeniu i wraca, gdy różnica znowu się zmieni.'
+                  'To już zeszło w pliku, a bieżący stan jest inny. Paragon oznaczony po pobraniu pliku oraz zamówienie wyeksportowane już według dowodu, które potem wypadło z dowodu, mają teraz 0 sztuk — stan w PC Market trzeba przywrócić ręcznie. Po odhaczeniu te sztuki mogą wrócić do następnego pliku, gdy zamówienie znowu wchodzi do dowodu. Plik zawiera tylko ilości dodatnie. Korekta znika po odhaczeniu i wraca, gdy różnica znowu się zmieni.'
                 }
+                {preview.correctionsTruncated
+                  ? ` Pokazane są pierwsze korekty z ${preview.summary.correctionsCount}.`
+                  : ''}
               </Typography>
               <Box
                 height={Math.min(160 + preview.corrections.length * 52, 420)}
@@ -633,7 +752,7 @@ export const EcommerceSalesExportPage = () => {
               <Typography variant="h6">{'Oczekujące'}</Typography>
               <Typography variant="body2">
                 {
-                  'To zamówienia bez płatności i bez pobrania. Opłacone, za pobraniem i wysłane są już w pliku. Kolumna „Dlaczego czeka” mówi, na czym stanęło konkretne zamówienie.'
+                  'To zamówienia, które jeszcze nie schodzą ze stanu, bo brakuje płatności. Pobrania przy ustawieniu „Na kasie”, paragony i faktury poza dowodem są na liście „Poza plikiem”.'
                 }
                 {preview.pendingTruncated
                   ? ` Pokazane są pierwsze zamówienia z ${preview.summary.pendingCount}.`

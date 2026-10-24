@@ -150,7 +150,8 @@ const offerTooltipLine = (offer: ChannelListingOffer) => {
   parts.push(
     offer.stockAvailable == null ? 'stan —' : `stan ${offer.stockAvailable}`,
   );
-  if (offer.unitsInOffer > 1) parts.push(`${offer.unitsInOffer} szt. w ofercie`);
+  if (offer.unitsInOffer > 1)
+    parts.push(`${offer.unitsInOffer} szt. w ofercie`);
   if (offer.marketplace) parts.push(offer.marketplace);
   if (offer.lastSyncedAt)
     parts.push(dayjs(offer.lastSyncedAt).format('DD.MM.YYYY HH:mm'));
@@ -213,11 +214,11 @@ const skuColumn: GridColDef<ProductSalesListItem> = {
 const trailingColumns: GridColDef<ProductSalesListItem>[] = [
   {
     field: 'channels',
-    headerName: 'Kanały',
+    headerName: 'Kanały ze stanem w ofertach',
     description:
       'Suma stanu aktywnych ofert. Sztuki zestawu i magazyn kanału są w podpowiedzi.',
     flex: 1,
-    minWidth: 200,
+    minWidth: 240,
     sortable: false,
     renderCell: (params) => (
       <ChannelListingsCell listings={params.row.channelListings} />

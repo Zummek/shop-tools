@@ -148,30 +148,11 @@ const skuColumn: GridColDef<ProductSalesListItem> = {
   sortable: false,
 };
 
-const vatColumn: GridColDef<ProductSalesListItem> = {
-  field: 'vat',
-  headerName: 'VAT',
-  width: 64,
-  minWidth: 52,
-  align: 'right',
-  headerAlign: 'right',
-  sortable: false,
-  valueFormatter: (value: number) => (value != null ? `${value}%` : '—'),
-};
-
 const trailingColumns: GridColDef<ProductSalesListItem>[] = [
-  {
-    field: 'barcodes',
-    headerName: 'Kody EAN',
-    flex: 1,
-    minWidth: 140,
-    sortable: false,
-    valueGetter: (_value, row) => (row.barcodes || []).join(', '),
-  },
   {
     field: 'channels',
     headerName: 'Kanały',
-    width: 240,
+    flex: 1,
     minWidth: 160,
     sortable: false,
     renderCell: (params) => (
@@ -402,7 +383,6 @@ export const ProductsListPage = () => {
       void api.autosizeColumns({
         columns: [
           'internalId',
-          'vat',
           'units',
           'revenueCents',
           'ordersCount',
@@ -684,7 +664,6 @@ export const ProductsListPage = () => {
     return [
       nameColumn,
       skuColumn,
-      vatColumn,
       ...salesColumns,
       ...trailingColumns,
       ...(canViewPurchases && missingPurchaseCost ? [manualColumn] : []),

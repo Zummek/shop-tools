@@ -249,7 +249,14 @@ const excludedColumns: GridColDef<SalesExportExcluded>[] = [
     valueFormatter: (value: SalesExportExcluded['disposition']) =>
       value === 'hold' ? 'Wstrzymane' : 'Poza plikiem',
   },
-  { field: 'quantity', headerName: 'Sztuki', width: 90, type: 'number' },
+  {
+    field: 'quantity',
+    headerName: 'Ilość szt. produktów w zamówieniu',
+    description:
+      'Suma sztuk produktów w tym zamówieniu, których ten plik jeszcze nie zdjął.',
+    width: 200,
+    type: 'number',
+  },
 ];
 
 const pendingColumns: GridColDef<SalesExportPending>[] = [
@@ -678,6 +685,7 @@ export const EcommerceSalesExportPage = () => {
                   sx={gridSx}
                   rows={preview.excluded}
                   columns={excludedColumns}
+                  columnHeaderHeight={72}
                   getRowId={(row) => row.orderId}
                   disableRowSelectionOnClick
                   hideFooter={preview.excluded.length <= 25}

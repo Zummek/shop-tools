@@ -97,13 +97,7 @@ const ALLEGRO_TERMINAL = new Set([
   'auto_cancelled',
   'buyer_cancelled',
 ]);
-const ERLI_TERMINAL = new Set([
-  'sent',
-  'delivered',
-  'cancelled',
-  'canceled',
-  'returned',
-]);
+const ERLI_TERMINAL = new Set(['cancelled', 'canceled', 'returned']);
 
 const CHANNEL_LABELS: Record<string, string> = {
   allegro: 'Allegro',
@@ -135,6 +129,10 @@ const ERLI_STATUS_LABELS: Record<string, string> = {
   ready_to_send: 'Gotowe do wysyłki',
   sent: 'Wysłane',
   delivered: 'Dostarczone',
+  received: 'Odebrane',
+  readytopickup: 'Gotowe do odbioru',
+  returningtosender: 'Wraca do nadawcy',
+  pickuptimeexpired: 'Minął czas odbioru',
   cancelled: 'Anulowane',
   canceled: 'Anulowane',
   returned: 'Zwrócone',

@@ -20,6 +20,7 @@ import { Link as RouterLink, Navigate } from 'react-router-dom';
 
 import { useAppSelector } from '../../../../hooks';
 import { Pages } from '../../../../utils';
+import { formatPrice } from '../../products/utils';
 import {
   SalesExportCorrection,
   SalesExportEvidenceReason,
@@ -74,6 +75,7 @@ const evidenceReasonLabel = (reason: SalesExportEvidenceReason | string) => {
   if (reason === 'invoice_buyer_unknown') return 'Faktura, NIP nieznany';
   if (reason === 'missing_country') return 'Brak kraju dostawy';
   if (reason === 'wsto_unset') return 'Sprzedaż do UE bez rozliczenia';
+  if (reason === 'missing_fx') return 'Brak kursu NBP';
   return reason;
 };
 
@@ -141,6 +143,16 @@ const lineColumns: GridColDef<SalesExportLine>[] = [
     headerName: 'Razem',
     width: 100,
     type: 'number',
+  },
+  {
+    field: 'netGrosze',
+    headerName: 'Netto',
+    description:
+      'Suma netto z zamówień. Tę kwotę dostaje PC Market w polu Wartosc.',
+    width: 120,
+    type: 'number',
+    valueFormatter: (value: number | null) =>
+      value == null ? '—' : formatPrice(value, 'PLN'),
   },
 ];
 
@@ -439,7 +451,7 @@ export const EcommerceSalesExportPage = () => {
         <Typography variant="h5">{'Eksport do PC Market'}</Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
           {
-            'Suma sztuk ze sprzedaży, która wchodzi do dowodu bezrachunkowego. Plik wgrywa się jako rozchód, ilości są dodatnie. Drugi import tego samego pliku zdejmie stan drugi raz.'
+            'Suma sztuk ze sprzedaży, która wchodzi do dowodu bezrachunkowego, z ceną netto z zamówienia. Plik wgrywa się w PC Market: Kontrola → Obsługa kas → ręczne sporządzanie dokumentu. Ilości są dodatnie. Drugi import tego samego pliku zdejmie stan drugi raz.'
           }
         </Typography>
         {preview?.evidenceRules && (
@@ -606,6 +618,16 @@ export const EcommerceSalesExportPage = () => {
                 ['Zamówienia', summary.ordersCount],
                 ['Linie w pliku', summary.linesCount],
                 ['Sztuki', summary.piecesCount],
+                [
+                  'Netto',
+                  formatPrice(
+                    (preview?.lines ?? []).reduce(
+                      (sum, row) => sum + (row.netGrosze || 0),
+                      0,
+                    ),
+                    'PLN',
+                  ),
+                ],
                 ['Pominięte', summary.skippedCount],
                 ['Poza plikiem', summary.excludedCount],
               ].map(([label, value]) => (

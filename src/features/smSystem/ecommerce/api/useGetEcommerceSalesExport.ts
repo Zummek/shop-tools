@@ -25,6 +25,7 @@ export interface SalesExportLine {
   vat: number | null;
   quantities: SalesExportQuantities;
   quantity: number;
+  netGrosze: number | null;
 }
 
 export interface SalesExportSkipped {
@@ -66,7 +67,8 @@ export type SalesExportEvidenceReason =
   | 'export'
   | 'invoice_buyer_unknown'
   | 'missing_country'
-  | 'wsto_unset';
+  | 'wsto_unset'
+  | 'missing_fx';
 
 export interface SalesExportEvidenceRules {
   codTreatment: 'on_register' | 'in_evidence';

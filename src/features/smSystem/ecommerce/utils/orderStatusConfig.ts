@@ -124,7 +124,7 @@ const ALLEGRO_STATUS_LABELS: Record<string, string> = {
 
 const ERLI_STATUS_LABELS: Record<string, string> = {
   pending: 'Oczekujące',
-  purchased: 'Opłacone',
+  purchased: 'Kupione',
   readytosend: 'Gotowe do wysyłki',
   ready_to_send: 'Gotowe do wysyłki',
   sent: 'Wysłane',
@@ -136,6 +136,30 @@ const ERLI_STATUS_LABELS: Record<string, string> = {
   cancelled: 'Anulowane',
   canceled: 'Anulowane',
   returned: 'Zwrócone',
+};
+
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  COMPLETED: 'Opłacone',
+  PENDING: 'Oczekuje na wpłatę',
+  COD: 'Za pobraniem',
+  CANCELED: 'Anulowana',
+  CANCELLED: 'Anulowana',
+  FAILED: 'Nieudana',
+  ONLINE: 'Płatność online',
+  CASH_ON_DELIVERY: 'Za pobraniem',
+  EXTENDED_TERM: 'Płatność odroczona',
+  WIRE_TRANSFER: 'Przelew',
+  P24: 'Przelewy24',
+  PAYU: 'PayU',
+  AF: 'Allegro Finance',
+};
+
+export const paymentMethodLabel = (
+  method: string | null | undefined,
+): string => {
+  const raw = (method || '').trim();
+  if (!raw) return '';
+  return PAYMENT_METHOD_LABELS[raw.toUpperCase()] || raw;
 };
 
 export const externalStatusLabel = (

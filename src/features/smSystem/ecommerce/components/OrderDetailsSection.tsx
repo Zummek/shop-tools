@@ -41,6 +41,7 @@ import {
   channelLabel,
   externalStatusLabel,
   orderStatusConfig,
+  paymentMethodLabel,
   SM_TO_WOO_STATUS,
   WOO_STATUS_OPTIONS,
   WooStatusValue,
@@ -191,7 +192,9 @@ export const OrderDetailsSection = ({
             >
               <LabelData
                 label="Metoda płatności"
-                value={ecommerceOrder.paymentMethod}
+                value={
+                  paymentMethodLabel(ecommerceOrder.paymentMethod) || 'brak'
+                }
                 minWidth={FIELD_MIN_WIDTH}
               />
               {ecommerceOrder.deliveryGroupName ? (

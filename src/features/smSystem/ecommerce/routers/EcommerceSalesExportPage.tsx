@@ -83,6 +83,7 @@ const correctionReasonLabel = (reason: SalesExportCorrection['reason']) => {
   if (reason === 'canceled') return 'Anulowane';
   if (reason === 'quantity') return 'Mniejsza liczba sztuk';
   if (reason === 'product') return 'Inny produkt';
+  if (reason === 'return') return 'Zwrot';
   return evidenceReasonLabel(reason);
 };
 
@@ -754,7 +755,7 @@ export const EcommerceSalesExportPage = () => {
               <Typography variant="h6">{'Korekty'}</Typography>
               <Typography variant="body2">
                 {
-                  'To już zeszło w pliku, a bieżący stan jest inny. Paragon oznaczony po pobraniu pliku oraz zamówienie wyeksportowane już według dowodu, które potem wypadło z dowodu, mają teraz 0 sztuk — stan w PC Market trzeba przywrócić ręcznie. Po odhaczeniu te sztuki mogą wrócić do następnego pliku, gdy zamówienie znowu wchodzi do dowodu. Plik zawiera tylko ilości dodatnie. Korekta znika po odhaczeniu i wraca, gdy różnica znowu się zmieni.'
+                  'To już zeszło w pliku, a bieżący stan jest inny. Paragon oznaczony po pobraniu pliku oraz zamówienie wyeksportowane już według dowodu, które potem wypadło z dowodu, mają teraz 0 sztuk — stan w PC Market trzeba przywrócić ręcznie. Zwrot towaru jest na tej liście tak samo: w pliku tyle zeszło, teraz tyle zostaje, i po odhaczeniu te sztuki nie wchodzą do następnego pliku. Po odhaczeniu pozostałe korekty mogą wrócić do następnego pliku, gdy zamówienie znowu wchodzi do dowodu. Plik zawiera tylko ilości dodatnie. Korekta znika po odhaczeniu i wraca, gdy różnica znowu się zmieni.'
                 }
                 {preview.correctionsTruncated
                   ? ` Pokazane są pierwsze korekty z ${preview.summary.correctionsCount}.`

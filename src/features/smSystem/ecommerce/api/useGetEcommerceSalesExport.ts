@@ -96,7 +96,12 @@ export interface SalesExportCorrection {
   internalId: string;
   exportedPieces: number;
   currentPieces: number;
-  reason: 'canceled' | 'quantity' | 'product' | SalesExportEvidenceReason;
+  reason:
+    | 'canceled'
+    | 'quantity'
+    | 'product'
+    | 'return'
+    | SalesExportEvidenceReason;
 }
 
 export interface SalesExportPending {

@@ -14,6 +14,7 @@ interface OrderStatusChipProps {
   size?: 'small' | 'medium';
   onStatusChange?: (status: OrderStatus) => void;
   isUpdating?: boolean;
+  allowedStatuses?: OrderStatus[];
 }
 
 export const OrderStatusChip = ({
@@ -21,14 +22,17 @@ export const OrderStatusChip = ({
   size = 'small',
   onStatusChange,
   isUpdating = false,
+  allowedStatuses,
 }: OrderStatusChipProps) => {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const knownStatus = isOrderStatus(status) ? status : undefined;
   const config = knownStatus
     ? orderStatusConfig[knownStatus]
     : { label: status || '—', color: 'default' as const };
-  const selectableStatuses = getSelectableOrderStatuses(knownStatus);
-  const isInteractive = Boolean(onStatusChange);
+  const selectableStatuses = getSelectableOrderStatuses(knownStatus).filter(
+    (nextStatus) => !allowedStatuses || allowedStatuses.includes(nextStatus),
+  );
+  const isInteractive = Boolean(onStatusChange) && selectableStatuses.length > 0;
 
   const handleOpen = (event: MouseEvent<HTMLElement>) => {
     event.stopPropagation();

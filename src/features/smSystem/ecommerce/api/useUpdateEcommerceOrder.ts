@@ -156,7 +156,13 @@ export const useUpdateEcommerceOrder = () => {
         // Caller shows conflict dialog
         return;
       }
-      notify('error', 'Błąd podczas aktualizacji zamówienia');
+      const message = error instanceof Error ? error.message : '';
+      notify(
+        'error',
+        message && !message.startsWith('Update failed')
+          ? message
+          : 'Błąd podczas aktualizacji zamówienia',
+      );
     },
   });
 

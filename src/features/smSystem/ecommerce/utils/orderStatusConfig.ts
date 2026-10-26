@@ -162,6 +162,13 @@ export const paymentMethodLabel = (
   return PAYMENT_METHOD_LABELS[raw.toUpperCase()] || raw;
 };
 
+export const allegroPaymentStarted = (
+  source: string,
+  externalStatus: string | null | undefined,
+): boolean =>
+  source === 'allegro' &&
+  (externalStatus || '').trim().toLowerCase() === 'filled_in';
+
 export const externalStatusLabel = (
   source: string,
   status: string | null | undefined,

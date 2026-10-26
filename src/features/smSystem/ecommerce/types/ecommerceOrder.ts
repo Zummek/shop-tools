@@ -43,6 +43,7 @@ export interface EcommerceOrderDetails {
   orderItems: EcommerceOrderItem[];
   itemsAmount: number;
   productsAmount: number;
+  packingBlocked: boolean;
   createdAt: string;
   updatedAt: string;
 }

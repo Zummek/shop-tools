@@ -37,6 +37,7 @@ import {
 } from '../types';
 import {
   NEXT_ORDER_STATUS,
+  allegroPaymentStarted,
   canRefreshOrderStatus,
   channelLabel,
   externalStatusLabel,
@@ -115,7 +116,12 @@ export const OrderDetailsSection = ({
       ecommerceOrder.externalStatus,
     );
 
-  const nextStatus = NEXT_ORDER_STATUS[status];
+  const paymentStarted = allegroPaymentStarted(
+    ecommerceOrder.orderSource,
+    ecommerceOrder.externalStatus,
+  );
+  const packingBlocked = ecommerceOrder.packingBlocked || paymentStarted;
+  const nextStatus = packingBlocked ? undefined : NEXT_ORDER_STATUS[status];
   const canCancel = status !== 'canceled';
 
   const [selectedWooStatus, setSelectedWooStatus] = useState<WooStatusValue>(
@@ -242,6 +248,7 @@ export const OrderDetailsSection = ({
                   status={status}
                   onStatusChange={onSmStatusChange}
                   isUpdating={isUpdatingStatus}
+                  allowedStatuses={packingBlocked ? ['canceled'] : undefined}
                 />
               </Stack>
               {isWooOrder ? (

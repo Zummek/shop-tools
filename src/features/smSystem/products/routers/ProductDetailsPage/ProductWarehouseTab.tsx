@@ -49,6 +49,8 @@ import {
 } from '../../types';
 import { formatPrice } from '../../utils';
 
+import { ListedStockPanel } from './ListedStockPanel';
+
 const transferStatusLabels: Record<string, string> = {
   PREPARING: 'W trakcie tworzenia',
   PREPARED: 'Przygotowany',
@@ -366,6 +368,8 @@ export const ProductWarehouseTab = ({ product }: ProductWarehouseTabProps) => {
           </TableBody>
         </Table>
       </Stack>
+
+      <ListedStockPanel product={product} />
 
       {canViewPurchases && <ManualPurchaseSection product={product} />}
 

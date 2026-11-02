@@ -71,6 +71,8 @@ export interface EcommerceStockBlockedOffer {
 }
 
 export interface EcommerceStock {
+  offersActive: number;
+  offersPublishing: number;
   warehousePieces: number | null;
   syncedAt: string | null;
   soldPieces: number;
@@ -96,6 +98,7 @@ export interface ChannelListingOffer {
   unitsInOffer: number;
   ended: boolean;
   lastSyncedAt: string | null;
+  stockPublishEnabled: boolean;
 }
 
 export interface ChannelListing {

@@ -33,6 +33,7 @@ export enum Pages {
   smSystemEcommerceIntegrationsWooCommerce = '/sm-system/ecommerce/integrations/woocommerce',
   smSystemEcommerceIntegrationsErli = '/sm-system/ecommerce/integrations/erli',
   smSystemEcommercePriceSchedules = '/sm-system/ecommerce/price-schedules',
+  smSystemEcommerceOffers = '/sm-system/ecommerce/offers',
   smSystemEcommerceDeliveryGroups = '/sm-system/ecommerce/delivery-groups',
   smSystemProducts = '/sm-system/products',
   smSystemProductDetails = '/sm-system/products/:productId',

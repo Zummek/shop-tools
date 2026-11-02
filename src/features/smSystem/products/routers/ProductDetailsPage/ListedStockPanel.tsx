@@ -125,6 +125,10 @@ export const ListedStockPanel = ({ product }: { product: Product }) => {
     : 'Od ostatniego pobrania stanu.';
   const listed =
     stock.listedPieces == null ? '—' : piecesLabel(stock.listedPieces);
+  const publishingText =
+    stock.offersActive === 0
+      ? 'brak aktywnych ofert'
+      : `${stock.offersPublishing} z ${stock.offersActive} ofert`;
   const reserveText =
     product.shopReservePieces == null
       ? `Domyślne (${piecesLabel(stock.reservePieces)})`
@@ -158,6 +162,11 @@ export const ListedStockPanel = ({ product }: { product: Product }) => {
               label="Wystawione w e-commerce"
               value={listed}
               weight="bold"
+            />
+            <LabelData
+              label="Aktualizacja stanu"
+              value={publishingText}
+              hint="Ile aktywnych ofert tego produktu ma włączone „Aktualizuj stan”. Pozostałych SM nie zmienia."
             />
           </Stack>
           {stock.shortagePieces > 0 && (

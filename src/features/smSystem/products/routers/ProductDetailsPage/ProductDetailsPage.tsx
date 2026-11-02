@@ -12,10 +12,12 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
   Menu,
   MenuItem,
   Paper,
   Stack,
+  Switch,
   Tab,
   Tabs,
   Typography,
@@ -39,6 +41,7 @@ import {
   useEnablePriceSchedule,
   useGetPriceSchedules,
   useGetProductChannelLinks,
+  useSetOfferStockPublish,
 } from '../../../ecommerce/api';
 import { SchedulePriceChangeModal } from '../../../ecommerce/modals';
 import {
@@ -373,6 +376,8 @@ const ChannelOfferCard = ({ link, schedules }: ChannelOfferCardProps) => {
     useDisablePriceSchedule();
   const { enablePriceSchedule, isPending: isEnabling } =
     useEnablePriceSchedule();
+  const { setOfferStockPublish, isPending: isSavingStockPublish } =
+    useSetOfferStockPublish();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
@@ -425,6 +430,20 @@ const ChannelOfferCard = ({ link, schedules }: ChannelOfferCardProps) => {
       schedule.originalPrice,
       schedule.currency,
     )} i harmonogram się wyłączy.`;
+  };
+
+  const handleStockPublish = async (enabled: boolean) => {
+    try {
+      await setOfferStockPublish({ id: link.id, enabled });
+      notify(
+        'success',
+        enabled
+          ? 'Aktualizacja stanu włączona'
+          : 'Aktualizacja stanu wyłączona',
+      );
+    } catch {
+      notify('error', 'Nie udało się zmienić aktualizacji stanu');
+    }
   };
 
   const handleEnable = async () => {
@@ -497,6 +516,18 @@ const ChannelOfferCard = ({ link, schedules }: ChannelOfferCardProps) => {
             value={
               link.stockAvailable != null ? String(link.stockAvailable) : '—'
             }
+          />
+          <FormControlLabel
+            sx={{ mx: 0 }}
+            control={
+              <Switch
+                checked={link.stockPublishEnabled}
+                disabled={isSavingStockPublish}
+                onChange={(_event, checked) => void handleStockPublish(checked)}
+                slotProps={{ input: { 'aria-label': 'Aktualizuj stan' } }}
+              />
+            }
+            label="Aktualizuj stan"
           />
           <LabelData
             label="Sprzedano"

@@ -133,17 +133,73 @@ const listingWarns = (listing: ChannelListing) => {
   );
 };
 
+const formatListedPieces = (value: number) =>
+  value.toLocaleString('pl-PL', { maximumFractionDigits: 0 });
+
+const offerUnits = (offer: ChannelListingOffer) =>
+  offer.unitsInOffer > 0 ? offer.unitsInOffer : 1;
+
+const offerKey = (channel: string, offer: ChannelListingOffer) =>
+  `${channel}:${offer.externalOfferId}`;
+
+const divergentOfferKeys = (
+  listings: Partial<Record<ProductSalesChannel, ChannelListing>> | undefined,
+  listed: number | null,
+) => {
+  const active = LISTING_CHANNELS.flatMap((channel) => {
+    const listing = listings?.[channel];
+    if (!listing) return [];
+    // An offer with stock updates off is not set by SM, so its number says
+    // nothing about the other channels.
+    return listing.offers
+      .filter((offer) => !offer.ended && offer.stockPublishEnabled !== false)
+      .map((offer) => ({ channel, offer }));
+  });
+  const keys = new Set<string>();
+  if (active.length === 0) return keys;
+  if (listed != null) {
+    for (const { channel, offer } of active) {
+      const expected = Math.floor(listed / offerUnits(offer));
+      if (offer.stockAvailable !== expected) keys.add(offerKey(channel, offer));
+    }
+    return keys;
+  }
+  const physical = active.map(({ offer }) =>
+    offer.stockAvailable == null
+      ? null
+      : offer.stockAvailable * offerUnits(offer),
+  );
+  const known = physical.filter((value): value is number => value != null);
+  const same = known.length === active.length && new Set(known).size <= 1;
+  if (same) return keys;
+  for (const { channel, offer } of active) keys.add(offerKey(channel, offer));
+  return keys;
+};
+
+const divergentStockLabels = (
+  channel: ProductSalesChannel,
+  listing: ChannelListing,
+  keys: Set<string>,
+) =>
+  listing.offers
+    .filter((offer) => !offer.ended && keys.has(offerKey(channel, offer)))
+    .map((offer) =>
+      offer.stockAvailable == null
+        ? '—'
+        : formatListedPieces(offer.stockAvailable),
+    );
+
 const listingCellLabel = (
   channel: ProductSalesChannel,
   listing: ChannelListing,
+  divergent: Set<string>,
 ) => {
   const name = orderChannelLabel(channel);
   if (listing.status === 'ended') return `${name} (zakończona)`;
-  return name;
+  const stocks = divergentStockLabels(channel, listing, divergent);
+  if (stocks.length === 0) return name;
+  return `${name} ${stocks.join(', ')}`;
 };
-
-const formatListedPieces = (value: number) =>
-  value.toLocaleString('pl-PL', { maximumFractionDigits: 0 });
 
 const offerTooltipLine = (offer: ChannelListingOffer) => {
   const parts = [offer.offerName || offer.externalOfferId];
@@ -153,6 +209,7 @@ const offerTooltipLine = (offer: ChannelListingOffer) => {
   );
   if (offer.unitsInOffer > 1)
     parts.push(`${offer.unitsInOffer} szt. w ofercie`);
+  if (offer.stockPublishEnabled === false) parts.push('aktualizacja wyłączona');
   if (offer.marketplace) parts.push(offer.marketplace);
   if (offer.lastSyncedAt)
     parts.push(dayjs(offer.lastSyncedAt).format('DD.MM.YYYY HH:mm'));
@@ -273,20 +330,25 @@ const trailingColumns: GridColDef<ProductSalesListItem>[] = [
     field: 'channels',
     headerName: 'Kanały w ofertach',
     description:
-      'Kanały, na których produkt ma ofertę. Liczba sztuk jest w kolumnie Wystawione. Szczegóły ofert są w podpowiedzi.',
+      'Kanały, na których produkt ma ofertę. Liczba przy kanale pojawia się, gdy stan oferty nie jest liczbą z kolumny Wystawione. Szczegóły ofert są w podpowiedzi.',
     flex: 1,
     minWidth: 180,
     sortable: false,
     renderCell: (params) => (
-      <ChannelListingsCell listings={params.row.channelListings} />
+      <ChannelListingsCell
+        listings={params.row.channelListings}
+        listedPieces={params.row.listedPieces}
+      />
     ),
   },
 ];
 
 const ChannelListingsCell = ({
   listings,
+  listedPieces,
 }: {
   listings: Partial<Record<ProductSalesChannel, ChannelListing>> | undefined;
+  listedPieces: number | null;
 }) => {
   const entries = LISTING_CHANNELS.flatMap((channel) => {
     const listing = listings?.[channel];
@@ -294,6 +356,7 @@ const ChannelListingsCell = ({
     return [[channel, listing] as const];
   });
   if (entries.length === 0) return '—';
+  const divergent = divergentOfferKeys(listings, listedPieces);
   const text = entries
     .map(([channel, listing]) => listingTooltip(channel, listing))
     .join('\n\n');
@@ -306,18 +369,24 @@ const ChannelListingsCell = ({
       }
     >
       <Typography variant="body2" noWrap sx={{ width: '100%' }}>
-        {entries.map(([channel, listing], index) => (
-          <Box
-            component="span"
-            key={channel}
-            sx={{
-              color: listingWarns(listing) ? 'warning.main' : 'text.primary',
-            }}
-          >
-            {index > 0 ? ', ' : ''}
-            {listingCellLabel(channel, listing)}
-          </Box>
-        ))}
+        {entries.map(([channel, listing], index) => {
+          const stocks = divergentStockLabels(channel, listing, divergent);
+          return (
+            <Box
+              component="span"
+              key={channel}
+              sx={{
+                color:
+                  listingWarns(listing) || stocks.length > 0
+                    ? 'warning.main'
+                    : 'text.primary',
+              }}
+            >
+              {index > 0 ? ', ' : ''}
+              {listingCellLabel(channel, listing, divergent)}
+            </Box>
+          );
+        })}
       </Typography>
     </Tooltip>
   );

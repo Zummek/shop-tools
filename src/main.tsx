@@ -15,6 +15,7 @@ import { BarcodesGeneratorPage } from './features/BarcodesGenerator/routes/Barco
 import { InvoiceConverterPage } from './features/invoiceConverter/routers/InvoiceConverterPage/InvoiceConverterPage';
 import { AlertsListPage } from './features/smSystem/alerts/routers/AlertsListPage/AlertsListPage';
 import { DeliveryGroupsPage } from './features/smSystem/ecommerce/routers/DeliveryGroupsPage';
+import { EcommerceOffersPage } from './features/smSystem/ecommerce/routers/EcommerceOffersPage';
 import { EcommerceOrderDetailsPage } from './features/smSystem/ecommerce/routers/EcommerceOrderDetailsPage';
 import { EcommerceOrdersListPage } from './features/smSystem/ecommerce/routers/EcommerceOrdersListPage';
 import { EcommerceSalesExportPage } from './features/smSystem/ecommerce/routers/EcommerceSalesExportPage';
@@ -236,6 +237,10 @@ const router = sentryCreateHashRouter(
             {
               path: 'price-schedules',
               element: <PriceSchedulesPage />,
+            },
+            {
+              path: 'offers',
+              element: <EcommerceOffersPage />,
             },
             {
               path: 'delivery-groups',

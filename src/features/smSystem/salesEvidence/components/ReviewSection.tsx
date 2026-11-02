@@ -90,6 +90,19 @@ const KIND_META: Record<ReviewKind, KindMeta> = {
     title: 'Zwrot większy niż wpłata',
     hint: 'Dowód nie odejmie więcej, niż kupujący zapłacił – inaczej VAT wyszedłby za niski. Sprawdź kwotę w kanale. Jeśli to pomyłka, pomiń zwrot.',
   },
+  refund_amount_ambiguous: {
+    title: 'Niejednoznaczna kwota zwrotu Erli',
+    hint: 'Erli podało liczbę bez jednostki. Może to być złote albo grosze. Wpisz właściwą kwotę zwrotu, a potem pomiń ten komunikat – dopóki tu wisi, dowodu nie wystawisz.',
+  },
+  refund_unparsed: {
+    title: 'Nieczytelny zwrot Erli',
+    hint: 'Zwrot przyszedł z Erli, ale brakuje kwoty, daty albo identyfikatora. Wpisz datę i kwotę, a potem pomiń ten komunikat. Możesz też poprawić dane w Erli i pobrać okres ponownie.',
+    syncFixes: true,
+  },
+  refund_in_issued_period: {
+    title: 'Zwrot z już wystawionego okresu',
+    hint: 'Data zwrotu wpada w miesiąc, na który dowód jest już wystawiony, a tego zwrotu na nim nie ma. Wystaw korektę tamtego dowodu albo pomiń zwrot.',
+  },
   returned_without_refund: {
     title: 'Zamówienie zwrócone, ale bez zwrotu pieniędzy',
     hint: 'Wpisz zwrot ręcznie albo potwierdź, że pieniądze nie wróciły do kupującego.',
@@ -285,6 +298,68 @@ export const ReviewSection = ({
           'ignore-refund',
           { refundId: item.refundId },
           'Pomiń ten zwrot',
+        );
+      case 'refund_unparsed':
+        return (
+          <>
+            {item.orderId ? (
+              <Button
+                size="small"
+                variant="outlined"
+                disabled={!canManage}
+                onClick={() => setDialog({ type: 'refund', item })}
+              >
+                {'Wpisz zwrot'}
+              </Button>
+            ) : null}
+            {actionButton(
+              'ignore-refund',
+              { refundId: item.refundId },
+              'Pomiń ten zwrot',
+            )}
+          </>
+        );
+      case 'refund_amount_ambiguous':
+        return (
+          <>
+            {item.orderId ? (
+              <Button
+                size="small"
+                variant="outlined"
+                disabled={!canManage}
+                onClick={() => setDialog({ type: 'refund', item })}
+              >
+                {'Wpisz zwrot'}
+              </Button>
+            ) : null}
+            {actionButton(
+              'ignore-refund',
+              { refundId: item.refundId },
+              'Pomiń ten zwrot',
+            )}
+          </>
+        );
+      case 'refund_in_issued_period':
+        return (
+          <>
+            {actionButton(
+              'ignore-refund',
+              { refundId: item.refundId },
+              'Pomiń ten zwrot',
+            )}
+            {item.day ? (
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => {
+                  const [from, to] = monthRangeOf(item.day as string);
+                  onSelectPeriod(from, to);
+                }}
+              >
+                {'Przejdź do miesiąca zwrotu'}
+              </Button>
+            ) : null}
+          </>
         );
       case 'refund_original_not_issued':
         return item.day ? (

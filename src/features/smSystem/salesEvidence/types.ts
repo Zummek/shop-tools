@@ -40,6 +40,9 @@ export type ReviewKind =
   | 'refund_original_not_issued'
   | 'refund_currency'
   | 'refund_exceeds'
+  | 'refund_amount_ambiguous'
+  | 'refund_unparsed'
+  | 'refund_in_issued_period'
   | 'returned_without_refund'
   | 'invoice_buyer_unknown';
 
@@ -214,9 +217,19 @@ export interface EvidenceRow {
   goods: string;
 }
 
+export interface SideChange {
+  list: 'register' | 'outside';
+  action: 'added' | 'removed';
+  orderExternalId: string;
+  date?: string | null;
+  amount?: number;
+  currency?: string;
+}
+
 export interface RecheckResult {
   hasChanges: boolean;
   changed: { before: EvidenceRow | null; after: EvidenceRow | null }[];
+  sideChanges?: SideChange[];
   beforeTotals: RateBucket[];
   afterTotals: RateBucket[];
   diffTotals: RateBucket[];

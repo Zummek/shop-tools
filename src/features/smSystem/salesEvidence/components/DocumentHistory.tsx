@@ -15,9 +15,24 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 
-import { useRecheckDocument, useSalesEvidenceActions, useSalesEvidenceDownload } from '../api';
-import type { EvidenceRow, SalesEvidenceChannel, SalesEvidenceDocument } from '../types';
-import { countLabel, formatDay, formatMoment, formatPeriod, formatPln } from '../utils/format';
+import {
+  useRecheckDocument,
+  useSalesEvidenceActions,
+  useSalesEvidenceDownload,
+} from '../api';
+import type {
+  EvidenceRow,
+  SalesEvidenceChannel,
+  SalesEvidenceDocument,
+  SideChange,
+} from '../types';
+import {
+  countLabel,
+  formatDay,
+  formatMoment,
+  formatPeriod,
+  formatPln,
+} from '../utils/format';
 
 import { RateTable } from './RateTable';
 
@@ -81,6 +96,17 @@ const rowText = (row: EvidenceRow | null) =>
     ? `${formatDay(row.obligationDate)} · ${row.rate}% · ${formatPln(row.gross)}`
     : 'brak';
 
+const sideChangeText = (change: SideChange) => {
+  const verb = change.action === 'added' ? 'Dopisano' : 'Zniknęło';
+  const place = change.list === 'register' ? 'na kasie' : 'poza dowodem';
+  const when = change.date ? formatDay(change.date) : 'bez daty';
+  const money =
+    change.amount === undefined
+      ? ''
+      : ` · ${formatPln(change.amount, change.currency && change.currency !== 'PLN' ? ` ${change.currency}` : ' zł')}`;
+  return `${verb} ${place}: ${change.orderExternalId || '—'}, ${when}${money}`;
+};
+
 const Recheck = ({
   doc,
   auto,
@@ -97,34 +123,61 @@ const Recheck = ({
   const [requested, setRequested] = useState(auto);
   const { data, isFetching, isError } = useRecheckDocument(doc.id, requested);
 
-  if (!requested)
-    {return (
+  if (!requested) {
+    return (
       <Box>
         <Button size="small" onClick={() => setRequested(true)}>
           {'Sprawdź, czy dane się zmieniły'}
         </Button>
       </Box>
-    );}
-  if (isFetching)
-    {return (
+    );
+  }
+  if (isFetching) {
+    return (
       <Typography variant="body2" color="text.secondary">
         {'Porównuję dowód z aktualnymi danymi…'}
       </Typography>
-    );}
+    );
+  }
   if (isError || !data)
-    return <Alert severity="error">{'Nie udało się porównać dowodu z aktualnymi danymi.'}</Alert>;
-  if (!data.hasChanges)
-    {return (
+    return (
+      <Alert severity="error">
+        {'Nie udało się porównać dowodu z aktualnymi danymi.'}
+      </Alert>
+    );
+  if (!data.hasChanges) {
+    return (
       <Typography variant="body2" color="success.main">
         {'Dane się nie zmieniły od wystawienia – dowód jest aktualny.'}
       </Typography>
-    );}
+    );
+  }
+
+  const sideChanges = data.sideChanges ?? [];
+  const changeBits = [
+    data.changed.length
+      ? countLabel(
+          data.changed.length,
+          'transakcja',
+          'transakcje',
+          'transakcji',
+        )
+      : '',
+    sideChanges.length
+      ? countLabel(
+          sideChanges.length,
+          'pozycja na kasie lub poza dowodem',
+          'pozycje na kasie lub poza dowodem',
+          'pozycji na kasie lub poza dowodem',
+        )
+      : '',
+  ].filter(Boolean);
 
   return (
     <Alert severity="warning">
       <Stack spacing={1}>
         <Typography variant="body2" fontWeight={500}>
-          {`Od wystawienia zmieniły się dane: ${countLabel(data.changed.length, 'transakcja', 'transakcje', 'transakcji')} (np. nowa stawka produktu, faktura, dociągnięta płatność).`}
+          {`Od wystawienia zmieniły się dane: ${changeBits.join(' i ')} (np. nowa stawka produktu, faktura, zwrot na kasie).`}
         </Typography>
         <Typography variant="body2">{data.hint}</Typography>
         <RateTable buckets={data.diffTotals} showRows={false} />
@@ -136,9 +189,20 @@ const Recheck = ({
               </Typography>
             </li>
           ))}
+          {sideChanges
+            .slice(0, Math.max(0, 10 - data.changed.length))
+            .map((change, index) => (
+              <li key={`side-${index}`}>
+                <Typography variant="body2">
+                  {sideChangeText(change)}
+                </Typography>
+              </li>
+            ))}
         </Box>
-        {data.changed.length > 10 ? (
-          <Typography variant="caption">{`…i ${data.changed.length - 10} więcej.`}</Typography>
+        {data.changed.length + sideChanges.length > 10 ? (
+          <Typography variant="caption">
+            {`…i ${data.changed.length + sideChanges.length - 10} więcej.`}
+          </Typography>
         ) : null}
         {data.review.length > 0 ? (
           <Typography variant="body2">
@@ -158,7 +222,12 @@ const Recheck = ({
                 {'Wystaw dowód korygujący'}
               </Button>
             ) : (
-              <Button size="small" variant="contained" color="warning" onClick={onCancel}>
+              <Button
+                size="small"
+                variant="contained"
+                color="warning"
+                onClick={onCancel}
+              >
                 {'Anuluj dowód, aby wystawić go ponownie'}
               </Button>
             )}
@@ -176,7 +245,12 @@ interface Props {
   autoRecheckMonth: string;
 }
 
-export const DocumentHistory = ({ documents, canManage, channel, autoRecheckMonth }: Props) => {
+export const DocumentHistory = ({
+  documents,
+  canManage,
+  channel,
+  autoRecheckMonth,
+}: Props) => {
   const actions = useSalesEvidenceActions(channel);
   const downloads = useSalesEvidenceDownload();
   const [dialog, setDialog] = useState<{
@@ -184,12 +258,13 @@ export const DocumentHistory = ({ documents, canManage, channel, autoRecheckMont
     doc: SalesEvidenceDocument;
   } | null>(null);
 
-  if (documents.length === 0)
-    {return (
+  if (documents.length === 0) {
+    return (
       <Typography variant="body2" color="text.secondary">
         {'Nie wystawiono jeszcze żadnego dowodu dla tego kanału.'}
       </Typography>
-    );}
+    );
+  }
 
   return (
     <Stack spacing={1.5}>
@@ -197,12 +272,29 @@ export const DocumentHistory = ({ documents, canManage, channel, autoRecheckMont
         const isEvidence = doc.kind === 'evidence';
         const active = doc.status !== 'cancelled';
         return (
-          <Paper key={doc.id} variant="outlined" sx={{ p: 1.5, opacity: active ? 1 : 0.7 }}>
+          <Paper
+            key={doc.id}
+            variant="outlined"
+            sx={{ p: 1.5, opacity: active ? 1 : 0.7 }}
+          >
             <Stack spacing={1}>
-              <Stack direction="row" spacing={1} alignItems="center" sx={{ flexWrap: 'wrap', rowGap: 0.5 }}>
+              <Stack
+                direction="row"
+                spacing={1}
+                alignItems="center"
+                sx={{ flexWrap: 'wrap', rowGap: 0.5 }}
+              >
                 <Typography fontWeight={600}>{doc.number}</Typography>
-                <Chip size="small" label={isEvidence ? 'dowód' : 'korekta'} variant="outlined" />
-                <Chip size="small" color={STATUS_COLORS[doc.status]} label={doc.statusLabel} />
+                <Chip
+                  size="small"
+                  label={isEvidence ? 'dowód' : 'korekta'}
+                  variant="outlined"
+                />
+                <Chip
+                  size="small"
+                  color={STATUS_COLORS[doc.status]}
+                  label={doc.statusLabel}
+                />
                 <Typography variant="body2" color="text.secondary">
                   {formatPeriod(doc.periodFrom, doc.periodTo)}
                 </Typography>
@@ -219,9 +311,15 @@ export const DocumentHistory = ({ documents, canManage, channel, autoRecheckMont
                 {doc.cancelledAt
                   ? ` · anulowany: ${doc.cancelledByName ?? '—'}, ${formatMoment(doc.cancelledAt)} – ${doc.cancelReason}`
                   : ''}
-                {doc.reason && !isEvidence ? ` · powód korekty: ${doc.reason}` : ''}
+                {doc.reason && !isEvidence
+                  ? ` · powód korekty: ${doc.reason}`
+                  : ''}
               </Typography>
-              <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', rowGap: 1 }}>
+              <Stack
+                direction="row"
+                spacing={1}
+                sx={{ flexWrap: 'wrap', rowGap: 1 }}
+              >
                 <LoadingButton
                   size="small"
                   variant="outlined"
@@ -240,10 +338,17 @@ export const DocumentHistory = ({ documents, canManage, channel, autoRecheckMont
                 </LoadingButton>
                 {canManage && doc.status === 'issued' ? (
                   <>
-                    <Button size="small" onClick={() => setDialog({ type: 'handOver', doc })}>
+                    <Button
+                      size="small"
+                      onClick={() => setDialog({ type: 'handOver', doc })}
+                    >
                       {'Oznacz jako przekazany do księgowości'}
                     </Button>
-                    <Button size="small" color="warning" onClick={() => setDialog({ type: 'cancel', doc })}>
+                    <Button
+                      size="small"
+                      color="warning"
+                      onClick={() => setDialog({ type: 'cancel', doc })}
+                    >
                       {'Anuluj'}
                     </Button>
                   </>
@@ -294,7 +399,9 @@ export const DocumentHistory = ({ documents, canManage, channel, autoRecheckMont
           <DialogTitle>{`Przekazać ${dialog.doc.number} do księgowości?`}</DialogTitle>
           <DialogContent>
             <Typography variant="body2">
-              {'Oznacz, gdy wyślesz PDF i XLSX księgowej. Od tej chwili dowodu nie da się anulować – jeśli później zmienią się dane, wystawisz dowód korygujący.'}
+              {
+                'Oznacz, gdy wyślesz PDF i XLSX księgowej. Od tej chwili dowodu nie da się anulować – jeśli później zmienią się dane, wystawisz dowód korygujący.'
+              }
             </Typography>
           </DialogContent>
           <DialogActions>

@@ -11,7 +11,6 @@ export interface SalesExportRecord {
   hasFile: boolean;
   coveredFrom: string | null;
   coveredUntil: string | null;
-  importedAt: string | null;
 }
 
 const warsawDateTime = new Intl.DateTimeFormat('pl-PL', {

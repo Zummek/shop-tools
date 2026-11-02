@@ -20,7 +20,6 @@ export * from './useUpdateDeliveryGroup';
 export * from './useGetEcommerceOrderDetails';
 export * from './useGetEcommerceOrders';
 export * from './useAckEcommerceSalesExportCorrection';
-export * from './useConfirmEcommerceSalesExportImport';
 export * from './useDownloadEcommerceSalesExport';
 export * from './useSetEcommerceSalesExportStart';
 export * from './useSetOfferStockPublish';

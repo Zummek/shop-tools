@@ -32,7 +32,6 @@ import {
   SalesExportSkipped,
   SalesExportSyncResult,
   useAckEcommerceSalesExportCorrection,
-  useConfirmEcommerceSalesExportImport,
   useDownloadEcommerceSalesExport,
   useGetEcommerceSalesExport,
   useGetEcommerceSalesExportHistory,
@@ -338,7 +337,6 @@ export const EcommerceSalesExportPage = () => {
   const { setStart, isPending: isSettingStart } =
     useSetEcommerceSalesExportStart();
   const { acknowledge, ackingId } = useAckEcommerceSalesExportCorrection();
-  const { confirm, confirmingId } = useConfirmEcommerceSalesExportImport();
   const startTouched = useRef(false);
   const [start, setStartDate] = useState<Dayjs | null>(() =>
     dayjs().subtract(7, 'day'),
@@ -474,36 +472,14 @@ export const EcommerceSalesExportPage = () => {
           </Typography>
           <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
             {history.map((row) => (
-              <Stack
+              <Chip
                 key={row.id}
-                direction="row"
-                spacing={0.5}
-                sx={{ alignItems: 'center' }}
-              >
-                <Chip
-                  size="small"
-                  variant="outlined"
-                  label={formatHistoryLabel(row)}
-                  title={row.sources.map(orderChannelLabel).join(', ')}
-                  onClick={() => downloadHistory(row.id, historyFileName(row))}
-                />
-                {row.importedAt ? (
-                  <Chip
-                    size="small"
-                    color="success"
-                    variant="outlined"
-                    label={`W PC Market ${formatExportMoment(row.importedAt)}`}
-                  />
-                ) : (
-                  <Button
-                    size="small"
-                    disabled={confirmingId === row.id}
-                    onClick={() => confirm(row.id)}
-                  >
-                    {'Weszło do PC Market'}
-                  </Button>
-                )}
-              </Stack>
+                size="small"
+                variant="outlined"
+                label={formatHistoryLabel(row)}
+                title={row.sources.map(orderChannelLabel).join(', ')}
+                onClick={() => downloadHistory(row.id, historyFileName(row))}
+              />
             ))}
           </Stack>
         </Stack>

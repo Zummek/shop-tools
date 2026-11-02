@@ -18,10 +18,13 @@ import {
   Stack,
   Tab,
   Tabs,
+  TextField,
   Typography,
 } from '@mui/material';
+import { useQueryClient } from '@tanstack/react-query';
+import { AxiosResponse } from 'axios';
 import dayjs from 'dayjs';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Navigate,
   useNavigate,
@@ -46,7 +49,12 @@ import {
   isPriceScheduleSnoozed,
   notifyPriceScheduleFailure,
 } from '../../../ecommerce/utils';
-import { useGetProductDetails } from '../../api';
+import {
+  getProductDetailsQueryKey,
+  useGetProductDetails,
+  useUpdateProduct,
+} from '../../api';
+import { Product } from '../../types';
 import { formatPrice, productsListSearchString } from '../../utils';
 
 import { ProductReceiptSalesChart } from './ProductReceiptSalesChart';
@@ -84,58 +92,169 @@ const channelDisplayName = (channel: string) => {
   return channel.toUpperCase();
 };
 
-const SUMMARY_CHANNELS = ['allegro', 'woocommerce', 'erli'] as const;
-
-const offerCountLabel = (count: number) => {
-  const mod10 = count % 10;
-  const mod100 = count % 100;
-  if (count === 1) return '1 oferta';
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14))
-    return `${count} oferty`;
-  return `${count} ofert`;
+const blockedOfferReason = (reason: string) => {
+  if (reason === 'ended') return 'zakończona';
+  if (reason === 'closed') return 'szkic albo kosz';
+  if (reason === 'archived') return 'zarchiwizowana';
+  if (reason === 'unmanaged_stock') return 'WooCommerce nie prowadzi stanu';
+  if (reason === 'manage_stock_unknown')
+    return 'nie wiadomo, czy WooCommerce prowadzi stan';
+  if (reason === 'pool_conflict') return 'kanały mają różne placówki';
+  if (reason === 'no_pool') return 'brak placówek stanu';
+  if (reason === 'unmatched_line') return 'linia bez pewnego produktu';
+  if (reason === 'no_product') return 'brak produktu';
+  if (reason === 'no_warehouse') return 'brak stanu w PC-Markecie';
+  return reason;
 };
 
-const channelSummaryLine = (channel: string, links: ChannelProductLink[]) => {
-  const active = links.filter((link) => !isEndedChannelOffer(link));
-  const name = channelDisplayName(channel);
-  if (active.length === 0) return `${name}: zakończone`;
-  const unknown = active.some((link) => link.stockAvailable == null);
-  if (unknown) return `${name}: ${offerCountLabel(active.length)}, stan —`;
-  const stock = active.reduce(
-    (sum, link) => sum + (link.stockAvailable ?? 0),
-    0,
-  );
-  const pieces = active.reduce(
-    (sum, link) =>
-      sum + (link.stockAvailable ?? 0) * (link.unitsInOffer || 1),
-    0,
-  );
-  const piecesText = pieces !== stock ? ` (${pieces} szt.)` : '';
-  return `${name}: ${offerCountLabel(active.length)}, stan ${stock}${piecesText}`;
-};
+const piecesLabel = (count: number) => `${count} szt.`;
 
-const ChannelStockSummary = ({ links }: { links: ChannelProductLink[] }) => {
-  const present = new Set(links.map((link) => link.channel));
-  const known = new Set<string>(SUMMARY_CHANNELS);
-  const ordered = [
-    ...SUMMARY_CHANNELS.filter((channel) => present.has(channel)),
-    ...Array.from(present).filter((channel) => !known.has(channel)),
-  ];
-  if (ordered.length === 0) return null;
+const ListedStockPanel = ({ product }: { product: Product }) => {
+  const stock = product.ecommerceStock;
+  const { notify } = useNotify();
+  const queryClient = useQueryClient();
+  const { updateShopReservePieces } = useUpdateProduct();
+  const [draft, setDraft] = useState(
+    product.shopReservePieces == null ? '' : String(product.shopReservePieces),
+  );
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setDraft(
+      product.shopReservePieces == null
+        ? ''
+        : String(product.shopReservePieces),
+    );
+  }, [product.id, product.shopReservePieces]);
+
+  if (!stock) return null;
+
+  const saveReserve = async () => {
+    const trimmed = draft.trim();
+    const value = trimmed === '' ? null : Number(trimmed);
+    if (value != null && (!Number.isInteger(value) || value < 0)) {
+      notify('error', 'Podaj pełne sztuki albo zostaw puste, żeby wziąć domyślną');
+      return;
+    }
+    setSaving(true);
+    try {
+      const updated = await updateShopReservePieces(product.id, value);
+      queryClient.setQueryData<AxiosResponse<Product>>(
+        getProductDetailsQueryKey(product.id),
+        (current) => (current ? { ...current, data: updated } : current),
+      );
+      await queryClient.invalidateQueries({
+        queryKey: getProductDetailsQueryKey(product.id),
+      });
+    } catch {
+      notify('error', 'Nie udało się zapisać sztuk dla sklepu');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const warehouse =
+    stock.warehousePieces == null
+      ? 'brak stanu'
+      : `${piecesLabel(stock.warehousePieces)}${
+          stock.syncedAt
+            ? `, pobrane ${dayjs(stock.syncedAt).format('D.MM.YYYY HH:mm')}`
+            : ''
+        }`;
+  const sold = `${piecesLabel(stock.soldPieces)}${
+    stock.soldSince
+      ? `, od ${dayjs(stock.soldSince).format('D.MM.YYYY HH:mm')}`
+      : ''
+  }`;
+  const listed =
+    stock.listedPieces == null ? '—' : piecesLabel(stock.listedPieces);
+
   return (
-    <Stack direction="row" flexWrap="wrap" gap={1}>
-      {ordered.map((channel) => (
-        <Chip
-          key={channel}
-          size="small"
-          variant="outlined"
-          label={channelSummaryLine(
-            channel,
-            links.filter((link) => link.channel === channel),
-          )}
-        />
-      ))}
-    </Stack>
+    <Paper variant="outlined" sx={{ p: 2 }}>
+      <Stack spacing={2}>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={3}
+          useFlexGap
+          flexWrap="wrap"
+        >
+          <LabelData label="Stan z PC-Marketu" value={warehouse} />
+          <LabelData label="Sprzedano w e-commerce" value={sold} />
+          <LabelData
+            label="Dla sklepu"
+            value={piecesLabel(stock.reservePieces)}
+          />
+          <LabelData
+            label="Wystawione w e-commerce"
+            value={listed}
+            weight="bold"
+          />
+        </Stack>
+        {stock.shortagePieces > 0 && (
+          <Alert severity="warning">
+            {`Brakuje ${piecesLabel(stock.shortagePieces)}. Sprzedaż i bufor przekraczają stan.`}
+          </Alert>
+        )}
+        {stock.poolConflict && (
+          <Alert severity="error">
+            {`Publikacja stoi. Kanały wskazują różne placówki: ${stock.sources
+              .map(
+                (source) =>
+                  `${channelDisplayName(source.channel)} (${source.branches.join(', ')})`,
+              )
+              .join('; ')}.`}
+          </Alert>
+        )}
+        {!stock.poolReady && !stock.poolConflict && (
+          <Alert severity="info">
+            {'Brak placówek, z których liczony jest stan e-commerce.'}
+          </Alert>
+        )}
+        {stock.reservePercent != null && (
+          <Typography variant="body2" color="text.secondary">
+            {`Dodatkowy limit: ${stock.reservePercent}% tego, co zostaje po sprzedaży online.`}
+          </Typography>
+        )}
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={1}
+          sx={{ alignItems: { sm: 'center' } }}
+        >
+          <TextField
+            size="small"
+            label="Sztuki dla sklepu"
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            helperText={
+              stock.reserveInherited
+                ? `Puste zostawia domyślne ${stock.reservePieces} szt.`
+                : 'Puste wraca do liczby domyślnej organizacji.'
+            }
+            sx={{ width: 220 }}
+          />
+          <Button variant="outlined" disabled={saving} onClick={saveReserve}>
+            {'Zapisz'}
+          </Button>
+        </Stack>
+        {stock.blockedOffers.length > 0 && (
+          <Stack spacing={0.5}>
+            <Typography variant="body2" color="text.secondary">
+              {'Te oferty nie dostały nowej liczby:'}
+            </Typography>
+            {stock.blockedOffers.map((offer) => (
+              <Typography
+                key={`${offer.channel}:${offer.externalOfferId}:${offer.reason}`}
+                variant="body2"
+              >
+                {`${channelDisplayName(offer.channel)} ${
+                  offer.offerName || offer.externalOfferId
+                }: ${blockedOfferReason(offer.reason)}`}
+              </Typography>
+            ))}
+          </Stack>
+        )}
+      </Stack>
+    </Paper>
   );
 };
 
@@ -313,6 +432,7 @@ export const ProductDetailsPage = () => {
       {tab === 'channels' && (
         <Stack spacing={2}>
           <Typography variant="h6">{'Kanały e-commerce'}</Typography>
+          <ListedStockPanel product={product} />
 
           {isLoadingLinks ? (
             <CircularProgress size={28} />
@@ -328,7 +448,6 @@ export const ProductDetailsPage = () => {
             </Typography>
           ) : (
             <Stack spacing={2}>
-              <ChannelStockSummary links={channelLinks} />
               {activeLinks.length === 0 && endedLinks.length > 0 && (
                 <Typography color="text.secondary">
                   {'Brak aktywnych ofert — zakończone poniżej.'}

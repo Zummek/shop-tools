@@ -52,8 +52,38 @@ export interface Product {
   manualPurchaseSetAt?: string | null;
   hasRealPurchase?: boolean;
   canEditManualPurchase?: boolean;
+  shopReservePieces?: number | null;
+  ecommerceStock?: EcommerceStock | null;
   reportPurchase?: ProductReportPurchase | null;
   channels?: ProductSalesChannel[];
+}
+
+export interface EcommerceStockSource {
+  channel: string;
+  branches: string[];
+}
+
+export interface EcommerceStockBlockedOffer {
+  channel: string;
+  externalOfferId: string;
+  offerName: string;
+  reason: string;
+}
+
+export interface EcommerceStock {
+  warehousePieces: number | null;
+  syncedAt: string | null;
+  soldPieces: number;
+  soldSince: string | null;
+  reservePieces: number;
+  reserveInherited: boolean;
+  reservePercent: number | null;
+  listedPieces: number | null;
+  shortagePieces: number;
+  poolConflict: boolean;
+  poolReady: boolean;
+  sources: EcommerceStockSource[];
+  blockedOffers: EcommerceStockBlockedOffer[];
 }
 
 export type ChannelListingStatus = 'active' | 'ended' | 'none';

@@ -13,6 +13,7 @@ interface Payload {
   unitScale?: ProductUnitScale | null;
   unitScaleValue?: number | null;
   manualPurchaseNetPrice?: number | null;
+  shopReservePieces?: number | null;
 }
 
 interface Params {
@@ -86,6 +87,17 @@ export const useUpdateProduct = () => {
     return response;
   };
 
+  const updateShopReservePieces = async (
+    productId: number,
+    shopReservePieces: number | null,
+  ) => {
+    return request(
+      productId,
+      { shopReservePieces },
+      { throwOn400: true },
+    );
+  };
+
   const updateManualPurchaseNetPrice = async (
     productId: number,
     manualPurchaseNetPrice: number | null
@@ -103,5 +115,6 @@ export const useUpdateProduct = () => {
     updateUnitScale,
     updateUnitScaleValue,
     updateManualPurchaseNetPrice,
+    updateShopReservePieces,
   };
 };

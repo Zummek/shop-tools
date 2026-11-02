@@ -139,10 +139,11 @@ const listingCellLabel = (
 ) => {
   const name = orderChannelLabel(channel);
   if (listing.status === 'ended') return `${name} (zakończona)`;
-  if (listing.status === 'active' && listing.stockAvailable != null)
-    return `${name} ${listing.stockAvailable}`;
   return name;
 };
+
+const formatListedPieces = (value: number) =>
+  value.toLocaleString('pl-PL', { maximumFractionDigits: 0 });
 
 const offerTooltipLine = (offer: ChannelListingOffer) => {
   const parts = [offer.offerName || offer.externalOfferId];
@@ -211,14 +212,70 @@ const skuColumn: GridColDef<ProductSalesListItem> = {
   sortable: false,
 };
 
+const listedStockTitle = (row: ProductSalesListItem) => {
+  if (row.listedPieces == null)
+    return 'Brak zdjęcia stanu z PC-Marketu albo kanały wskazują różne placówki.';
+  if (row.shortagePieces > 0)
+    return `Brakuje ${formatListedPieces(row.shortagePieces)} szt. Sprzedaż i bufor przekraczają stan.`;
+  return 'Jedna liczba dla Allegro, WooCommerce i Erli.';
+};
+
 const trailingColumns: GridColDef<ProductSalesListItem>[] = [
   {
-    field: 'channels',
-    headerName: 'Kanały ze stanem w ofertach',
+    field: 'listedPieces',
+    headerName: 'Wystawione w e-commerce',
     description:
-      'Suma stanu aktywnych ofert. Sztuki zestawu i magazyn kanału są w podpowiedzi.',
+      'Ile sztuk widać w sprzedaży online. Ta sama liczba idzie na każdy kanał: stan z PC-Marketu minus sprzedano w e-commerce minus sztuki dla sklepu.',
+    width: 132,
+    minWidth: 108,
+    align: 'right',
+    headerAlign: 'right',
+    sortable: false,
+    renderHeader: () => (
+      <Stack alignItems="flex-end" spacing={0} sx={{ lineHeight: 1.15 }}>
+        <span>{'Wystawione'}</span>
+        <Box
+          component="span"
+          sx={{
+            fontSize: '0.75rem',
+            fontWeight: 500,
+            color: 'text.secondary',
+          }}
+        >
+          {'w e-commerce'}
+        </Box>
+      </Stack>
+    ),
+    renderCell: (params) => {
+      const listed = params.row.listedPieces;
+      const label = listed == null ? '—' : formatListedPieces(listed);
+      return (
+        <Tooltip title={listedStockTitle(params.row)}>
+          <Box
+            component="span"
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              height: '100%',
+              width: '100%',
+              color:
+                params.row.shortagePieces > 0 ? 'warning.main' : 'text.primary',
+            }}
+          >
+            {label}
+          </Box>
+        </Tooltip>
+      );
+    },
+  },
+  {
+    field: 'channels',
+    headerName: 'Kanały w ofertach',
+    description:
+      'Kanały, na których produkt ma ofertę. Liczba sztuk jest w kolumnie Wystawione. Szczegóły ofert są w podpowiedzi.',
     flex: 1,
-    minWidth: 240,
+    minWidth: 180,
     sortable: false,
     renderCell: (params) => (
       <ChannelListingsCell listings={params.row.channelListings} />
@@ -451,6 +508,7 @@ export const ProductsListPage = () => {
           'ordersCount',
           'stock',
           'daysOfCover',
+          'listedPieces',
         ],
         includeHeaders: true,
         includeOutliers: true,

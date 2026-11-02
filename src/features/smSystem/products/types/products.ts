@@ -120,6 +120,8 @@ export interface ProductSalesListItem extends Product {
   storeUnitsSold: number;
   alertSeverity: ProductAlertSeverity | null;
   alertTypes: string[];
+  listedPieces: number | null;
+  shortagePieces: number;
   channelListings: Partial<Record<ProductSalesChannel, ChannelListing>>;
 }
 

@@ -139,12 +139,13 @@ const Recheck = ({
       </Typography>
     );
   }
-  if (isError || !data)
+  if (isError || !data) {
     return (
       <Alert severity="error">
         {'Nie udało się porównać dowodu z aktualnymi danymi.'}
       </Alert>
     );
+  }
   if (!data.hasChanges) {
     return (
       <Typography variant="body2" color="success.main">

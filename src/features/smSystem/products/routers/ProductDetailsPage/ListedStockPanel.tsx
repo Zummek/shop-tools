@@ -1,15 +1,20 @@
+import CheckIcon from '@mui/icons-material/Check';
+import CloseIcon from '@mui/icons-material/Close';
+import EditIcon from '@mui/icons-material/Edit';
 import {
   Alert,
-  Button,
+  CircularProgress,
+  IconButton,
   Paper,
   Stack,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { AxiosResponse } from 'axios';
 import dayjs from 'dayjs';
-import { useEffect, useState } from 'react';
+import { KeyboardEvent, useEffect, useState } from 'react';
 
 import { LabelData } from '../../../../../components';
 import { useNotify } from '../../../../../hooks';
@@ -45,18 +50,16 @@ export const ListedStockPanel = ({ product }: { product: Product }) => {
   const { notify } = useNotify();
   const queryClient = useQueryClient();
   const { updateShopReservePieces } = useUpdateProduct();
-  const [draft, setDraft] = useState(
-    product.shopReservePieces == null ? '' : String(product.shopReservePieces),
-  );
+  const savedReserve =
+    product.shopReservePieces == null ? '' : String(product.shopReservePieces);
+  const [draft, setDraft] = useState(savedReserve);
+  const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    setDraft(
-      product.shopReservePieces == null
-        ? ''
-        : String(product.shopReservePieces),
-    );
-  }, [product.id, product.shopReservePieces]);
+    setDraft(savedReserve);
+    setIsEditing(false);
+  }, [product.id, savedReserve]);
 
   if (!stock) return null;
 
@@ -80,10 +83,32 @@ export const ListedStockPanel = ({ product }: { product: Product }) => {
       await queryClient.invalidateQueries({
         queryKey: getProductDetailsQueryKey(product.id),
       });
+      setIsEditing(false);
     } catch {
       notify('error', 'Nie udało się zapisać sztuk dla sklepu');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const startEdit = () => {
+    setDraft(savedReserve);
+    setIsEditing(true);
+  };
+
+  const cancelEdit = () => {
+    setDraft(savedReserve);
+    setIsEditing(false);
+  };
+
+  const handleDraftKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      void saveReserve();
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      cancelEdit();
     }
   };
 
@@ -95,13 +120,18 @@ export const ListedStockPanel = ({ product }: { product: Product }) => {
             ? `, pobrane ${dayjs(stock.syncedAt).format('D.MM.YYYY HH:mm')}`
             : ''
         }`;
-  const sold = `${piecesLabel(stock.soldPieces)}${
-    stock.soldSince
-      ? `, od ${dayjs(stock.soldSince).format('D.MM.YYYY HH:mm')}`
-      : ''
-  }`;
+  const soldSinceFetch = stock.syncedAt
+    ? `Od ostatniego pobrania stanu, ${dayjs(stock.syncedAt).format('D.MM.YYYY HH:mm')}.`
+    : 'Od ostatniego pobrania stanu.';
   const listed =
     stock.listedPieces == null ? '—' : piecesLabel(stock.listedPieces);
+  const reserveText =
+    product.shopReservePieces == null
+      ? `Domyślne (${piecesLabel(stock.reservePieces)})`
+      : piecesLabel(product.shopReservePieces);
+  const reserveHelper = stock.reserveInherited
+    ? `Puste zostawia domyślne ${stock.reservePieces} szt.`
+    : 'Puste wraca do liczby domyślnej organizacji.';
 
   return (
     <Stack spacing={2}>
@@ -115,7 +145,11 @@ export const ListedStockPanel = ({ product }: { product: Product }) => {
             flexWrap="wrap"
           >
             <LabelData label="Stan z PC-Marketu" value={warehouse} />
-            <LabelData label="Sprzedano w e-commerce" value={sold} />
+            <LabelData
+              label="Sprzedano w e-commerce"
+              value={piecesLabel(stock.soldPieces)}
+              hint={soldSinceFetch}
+            />
             <LabelData
               label="Dla sklepu"
               value={piecesLabel(stock.reservePieces)}
@@ -151,27 +185,63 @@ export const ListedStockPanel = ({ product }: { product: Product }) => {
               {`Dodatkowy limit: ${stock.reservePercent}% tego, co zostaje po sprzedaży online.`}
             </Typography>
           )}
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            spacing={1}
-            sx={{ alignItems: { sm: 'center' } }}
-          >
-            <TextField
-              size="small"
-              label="Sztuki dla sklepu"
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              helperText={
-                stock.reserveInherited
-                  ? `Puste zostawia domyślne ${stock.reservePieces} szt.`
-                  : 'Puste wraca do liczby domyślnej organizacji.'
-              }
-              sx={{ width: 220 }}
-            />
-            <Button variant="outlined" disabled={saving} onClick={saveReserve}>
-              {'Zapisz'}
-            </Button>
-          </Stack>
+          {isEditing ? (
+            <Stack direction="row" spacing={1} alignItems="flex-start">
+              <TextField
+                size="small"
+                autoFocus
+                label="Sztuki dla sklepu"
+                value={draft}
+                onChange={(event) => setDraft(event.target.value)}
+                onKeyDown={handleDraftKeyDown}
+                disabled={saving}
+                helperText={reserveHelper}
+                slotProps={{
+                  htmlInput: { 'aria-label': 'Sztuki dla sklepu' },
+                }}
+                sx={{ width: 220 }}
+              />
+              <IconButton
+                color="primary"
+                aria-label="Zapisz sztuki dla sklepu"
+                onClick={() => void saveReserve()}
+                disabled={saving}
+                sx={{ mt: 0.25 }}
+              >
+                {saving ? <CircularProgress size={18} /> : <CheckIcon />}
+              </IconButton>
+              <IconButton
+                aria-label="Anuluj edycję sztuk dla sklepu"
+                onClick={cancelEdit}
+                disabled={saving}
+                sx={{ mt: 0.25 }}
+              >
+                <CloseIcon />
+              </IconButton>
+            </Stack>
+          ) : (
+            <Stack spacing={0.5}>
+              <Typography
+                variant="subtitle2"
+                color="text.secondary"
+                fontWeight={500}
+              >
+                {'Sztuki dla sklepu'}
+              </Typography>
+              <Stack direction="row" spacing={0.5} alignItems="center">
+                <Typography>{reserveText}</Typography>
+                <Tooltip title="Edytuj sztuki dla sklepu">
+                  <IconButton
+                    size="small"
+                    aria-label="Edytuj sztuki dla sklepu"
+                    onClick={startEdit}
+                  >
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Stack>
+            </Stack>
+          )}
           {stock.blockedOffers.length > 0 && (
             <Stack spacing={0.5}>
               <Typography variant="body2" color="text.secondary">

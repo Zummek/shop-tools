@@ -5,6 +5,7 @@ type TextWeight = 'normal' | 'medium' | 'bold';
 interface Props {
   label: string;
   value: string | number | undefined | null;
+  hint?: string;
   minWidth?: number | string;
   sx?: SxProps<Theme>;
   weight?: TextWeight;
@@ -20,6 +21,7 @@ const textWeightMap: Record<TextWeight, number> = {
 export const LabelData = ({
   label,
   value,
+  hint,
   minWidth,
   sx,
   weight = 'normal',
@@ -37,6 +39,11 @@ export const LabelData = ({
       >
         {value ?? 'brak'}
       </Typography>
+      {hint ? (
+        <Typography variant="caption" color="text.secondary">
+          {hint}
+        </Typography>
+      ) : null}
     </Stack>
   );
 };

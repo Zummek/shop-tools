@@ -1,6 +1,8 @@
-import { Box, Typography } from '@mui/material';
+import { VisibilityOutlined } from '@mui/icons-material';
+import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 
+import { Pages } from '../../../../utils';
 import { Product } from '../../products/types';
 import { EcommerceOrderItem } from '../types';
 
@@ -11,6 +13,8 @@ const StyledProductCell = styled(Box, {
 })<{ isEditing: boolean; dense?: boolean }>(({ theme, isEditing, dense }) => ({
   display: 'flex',
   alignItems: 'center',
+  flex: 1,
+  minWidth: 0,
   gap: theme.spacing(1),
   justifyContent: 'space-between',
   cursor: 'pointer',
@@ -38,6 +42,7 @@ interface ProductCellProps {
   anchorEl: HTMLElement | null;
   dense?: boolean;
   productName?: string;
+  productId?: number;
   searchValue?: string;
 }
 
@@ -50,19 +55,44 @@ export const ProductCell = ({
   anchorEl,
   dense = false,
   productName,
+  productId,
   searchValue,
 }: ProductCellProps) => {
+  const linkedProductId = productId ?? orderItem.internalProduct?.id;
   const label =
     productName ??
     (orderItem.internalProduct ? orderItem.internalProduct.name : '-');
+  const productHref =
+    linkedProductId == null
+      ? null
+      : `#${Pages.smSystemProductDetails.replace(
+          ':productId',
+          String(linkedProductId),
+        )}`;
 
   return (
     <StyledProductCell isEditing={isEditing} dense={dense} onClick={onEdit}>
-      <Box>
+      <Box sx={{ minWidth: 0, flex: 1 }}>
         <Typography variant="body2" fontWeight="medium">
           {label}
         </Typography>
       </Box>
+      {productHref && (
+        <Tooltip title="Otwórz produkt">
+          <IconButton
+            size="small"
+            component="a"
+            href={productHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Otwórz produkt w nowej karcie"
+            onClick={(event) => event.stopPropagation()}
+            sx={{ flexShrink: 0 }}
+          >
+            <VisibilityOutlined fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      )}
       {isEditing && (
         <ProductSelector
           initialValue={searchValue ?? orderItem.externalName}

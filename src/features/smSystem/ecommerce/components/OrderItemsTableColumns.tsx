@@ -146,6 +146,7 @@ export const createOrderItemsColumns = ({
             {...editProps}
             dense={row.kind === 'component'}
             productName={row.product?.name}
+            productId={row.product?.id}
             searchValue={
               row.kind === 'component' ? row.product?.name : undefined
             }

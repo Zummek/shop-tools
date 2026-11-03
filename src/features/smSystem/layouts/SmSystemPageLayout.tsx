@@ -3,19 +3,27 @@ import { useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 
 import { AppLayout } from '../../../components/layout';
-import { useAppDispatch, useAppSelector, useIsPage } from '../../../hooks';
+import {
+  useAppDispatch,
+  useAppSelector,
+  useIsPage,
+  useWindowScrollRestoration,
+} from '../../../hooks';
 import { Pages } from '../../../utils';
 import { useRestoreSession } from '../user/hooks';
 import { invalidateSessionLifecycle } from '../user/sessionLifecycle';
 import { clearSession } from '../user/store';
 
 export const SmSystemPageLayout = () => {
+  useWindowScrollRestoration();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { isRestoringSession } = useRestoreSession();
 
   const accessToken = useAppSelector((state) => state.smSystemUser.accessToken);
-  const refreshToken = useAppSelector((state) => state.smSystemUser.refreshToken);
+  const refreshToken = useAppSelector(
+    (state) => state.smSystemUser.refreshToken,
+  );
   const user = useAppSelector((state) => state.smSystemUser.user);
   const isSessionExist = !!accessToken && !!user && !!refreshToken;
   const isOnLoginPage = useIsPage(Pages.smSystemLogin);

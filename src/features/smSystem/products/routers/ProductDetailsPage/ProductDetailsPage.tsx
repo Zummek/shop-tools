@@ -101,10 +101,13 @@ export const ProductDetailsPage = () => {
   const [searchParams] = useSearchParams();
   const { user } = useAppSelector((state) => state.smSystemUser);
   const goToProductsList = () => {
-    navigate({
-      pathname: Pages.smSystemProducts,
-      search: productsListSearchString(searchParams),
-    });
+    navigate(
+      {
+        pathname: Pages.smSystemProducts,
+        search: productsListSearchString(searchParams),
+      },
+      { state: { restoreScroll: true } },
+    );
   };
   const { productId: rawProductId } = useParams<{ productId: string }>();
   const productId = Number(rawProductId);

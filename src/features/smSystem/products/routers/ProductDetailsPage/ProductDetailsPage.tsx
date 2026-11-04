@@ -41,6 +41,7 @@ import {
   useEnablePriceSchedule,
   useGetPriceSchedules,
   useGetProductChannelLinks,
+  notifyOfferStockPublishError,
   useSetOfferStockPublish,
 } from '../../../ecommerce/api';
 import { SchedulePriceChangeModal } from '../../../ecommerce/modals';
@@ -444,8 +445,8 @@ const ChannelOfferCard = ({ link, schedules }: ChannelOfferCardProps) => {
           ? 'Aktualizacja stanu włączona'
           : 'Aktualizacja stanu wyłączona',
       );
-    } catch {
-      notify('error', 'Nie udało się zmienić aktualizacji stanu');
+    } catch (error) {
+      notifyOfferStockPublishError(notify, error);
     }
   };
 

@@ -12,7 +12,7 @@ import {
   Typography,
 } from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link as RouterLink, Navigate } from 'react-router-dom';
 
 import { useAppSelector, useNotify } from '../../../../hooks';
@@ -20,6 +20,7 @@ import { Pages } from '../../../../utils';
 import {
   OfferStatusFilter,
   StockPublishFilter,
+  notifyOfferStockPublishError,
   useGetEcommerceOffers,
   useSetOfferStockPublish,
 } from '../api';
@@ -28,6 +29,29 @@ import { ORDER_CHANNELS, orderChannelLabel } from '../utils';
 
 const productPath = (productId: number) =>
   Pages.smSystemProductDetails.replace(':productId', String(productId));
+
+type PinnedOffer = {
+  link: ChannelProductLink;
+  index: number;
+};
+
+/** Keeps rows the active filter would drop, at the index they had before the toggle. */
+const listWithPinnedOffers = (
+  offers: ChannelProductLink[],
+  pinned: Record<number, PinnedOffer>,
+) => {
+  const serverIds = new Set(offers.map((offer) => offer.id));
+  const merged = offers.map((offer) => pinned[offer.id]?.link ?? offer);
+  const missing = Object.values(pinned)
+    .filter((pin) => !serverIds.has(pin.link.id))
+    .sort((left, right) => left.index - right.index);
+
+  for (const pin of missing) {
+    const index = Math.max(0, Math.min(pin.index, merged.length));
+    merged.splice(index, 0, pin.link);
+  }
+  return merged;
+};
 
 export const EcommerceOffersPage = () => {
   const { user } = useAppSelector((state) => state.smSystemUser);
@@ -52,24 +76,93 @@ export const EcommerceOffersPage = () => {
   const { setOfferStockPublish } = useSetOfferStockPublish();
   const [searchInput, setSearchInput] = useState(query);
   const [pendingId, setPendingId] = useState<number | null>(null);
+  const listKey = [query, page, channel, stockPublish, offerStatus].join('\0');
+  const listKeyRef = useRef(listKey);
+  listKeyRef.current = listKey;
+  const [pinnedScope, setPinnedScope] = useState(listKey);
+  const [pinned, setPinned] = useState<Record<number, PinnedOffer>>({});
+
+  if (pinnedScope !== listKey) {
+    setPinnedScope(listKey);
+    setPinned({});
+  }
+
+  const visibleOffers = useMemo(
+    () => listWithPinnedOffers(offers, pinnedScope === listKey ? pinned : {}),
+    [offers, listKey, pinned, pinnedScope],
+  );
 
   useEffect(() => {
     const timeout = setTimeout(() => setQuery(searchInput), 300);
     return () => clearTimeout(timeout);
   }, [searchInput, setQuery]);
 
+  useEffect(() => {
+    setPinned((current) => {
+      const ids = Object.keys(current);
+      if (ids.length === 0) return current;
+
+      let changed = false;
+      const next = { ...current };
+      for (const id of ids) {
+        const pin = current[Number(id)];
+        if (!pin) continue;
+        const serverRow = offers.find((offer) => offer.id === pin.link.id);
+        if (
+          serverRow &&
+          serverRow.stockPublishEnabled === pin.link.stockPublishEnabled
+        ) {
+          delete next[pin.link.id];
+          changed = true;
+        }
+      }
+      return changed ? next : current;
+    });
+  }, [offers]);
+
   if (!user?.permissions?.canAccessEcommerce)
     return <Navigate to={Pages.smSystem} replace />;
 
   const toggleStockPublish = async (link: ChannelProductLink) => {
+    const enabled = !link.stockPublishEnabled;
+    const index = visibleOffers.findIndex((offer) => offer.id === link.id);
+    const label = link.offerName || link.externalOfferId;
+    const scopeAtToggle = listKeyRef.current;
+    const previousPin = pinned[link.id];
+    const stillOnThisList = () => listKeyRef.current === scopeAtToggle;
+
     setPendingId(link.id);
+    setPinned((current) => ({
+      ...current,
+      [link.id]: {
+        link: { ...link, stockPublishEnabled: enabled },
+        index: current[link.id]?.index ?? Math.max(index, 0),
+      },
+    }));
+
     try {
-      await setOfferStockPublish({
-        id: link.id,
-        enabled: !link.stockPublishEnabled,
-      });
-    } catch {
-      notify('error', 'Nie udało się zmienić aktualizacji stanu');
+      const updated = await setOfferStockPublish({ id: link.id, enabled });
+      if (stillOnThisList()) {
+        setPinned((current) => ({
+          ...current,
+          [link.id]: {
+            link: { ...link, ...updated, stockPublishEnabled: enabled },
+            index: current[link.id]?.index ?? Math.max(index, 0),
+          },
+        }));
+      }
+      const action = enabled ? 'Włączono' : 'Wyłączono';
+      notify('success', `${action} aktualizację stanu (${label}).`);
+    } catch (error) {
+      if (stillOnThisList()) {
+        setPinned((current) => {
+          const next = { ...current };
+          if (previousPin) next[link.id] = previousPin;
+          else delete next[link.id];
+          return next;
+        });
+      }
+      notifyOfferStockPublishError(notify, error);
     } finally {
       setPendingId(null);
     }
@@ -222,7 +315,7 @@ export const EcommerceOffersPage = () => {
         <Alert severity="error">{'Nie udało się wczytać ofert.'}</Alert>
       ) : (
         <DataGrid
-          rows={offers}
+          rows={visibleOffers}
           columns={columns}
           loading={isLoading}
           autoHeight

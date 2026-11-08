@@ -19,6 +19,7 @@ export * from './useGetDeliveryGroups';
 export * from './useUpdateDeliveryGroup';
 export * from './useGetEcommerceOrderDetails';
 export * from './useGetEcommerceOrders';
+export * from './useGetEcommerceOrderSync';
 export * from './useAckEcommerceSalesExportCorrection';
 export * from './useDownloadEcommerceSalesExport';
 export * from './useSetEcommerceSalesExportStart';

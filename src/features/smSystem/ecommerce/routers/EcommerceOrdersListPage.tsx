@@ -29,6 +29,7 @@ import {
   useGetAllegroConnection,
   useGetDeliveryMethods,
   useGetEcommerceOrders,
+  useGetEcommerceOrderSync,
   useGetWooCommerceConnection,
 } from '../api';
 import {
@@ -39,6 +40,37 @@ import {
 } from '../components';
 import { ImportEcommerceOrderModal } from '../modals/ImportEcommerceOrderModal/ImportEcommerceOrderModal';
 import { externalStatusLabel } from '../utils';
+
+const SYNC_STALE_MINUTES = 30;
+
+const OrderSyncCaption = () => {
+  const { channels } = useGetEcommerceOrderSync();
+  if (channels.length === 0) return null;
+  return (
+    <Typography variant="caption" color="text.secondary">
+      {'Ostatnia synchronizacja: '}
+      {channels.map((row, index) => {
+        const stale =
+          !row.lastSuccessAt ||
+          dayjs().diff(dayjs(row.lastSuccessAt), 'minute') >= SYNC_STALE_MINUTES;
+        return (
+          <Box
+            component="span"
+            key={row.channel}
+            sx={{ color: stale ? 'warning.main' : 'inherit' }}
+          >
+            {index > 0 ? ' · ' : ''}
+            {orderSourceLabel(row.channel)}
+            {' '}
+            {row.lastSuccessAt
+              ? dayjs(row.lastSuccessAt).format('DD.MM HH:mm')
+              : 'jeszcze nie'}
+          </Box>
+        );
+      })}
+    </Typography>
+  );
+};
 
 const orderSourceLabel = (source: string) => {
   if (source === 'allegro') return 'Allegro';
@@ -354,9 +386,12 @@ export const EcommerceOrdersListPage = () => {
             label="Wymagają uwagi"
           />
         </Stack>
-        <Button variant="contained" onClick={handleImportOrders}>
-          {'Importuj zamówienia'}
-        </Button>
+        <Stack alignItems="flex-end" spacing={0.5}>
+          <Button variant="contained" onClick={handleImportOrders}>
+            {'Importuj zamówienia'}
+          </Button>
+          <OrderSyncCaption />
+        </Stack>
       </Box>
       <Box height={500} width="100%">
         <DataGrid

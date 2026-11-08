@@ -43,31 +43,47 @@ import { externalStatusLabel } from '../utils';
 
 const SYNC_STALE_MINUTES = 30;
 
+const syncLabel = (value: string | null) =>
+  value ? dayjs(value).format('DD.MM HH:mm') : 'jeszcze nie';
+
+const syncIsStale = (value: string | null) =>
+  !value || dayjs().diff(dayjs(value), 'minute') >= SYNC_STALE_MINUTES;
+
 const OrderSyncCaption = () => {
   const { channels } = useGetEcommerceOrderSync();
   if (channels.length === 0) return null;
+  const labels = channels.map((row) => syncLabel(row.lastSuccessAt));
+  const shared = labels.every((label) => label === labels[0]);
   return (
     <Typography variant="caption" color="text.secondary">
       {'Ostatnia synchronizacja: '}
-      {channels.map((row, index) => {
-        const stale =
-          !row.lastSuccessAt ||
-          dayjs().diff(dayjs(row.lastSuccessAt), 'minute') >= SYNC_STALE_MINUTES;
-        return (
+      {shared ? (
+        <Box
+          component="span"
+          sx={{
+            color: syncIsStale(channels[0].lastSuccessAt)
+              ? 'warning.main'
+              : 'inherit',
+          }}
+        >
+          {labels[0]}
+        </Box>
+      ) : (
+        channels.map((row, index) => (
           <Box
             component="span"
             key={row.channel}
-            sx={{ color: stale ? 'warning.main' : 'inherit' }}
+            sx={{
+              color: syncIsStale(row.lastSuccessAt)
+                ? 'warning.main'
+                : 'inherit',
+            }}
           >
             {index > 0 ? ' · ' : ''}
-            {orderSourceLabel(row.channel)}
-            {' '}
-            {row.lastSuccessAt
-              ? dayjs(row.lastSuccessAt).format('DD.MM HH:mm')
-              : 'jeszcze nie'}
+            {orderSourceLabel(row.channel)} {syncLabel(row.lastSuccessAt)}
           </Box>
-        );
-      })}
+        ))
+      )}
     </Typography>
   );
 };

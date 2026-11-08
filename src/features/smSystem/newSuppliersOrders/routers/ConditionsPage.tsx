@@ -13,10 +13,12 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { DataGrid, GridColDef, GridRowParams } from '@mui/x-data-grid';
+import { GridColDef, GridRowParams } from '@mui/x-data-grid';
 import { debounce } from 'lodash';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { PersistedDataGrid } from '../../../../components/dataGrid/PersistedDataGrid';
+import { gridStorageIds } from '../../../../components/dataGrid/persistedGridState';
 import { useNotify } from '../../../../hooks';
 import { useConditionsFromOrders } from '../api/useConditionsFromOrders';
 import { useGetProductConditionsList } from '../api/useGetProductConditionsList';
@@ -242,7 +244,8 @@ export const ConditionsPage = () => {
             onChange={(e) => debouncedSetQuery(e.target.value)}
           />
           <Box height={560}>
-            <DataGrid
+            <PersistedDataGrid
+              storageKey={gridStorageIds.supplierConditions}
               rows={products}
               columns={columns}
               loading={isLoading}

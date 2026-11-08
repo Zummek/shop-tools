@@ -20,7 +20,6 @@ import {
   Typography,
 } from '@mui/material';
 import {
-  DataGrid,
   GridColDef,
   GridRowParams,
   useGridApiRef,
@@ -30,6 +29,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 
 import { modalStyle } from '../../../../components';
+import { PersistedDataGrid } from '../../../../components/dataGrid/PersistedDataGrid';
+import { gridStorageIds } from '../../../../components/dataGrid/persistedGridState';
 import { useAppSelector, useNotify } from '../../../../hooks';
 import { Pages } from '../../../../utils';
 import { useGetBranches } from '../../branches/api';
@@ -1032,7 +1033,8 @@ export const AllegroPriceSimPage = () => {
           minHeight: 320,
         }}
       >
-        <DataGrid
+        <PersistedDataGrid
+          storageKey={gridStorageIds.allegroPriceSim}
           apiRef={apiRef}
           rows={filteredRows}
           columns={columns}

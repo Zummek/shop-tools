@@ -1,10 +1,12 @@
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { Stack, Button, Box } from '@mui/material';
-import { DataGrid, GridColDef, GridRowParams } from '@mui/x-data-grid';
+import { GridColDef, GridRowParams } from '@mui/x-data-grid';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { PersistedDataGrid } from '../../../../components/dataGrid/PersistedDataGrid';
+import { gridStorageIds } from '../../../../components/dataGrid/persistedGridState';
 import { Pages } from '../../../../utils';
 import { useGetOrders } from '../api';
 import { AddOrderModal } from '../components/AddOrderModal/AddOrderModal';
@@ -94,7 +96,8 @@ export const OrdersPage = () => {
         }
       />
       <Box height={500}>
-        <DataGrid
+        <PersistedDataGrid
+          storageKey={gridStorageIds.supplierOrders}
           rows={orders?.results ?? []}
           loading={isLoading}
           columns={columns}

@@ -1,8 +1,10 @@
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { Box, Stack, TextField } from '@mui/material';
-import { DataGrid, GridColDef, GridRowParams } from '@mui/x-data-grid';
+import { GridColDef, GridRowParams } from '@mui/x-data-grid';
 import { useNavigate } from 'react-router-dom';
 
+import { PersistedDataGrid } from '../../../../components/dataGrid/PersistedDataGrid';
+import { gridStorageIds } from '../../../../components/dataGrid/persistedGridState';
 import { Pages } from '../../../../utils';
 import { useGetSuppliers } from '../api';
 import { SuppliersOrdersToolbar } from '../components/SuppliersOrdersToolbar';
@@ -78,7 +80,8 @@ export const SuppliersPage = () => {
       />
 
       <Box height={500}>
-        <DataGrid
+        <PersistedDataGrid
+          storageKey={gridStorageIds.suppliers}
           rows={suppliers?.results ?? []}
           loading={isLoading}
           columns={columns}

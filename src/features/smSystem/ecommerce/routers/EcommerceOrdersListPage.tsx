@@ -16,11 +16,13 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { DataGrid, GridColDef, GridRowParams } from '@mui/x-data-grid';
+import { GridColDef, GridRowParams } from '@mui/x-data-grid';
 import dayjs from 'dayjs';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { PersistedDataGrid } from '../../../../components/dataGrid/PersistedDataGrid';
+import { gridStorageIds } from '../../../../components/dataGrid/persistedGridState';
 import { useNotify } from '../../../../hooks';
 import { Pages } from '../../../../utils';
 import {
@@ -410,7 +412,8 @@ export const EcommerceOrdersListPage = () => {
         </Stack>
       </Box>
       <Box height={500} width="100%">
-        <DataGrid
+        <PersistedDataGrid
+          storageKey={gridStorageIds.ecommerceOrders}
           sx={{
             '& .MuiDataGrid-columnHeaderTitle': {
               whiteSpace: 'normal',

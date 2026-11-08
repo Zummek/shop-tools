@@ -26,7 +26,6 @@ import {
 } from '@mui/material';
 import { BarChart } from '@mui/x-charts/BarChart';
 import {
-  DataGrid,
   GridColDef,
   GridRowParams,
   useGridApiRef,
@@ -36,6 +35,8 @@ import dayjs from 'dayjs';
 import { MouseEvent, useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 
+import { PersistedDataGrid } from '../../../../components/dataGrid/PersistedDataGrid';
+import { gridStorageIds } from '../../../../components/dataGrid/persistedGridState';
 import { useAppSelector } from '../../../../hooks';
 import { Pages } from '../../../../utils';
 import { formatPrice } from '../../products/utils';
@@ -856,7 +857,8 @@ export const ChannelMarginReportPage = () => {
             ) : null}
           </Stack>
         </Stack>
-        <DataGrid
+        <PersistedDataGrid
+          storageKey={gridStorageIds.channelMargin}
           apiRef={apiRef}
           rows={filteredTableRows.map((row, index) => ({
             ...row,

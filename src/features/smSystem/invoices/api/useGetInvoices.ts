@@ -1,7 +1,13 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
+import {
+  browserStorage,
+  gridStorageIds,
+  patchPersistedGridState,
+  readPersistedGridState,
+} from '../../../../components/dataGrid/persistedGridState';
 import { axiosInstance } from '../../../../services';
 import { ListResponse } from '../../app/types';
 import {
@@ -23,6 +29,28 @@ const sortByApi: Record<InvoiceListSortBy, string> = {
 
 type Response = ListResponse<InvoiceListItem>;
 
+const invoiceSortFields: InvoiceListSortBy[] = [
+  'invoiceDate',
+  'createdAt',
+  'status',
+];
+
+const readInvoiceSort = (): {
+  sortBy: InvoiceListSortBy;
+  sortOrder: InvoiceListSortOrder;
+} => {
+  const saved = readPersistedGridState(
+    browserStorage(),
+    gridStorageIds.invoices,
+  ).sort?.[0];
+  const sortBy = invoiceSortFields.includes(saved?.field as InvoiceListSortBy)
+    ? (saved?.field as InvoiceListSortBy)
+    : 'invoiceDate';
+  const sortOrder: InvoiceListSortOrder =
+    saved?.sort === 'asc' || saved?.sort === 'desc' ? saved.sort : 'desc';
+  return { sortBy, sortOrder };
+};
+
 const parsePageFromSearchParams = (searchParams: URLSearchParams): number => {
   const pageParam = searchParams.get('page');
   if (!pageParam) return 0;
@@ -39,8 +67,18 @@ export const useGetInvoices = () => {
   const [invoiceDateFrom, setInvoiceDateFrom] = useState<string>('');
   const [invoiceDateTo, setInvoiceDateTo] = useState<string>('');
   const [status, setStatusState] = useState<InvoiceStatus | ''>('');
-  const [sortBy, setSortByState] = useState<InvoiceListSortBy>('invoiceDate');
-  const [sortOrder, setSortOrderState] = useState<InvoiceListSortOrder>('desc');
+  const [sortBy, setSortByState] = useState<InvoiceListSortBy>(
+    () => readInvoiceSort().sortBy,
+  );
+  const [sortOrder, setSortOrderState] = useState<InvoiceListSortOrder>(
+    () => readInvoiceSort().sortOrder,
+  );
+
+  useEffect(() => {
+    patchPersistedGridState(browserStorage(), gridStorageIds.invoices, {
+      sort: [{ field: sortBy, sort: sortOrder }],
+    });
+  }, [sortBy, sortOrder]);
 
   const setPage = (nextPage: number) => {
     const normalized = Math.max(0, nextPage);

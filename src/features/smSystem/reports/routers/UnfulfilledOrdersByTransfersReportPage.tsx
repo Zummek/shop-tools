@@ -15,7 +15,6 @@ import {
   Typography,
 } from '@mui/material';
 import {
-  DataGrid,
   GridColDef,
   GridColumnHeaderParams,
   GridPaginationModel,
@@ -24,6 +23,8 @@ import {
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs, { Dayjs } from 'dayjs';
 
+import { PersistedDataGrid } from '../../../../components/dataGrid/PersistedDataGrid';
+import { gridStorageIds } from '../../../../components/dataGrid/persistedGridState';
 import { camelToSnakeCase, Pages, snakeToCamelCase } from '../../../../utils';
 import { BranchSelector } from '../../branches/components';
 import {
@@ -258,7 +259,8 @@ export const UnfulfilledOrdersByTransfersReportPage = () => {
       </Stack>
 
       <Box sx={{ height: 600, width: '100%' }}>
-        <DataGrid
+        <PersistedDataGrid
+          storageKey={gridStorageIds.unfulfilledOrders}
           rows={data?.results || []}
           columns={columns}
           loading={isLoading}

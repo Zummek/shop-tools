@@ -11,10 +11,12 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { DataGrid, GridColDef } from '@mui/x-data-grid';
+import { GridColDef } from '@mui/x-data-grid';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link as RouterLink, Navigate } from 'react-router-dom';
 
+import { PersistedDataGrid } from '../../../../components/dataGrid/PersistedDataGrid';
+import { gridStorageIds } from '../../../../components/dataGrid/persistedGridState';
 import { useAppSelector, useNotify } from '../../../../hooks';
 import { Pages } from '../../../../utils';
 import {
@@ -314,7 +316,8 @@ export const EcommerceOffersPage = () => {
       {isError ? (
         <Alert severity="error">{'Nie udało się wczytać ofert.'}</Alert>
       ) : (
-        <DataGrid
+        <PersistedDataGrid
+          storageKey={gridStorageIds.ecommerceOffers}
           rows={visibleOffers}
           columns={columns}
           loading={isLoading}

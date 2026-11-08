@@ -1,10 +1,12 @@
 import { LoadingButton } from '@mui/lab';
 import { Box, Chip, Stack, Typography } from '@mui/material';
-import { DataGrid, GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
+import { GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { PersistedDataGrid } from '../../../../components/dataGrid/PersistedDataGrid';
+import { gridStorageIds } from '../../../../components/dataGrid/persistedGridState';
 import { useNotify } from '../../../../hooks';
 import { Pages } from '../../../../utils';
 import {
@@ -180,7 +182,8 @@ export const ProductsDocumentsPage = () => {
         </LoadingButton>
       </Stack>
       <Box height={500}>
-        <DataGrid
+        <PersistedDataGrid
+          storageKey={gridStorageIds.productDocuments}
           sx={{
             '& .MuiDataGrid-columnHeaderTitle': {
               whiteSpace: 'normal',

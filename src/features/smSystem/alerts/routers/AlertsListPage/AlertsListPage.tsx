@@ -19,11 +19,13 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { DataGrid, GridColDef } from '@mui/x-data-grid';
+import { GridColDef } from '@mui/x-data-grid';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 
+import { PersistedDataGrid } from '../../../../../components/dataGrid/PersistedDataGrid';
+import { gridStorageIds } from '../../../../../components/dataGrid/persistedGridState';
 import { useAppSelector, useNotify } from '../../../../../hooks';
 import { Pages } from '../../../../../utils';
 import {
@@ -373,7 +375,8 @@ export const AlertsListPage = () => {
       </Stack>
 
       <Box height={560} width="100%">
-        <DataGrid
+        <PersistedDataGrid
+          storageKey={gridStorageIds.alerts}
           sx={{
             '& .MuiDataGrid-columnHeaderTitle': {
               whiteSpace: 'normal',

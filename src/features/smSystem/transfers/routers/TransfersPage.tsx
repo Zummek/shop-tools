@@ -1,9 +1,11 @@
 import { LoadingButton } from '@mui/lab';
 import { Box, Stack, Typography } from '@mui/material';
-import { DataGrid, GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
+import { GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 
+import { PersistedDataGrid } from '../../../../components/dataGrid/PersistedDataGrid';
+import { gridStorageIds } from '../../../../components/dataGrid/persistedGridState';
 import {
   pageSize,
   useGetTransfers,
@@ -156,7 +158,8 @@ export const TransfersPage = () => {
         </LoadingButton>
       </Stack>
       <Box height={500}>
-        <DataGrid
+        <PersistedDataGrid
+          storageKey={gridStorageIds.transfers}
           sx={{
             '& .MuiDataGrid-columnHeaderTitle': {
               whiteSpace: 'normal',

@@ -15,17 +15,14 @@ import {
   Tabs,
   TextField,
 } from '@mui/material';
-import {
-  DataGrid,
-  GridColDef,
-  GridRowParams,
-  GridSortModel,
-} from '@mui/x-data-grid';
+import { GridColDef, GridRowParams, GridSortModel } from '@mui/x-data-grid';
 import { DatePicker } from '@mui/x-date-pickers';
 import dayjs, { Dayjs } from 'dayjs';
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
+import { PersistedDataGrid } from '../../../../components/dataGrid/PersistedDataGrid';
+import { gridStorageIds } from '../../../../components/dataGrid/persistedGridState';
 import { useNotify } from '../../../../hooks';
 import { Pages } from '../../../../utils';
 import { formatPrice } from '../../products/utils';
@@ -326,7 +323,8 @@ export const InvoicesListPage = () => {
           </Stack>
 
           <Box height={500} width="100%">
-            <DataGrid
+            <PersistedDataGrid
+              storageKey={gridStorageIds.invoices}
               rows={invoices}
               rowCount={totalCount || 0}
               columns={columns}

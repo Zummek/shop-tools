@@ -10,11 +10,13 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { DataGrid, GridColDef } from '@mui/x-data-grid';
+import { GridColDef } from '@mui/x-data-grid';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { PersistedDataGrid } from '../../../../components/dataGrid/PersistedDataGrid';
+import { gridStorageIds } from '../../../../components/dataGrid/persistedGridState';
 import { useNotify } from '../../../../hooks';
 import { Pages } from '../../../../utils';
 import { useGetBranches } from '../../branches/api';
@@ -95,7 +97,8 @@ export const RemanentsPage = () => {
           {'Otwórz remanent'}
         </Button>
       </Stack>
-      <DataGrid
+      <PersistedDataGrid
+        storageKey={gridStorageIds.remanents}
         rows={remanents}
         columns={columns}
         loading={isLoading}

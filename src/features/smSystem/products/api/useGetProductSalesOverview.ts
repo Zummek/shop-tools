@@ -1,7 +1,13 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
+import {
+  browserStorage,
+  gridStorageIds,
+  patchPersistedGridState,
+  readPersistedGridState,
+} from '../../../../components/dataGrid/persistedGridState';
 import {
   axiosInstance,
   throwAxiosErrorFromResponse,
@@ -85,7 +91,18 @@ export const useGetProductSalesOverview = ({
   const rawChannels = urlFilters.channels;
   const channels = exclusiveSalesChannels(rawChannels, rawChannels);
   const soldOnly = urlFilters.soldOnly;
-  const ordering = urlFilters.ordering;
+  const [restoredOrdering] = useState(() => {
+    if (searchParams.has('ordering')) return null;
+    return parseSalesOrdering(
+      readPersistedGridState(browserStorage(), gridStorageIds.products)
+        .ordering,
+    );
+  });
+  const orderingTouched = useRef(false);
+  const ordering =
+    searchParams.has('ordering') || orderingTouched.current
+      ? urlFilters.ordering
+      : restoredOrdering;
   const coverWithin = urlFilters.coverWithin;
   const listing = urlFilters.listing;
   const needsBranch = coverWithin != null || coverOrdering(ordering);
@@ -251,6 +268,10 @@ export const useGetProductSalesOverview = ({
 
   const setOrdering = useCallback(
     (value: SalesOrdering | null) => {
+      orderingTouched.current = true;
+      patchPersistedGridState(browserStorage(), gridStorageIds.products, {
+        ordering: value,
+      });
       replaceSearchParams(setSearchParams, (params) => {
         const current = parseSalesOrdering(params.get('ordering'));
         if (current === value) return;
@@ -261,6 +282,15 @@ export const useGetProductSalesOverview = ({
     },
     [setSearchParams],
   );
+
+  useLayoutEffect(() => {
+    if (orderingTouched.current || searchParams.has('ordering')) return;
+    if (!restoredOrdering) return;
+    replaceSearchParams(setSearchParams, (params) => {
+      if (params.has('ordering')) return;
+      params.set('ordering', restoredOrdering);
+    });
+  }, [restoredOrdering, searchParams, setSearchParams]);
 
   const { data, isLoading, isFetching, isError } = useQuery({
     queryKey: [

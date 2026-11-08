@@ -27,7 +27,6 @@ import {
   Typography,
 } from '@mui/material';
 import {
-  DataGrid,
   GRID_CHECKBOX_SELECTION_COL_DEF,
   GridColDef,
   GridPaginationModel,
@@ -45,6 +44,8 @@ import {
 } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 
+import { PersistedDataGrid } from '../../../../components/dataGrid/PersistedDataGrid';
+import { gridStorageIds } from '../../../../components/dataGrid/persistedGridState';
 import { useAppSelector, useNotify } from '../../../../hooks';
 import { Pages } from '../../../../utils';
 import { formatPrice } from '../../products/utils';
@@ -1009,7 +1010,8 @@ export const PriceSchedulesPage = () => {
               : 'Brak nieaktywnych harmonogramów cenowych.'}
         </Typography>
       ) : (
-        <DataGrid
+        <PersistedDataGrid
+          storageKey={gridStorageIds.priceSchedules}
           apiRef={gridApiRef}
           rows={visibleSchedules}
           columns={columns}

@@ -19,7 +19,6 @@ import {
   Typography,
 } from '@mui/material';
 import {
-  DataGrid,
   GridColDef,
   GridRowParams,
   GridSortModel,
@@ -31,6 +30,12 @@ import dayjs from 'dayjs';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 
+import { PersistedDataGrid } from '../../../../../components/dataGrid/PersistedDataGrid';
+import {
+  browserStorage,
+  gridStorageIds,
+  readPersistedGridState,
+} from '../../../../../components/dataGrid/persistedGridState';
 import { useAppSelector } from '../../../../../hooks';
 import {
   axiosInstance,
@@ -565,28 +570,6 @@ export const ProductsListPage = () => {
   const apiRef = useGridApiRef();
   usePinDataGridColumn(apiRef, 'name', true);
 
-  useEffect(() => {
-    const api = apiRef.current;
-    if (!products.length || !api?.autosizeColumns) return undefined;
-    const frame = requestAnimationFrame(() => {
-      void api.autosizeColumns({
-        columns: [
-          'internalId',
-          'units',
-          'revenueCents',
-          'ordersCount',
-          'stock',
-          'daysOfCover',
-          'listedPieces',
-        ],
-        includeHeaders: true,
-        includeOutliers: true,
-        expand: false,
-      });
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [apiRef, products, selectedBranch?.name]);
-
   const sortModel = useMemo<GridSortModel>(() => {
     if (ordering === 'name' || ordering === '-name')
       return [{ field: 'name', sort: ordering === '-name' ? 'desc' : 'asc' }];
@@ -871,6 +854,34 @@ export const ProductsListPage = () => {
     selectedBranch,
   ]);
 
+  useEffect(() => {
+    const api = apiRef.current;
+    if (!products.length || !api?.autosizeColumns) return undefined;
+    const savedWidths = readPersistedGridState(
+      browserStorage(),
+      gridStorageIds.products,
+    ).widths;
+    const columnsToSize = [
+      'internalId',
+      'units',
+      'revenueCents',
+      'ordersCount',
+      'stock',
+      'daysOfCover',
+      'listedPieces',
+    ].filter((field) => savedWidths[field] == null);
+    if (!columnsToSize.length) return undefined;
+    const frame = requestAnimationFrame(() => {
+      void api.autosizeColumns({
+        columns: columnsToSize,
+        includeHeaders: true,
+        includeOutliers: true,
+        expand: false,
+      });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [apiRef, columns, products.length]);
+
   if (!user?.permissions?.canAccessEcommerce)
     return <Navigate to={Pages.smSystem} replace />;
 
@@ -1092,7 +1103,8 @@ export const ProductsListPage = () => {
         </Alert>
       ) : null}
 
-      <DataGrid
+      <PersistedDataGrid
+        storageKey={gridStorageIds.products}
         rows={products}
         columns={columns}
         loading={isLoading}

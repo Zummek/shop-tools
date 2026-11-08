@@ -1,10 +1,12 @@
 import AddIcon from '@mui/icons-material/Add';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { Box, Button, Stack, TextField } from '@mui/material';
-import { DataGrid, GridColDef, GridRowParams } from '@mui/x-data-grid';
+import { GridColDef, GridRowParams } from '@mui/x-data-grid';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { PersistedDataGrid } from '../../../../components/dataGrid/PersistedDataGrid';
+import { gridStorageIds } from '../../../../components/dataGrid/persistedGridState';
 import { Pages } from '../../../../utils';
 import { useGetPriceTagGroups, pageSize } from '../api/useGetPriceTagGroups';
 import { CreatePriceTagGroup } from '../modals/CreatePriceTagGroup';
@@ -81,7 +83,8 @@ export const PriceTagsGroupsPage = () => {
         </Button>
       </Box>
       <Box height={500} width="100%">
-        <DataGrid
+        <PersistedDataGrid
+          storageKey={gridStorageIds.priceTags}
           sx={{
             '& .MuiDataGrid-columnHeaderTitle': {
               whiteSpace: 'normal',

@@ -19,11 +19,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import {
-  GridColDef,
-  GridRowParams,
-  useGridApiRef,
-} from '@mui/x-data-grid';
+import { GridColDef, GridRowParams, useGridApiRef } from '@mui/x-data-grid';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from 'dayjs';
 import { useEffect, useMemo, useState } from 'react';
@@ -477,7 +473,12 @@ export const AllegroPriceSimPage = () => {
         return false;
       if (vatFilter !== 'all' && String(row.vatRate) !== vatFilter)
         return false;
-      if (query && !row.name.toLowerCase().includes(query)) return false;
+      if (
+        query &&
+        !row.name.toLowerCase().includes(query) &&
+        !row.offerId.toLowerCase().includes(query)
+      )
+        return false;
       return true;
     });
   }, [displayRows, statusFilter, gapFilter, vatFilter, search]);
@@ -580,6 +581,11 @@ export const AllegroPriceSimPage = () => {
         ),
       },
       {
+        field: 'offerId',
+        headerName: 'Nr/ID\noferty',
+        width: 140,
+      },
+      {
         field: 'stock',
         headerName: 'Stan',
         type: 'number',
@@ -653,7 +659,9 @@ export const AllegroPriceSimPage = () => {
               ? ` Oferta zawiera ${units} szt. — zakup × ${units}.`
               : '';
           return (
-            <Tooltip title={`${marginSourceLabel(params.row.cogsSource)}${pack}`}>
+            <Tooltip
+              title={`${marginSourceLabel(params.row.cogsSource)}${pack}`}
+            >
               <span>{value == null ? '—' : formatPrice(Number(value))}</span>
             </Tooltip>
           );
@@ -961,10 +969,10 @@ export const AllegroPriceSimPage = () => {
               </Tooltip>
               <TextField
                 size="small"
-                label="Szukaj"
+                label="Szukaj nazwy lub ID oferty"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                sx={{ minWidth: 160, flex: '1 1 180px' }}
+                sx={{ minWidth: 260, flex: '1 1 280px' }}
               />
               <FormControl size="small" sx={{ minWidth: 140 }}>
                 <InputLabel>{'Status'}</InputLabel>

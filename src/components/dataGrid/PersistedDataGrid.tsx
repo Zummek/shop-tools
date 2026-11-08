@@ -10,22 +10,29 @@ import {
   GridColDef,
   gridClasses,
   GridColumnsManagementProps,
+  GridFooterContainer,
+  GridPagination,
+  GridSelectedRowCount,
   GridSortModel,
   GridToolbarColumnsButton,
-  GridToolbarContainer,
+  selectedGridRowsCountSelector,
   useGridApiContext,
   useGridApiRef,
+  useGridRootProps,
+  useGridSelector,
   type DataGridProps,
 } from '@mui/x-data-grid';
 import { plPL } from '@mui/x-data-grid/locales';
 import {
   createContext,
+  forwardRef,
   useCallback,
   useContext,
   useEffect,
   useMemo,
   useRef,
   useState,
+  type ComponentProps,
 } from 'react';
 
 import {
@@ -192,11 +199,35 @@ const ColumnsManagement = ({
   );
 };
 
-const ColumnsToolbar = () => (
-  <GridToolbarContainer sx={{ minHeight: 40, px: 1 }}>
-    <GridToolbarColumnsButton />
-  </GridToolbarContainer>
-);
+const ColumnsFooter = forwardRef<
+  HTMLDivElement,
+  ComponentProps<typeof GridFooterContainer>
+>(function ColumnsFooter(props, ref) {
+  const apiRef = useGridApiContext();
+  const rootProps = useGridRootProps();
+  const selectedRowCount = useGridSelector(
+    apiRef,
+    selectedGridRowsCountSelector,
+  );
+  const showSelected =
+    !rootProps.hideFooterSelectedRowCount && selectedRowCount > 0;
+
+  return (
+    <GridFooterContainer {...props} ref={ref}>
+      <Box sx={{ display: 'flex', alignItems: 'center', pl: 1, minWidth: 0 }}>
+        <GridToolbarColumnsButton />
+        {showSelected ? (
+          <GridSelectedRowCount selectedRowCount={selectedRowCount} />
+        ) : null}
+      </Box>
+      {rootProps.hideFooterPagination ? null : (
+        <Box sx={{ ml: 'auto' }}>
+          <GridPagination />
+        </Box>
+      )}
+    </GridFooterContainer>
+  );
+});
 
 export type PersistedDataGridProps = DataGridProps & {
   storageKey: string;
@@ -525,7 +556,7 @@ export const PersistedDataGrid = ({
           }}
           slots={{
             ...slots,
-            toolbar: ColumnsToolbar,
+            footer: ColumnsFooter,
             columnsManagement: ColumnsManagement,
           }}
           slotProps={{

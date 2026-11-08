@@ -24,6 +24,7 @@ import {
   GridRowParams,
   useGridApiRef,
 } from '@mui/x-data-grid';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from 'dayjs';
 import { useEffect, useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
@@ -43,6 +44,11 @@ import {
   AllegroPriceSimRow,
   useGetAllegroPriceSim,
 } from '../api/useGetAllegroPriceSim';
+import {
+  ALLEGRO_SALES_MARKETPLACES,
+  AllegroSalesMarketplace,
+  useGetAllegroPriceSimSales,
+} from '../api/useGetAllegroPriceSimSales';
 import { useSaveAllegroPriceSimOverride } from '../api/useSaveAllegroPriceSimOverride';
 import {
   AllegroPriceSimApplyConfirmDialog,
@@ -127,6 +133,8 @@ type DisplayRow = AllegroPriceSimRow & {
   /** Marża przy aktualnej cenie oferty Allegro (gdy tabela liczy z symulacji). */
   offerMarginCents: number | null;
   offerMarginPercent: number | null;
+  /** Sztuki tej oferty w wybranym okresie. Null, dopóki sprzedaż nie wróci. */
+  soldUnits: number | null;
 };
 
 const MarginDeltaCell = ({
@@ -273,6 +281,19 @@ export const AllegroPriceSimPage = () => {
     enabled: canView === true,
     defaultBranchId: user?.defaultBranch?.id ?? null,
   });
+  const {
+    marketplaces,
+    setMarketplaces,
+    startDate,
+    setStartDate,
+    endDate,
+    setEndDate,
+    rangeError,
+    soldByOffer,
+    salesReady,
+    salesLoading,
+    salesError,
+  } = useGetAllegroPriceSimSales(canView === true);
 
   const [selectedRow, setSelectedRow] = useState<AllegroPriceSimRow | null>(
     null,
@@ -362,6 +383,9 @@ export const AllegroPriceSimPage = () => {
           ? offerSim.marginPercent
           : null;
 
+      const soldUnits = !salesReady
+        ? null
+        : (soldByOffer.get(row.offerId) ?? 0);
       const base: DisplayRow = {
         ...row,
         id: row.offerId,
@@ -370,6 +394,7 @@ export const AllegroPriceSimPage = () => {
         priceGrossCents: effective,
         offerMarginCents,
         offerMarginPercent,
+        soldUnits,
       };
       if (effective == null || effective === row.priceGrossCents) return base;
 
@@ -393,6 +418,8 @@ export const AllegroPriceSimPage = () => {
     buyerDeliveryCents,
     shippingRate,
     targetMargin,
+    salesReady,
+    soldByOffer,
   ]);
 
   useEffect(() => {
@@ -557,6 +584,15 @@ export const AllegroPriceSimPage = () => {
         headerName: 'Stan',
         type: 'number',
         width: 72,
+        valueFormatter: (value) => (value == null ? '—' : String(value)),
+      },
+      {
+        field: 'soldUnits',
+        headerName: 'Sprzedane',
+        description:
+          'Sztuki sprzedane z tej oferty Allegro w wybranym okresie. Zestaw liczy każdy składnik, wielosztuka mnoży sztuki w ofercie. Pozycja bez dopasowanego produktu też się liczy.',
+        type: 'number',
+        width: 110,
         valueFormatter: (value) => (value == null ? '—' : String(value)),
       },
       {
@@ -976,6 +1012,95 @@ export const AllegroPriceSimPage = () => {
               ) : null}
             </Stack>
           </Stack>
+        </Stack>
+      </Paper>
+
+      <Paper variant="outlined" sx={{ p: 1.5 }}>
+        <Stack spacing={1}>
+          <Typography variant="overline" color="text.secondary">
+            {'Sprzedaż na Allegro'}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {
+              'Sztuki z nieanulowanych zamówień tej oferty Allegro w tych dniach (czas Europe/Warsaw). Pusty marketplace i zaznaczenie wszystkich liczą też zamówienia bez marketplace.'
+            }
+          </Typography>
+          <Stack
+            direction="row"
+            spacing={1.5}
+            flexWrap="wrap"
+            useFlexGap
+            alignItems="center"
+          >
+            <FormControl size="small" sx={{ minWidth: 220 }}>
+              <InputLabel id="allegro-sales-marketplace-label" shrink>
+                {'Marketplace'}
+              </InputLabel>
+              <Select
+                labelId="allegro-sales-marketplace-label"
+                label="Marketplace"
+                displayEmpty
+                multiple
+                value={marketplaces}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  const next = (
+                    typeof value === 'string' ? value.split(',') : value
+                  ).filter((item): item is AllegroSalesMarketplace =>
+                    ALLEGRO_SALES_MARKETPLACES.some(
+                      (market) => market.id === item,
+                    ),
+                  );
+                  setMarketplaces(next);
+                }}
+                renderValue={(selected) =>
+                  selected.length === 0
+                    ? 'Wszystkie'
+                    : selected
+                        .map(
+                          (id) =>
+                            ALLEGRO_SALES_MARKETPLACES.find(
+                              (market) => market.id === id,
+                            )?.label ?? id,
+                        )
+                        .join(', ')
+                }
+              >
+                {ALLEGRO_SALES_MARKETPLACES.map((market) => (
+                  <MenuItem key={market.id} value={market.id}>
+                    {market.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <DatePicker
+              label="Od"
+              format="DD.MM.YYYY"
+              value={dayjs(startDate)}
+              onChange={(value) => {
+                if (!value?.isValid()) return;
+                setStartDate(value.format('YYYY-MM-DD'));
+              }}
+              slotProps={{ textField: { size: 'small' } }}
+            />
+            <DatePicker
+              label="Do"
+              format="DD.MM.YYYY"
+              value={dayjs(endDate)}
+              onChange={(value) => {
+                if (!value?.isValid()) return;
+                setEndDate(value.format('YYYY-MM-DD'));
+              }}
+              slotProps={{ textField: { size: 'small' } }}
+            />
+            {salesLoading ? (
+              <Typography variant="caption" color="text.secondary">
+                {'Liczę sprzedaż…'}
+              </Typography>
+            ) : null}
+          </Stack>
+          {rangeError ? <Alert severity="warning">{rangeError}</Alert> : null}
+          {salesError ? <Alert severity="error">{salesError}</Alert> : null}
         </Stack>
       </Paper>
 

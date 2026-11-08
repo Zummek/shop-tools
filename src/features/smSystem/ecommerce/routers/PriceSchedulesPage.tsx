@@ -1,17 +1,18 @@
 import AddIcon from '@mui/icons-material/Add';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Button,
+  Checkbox,
   Chip,
   CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
   IconButton,
   Menu,
   MenuItem,
@@ -55,6 +56,7 @@ import {
   ChannelProductLink,
   PriceScheduleDisableMode,
   PriceScheduleEvent,
+  useBulkDeletePriceSchedules,
   useBulkDisablePriceSchedules,
   useBulkEnablePriceSchedules,
   useDeletePriceSchedule,
@@ -240,7 +242,13 @@ export const PriceSchedulesPage = () => {
   const gridApiRef = useGridApiRef();
   const [searchParams, setSearchParams] = useSearchParams();
   const listParams = parsePriceScheduleListParams(searchParams);
-  const { tab, query, page, scheduleId } = listParams;
+  const {
+    tab,
+    query,
+    page,
+    scheduleId,
+    offerHasActive: offerHasActiveParam,
+  } = listParams;
   const { user } = useAppSelector((state) => state.smSystemUser);
   const { notify } = useNotify();
   const [searchInput, setSearchInput] = useState(query);
@@ -271,6 +279,9 @@ export const PriceSchedulesPage = () => {
     null,
   );
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [confirmBulkDeleteIds, setConfirmBulkDeleteIds] = useState<
+    number[] | null
+  >(null);
 
   const replaceListParams = useCallback(
     (next: Parameters<typeof applyPriceScheduleListParams>[1]) => {
@@ -287,14 +298,22 @@ export const PriceSchedulesPage = () => {
   );
 
   const isActiveTab = tab === 'active';
+  const offerHasActive = !isActiveTab && offerHasActiveParam;
   const { schedules, isLoading, isFetching, isPlaceholderData, isError } =
     useGetPriceSchedules({
       isEnabled: isActiveTab,
       ...(query ? { query } : {}),
+      ...(offerHasActive ? { hasActiveOnOffer: true } : {}),
     });
+  // keepPreviousData would otherwise leave the previous, wider list on screen
+  // while a new filter is in flight. Those rows must not be selectable.
+  const listReady = !isLoading && !isPlaceholderData;
   const visibleSchedules = useMemo(
-    () => schedules.filter((schedule) => schedule.isEnabled === isActiveTab),
-    [schedules, isActiveTab],
+    () =>
+      listReady
+        ? schedules.filter((schedule) => schedule.isEnabled === isActiveTab)
+        : [],
+    [schedules, isActiveTab, listReady],
   );
   usePinDataGridColumns(
     gridApiRef,
@@ -323,6 +342,8 @@ export const PriceSchedulesPage = () => {
     useBulkEnablePriceSchedules();
   const { deletePriceSchedule, isPending: isDeleting } =
     useDeletePriceSchedule();
+  const { bulkDeletePriceSchedules, isPending: isBulkDeleting } =
+    useBulkDeletePriceSchedules();
   const { refreshPriceSchedulePrices, isPending: isRefreshing } =
     useRefreshPriceSchedulePrices();
   const isMutationBusy =
@@ -331,7 +352,8 @@ export const PriceSchedulesPage = () => {
     isRefreshing ||
     isDisabling ||
     isEnabling ||
-    isDeleting;
+    isDeleting ||
+    isBulkDeleting;
   useEffect(() => {
     setSearchInput((current) => (current.trim() === query ? current : query));
   }, [query]);
@@ -367,7 +389,7 @@ export const PriceSchedulesPage = () => {
       isFetching,
       isError,
       found: visibleSchedules.some((schedule) => schedule.id === scheduleId),
-      hasQuery: query.length > 0,
+      hasQuery: query.length > 0 || offerHasActive,
       triedOtherTab: triedOtherTabForRef.current === scheduleId,
     });
 
@@ -399,7 +421,12 @@ export const PriceSchedulesPage = () => {
         `Harmonogram #${scheduleId} nie jest na tej liście przy obecnym filtrze.`,
         {
           actionLabel: 'Wyczyść filtr',
-          onAction: () => replaceListParams({ query: '', page: 0 }),
+          onAction: () =>
+            replaceListParams({
+              query: '',
+              page: 0,
+              offerHasActive: false,
+            }),
         },
       );
       return;
@@ -425,6 +452,7 @@ export const PriceSchedulesPage = () => {
     isLoading,
     isPlaceholderData,
     notify,
+    offerHasActive,
     query,
     replaceListParams,
     scheduleId,
@@ -485,6 +513,35 @@ export const PriceSchedulesPage = () => {
       }
     } catch {
       notify('error', 'Nie udało się wyłączyć harmonogramu');
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    const ids = confirmBulkDeleteIds;
+    setConfirmBulkDeleteIds(null);
+    if (!ids || ids.length === 0) return;
+    try {
+      const result = await bulkDeletePriceSchedules(ids);
+      setSelectedIds([]);
+      if (result.deleted === 0) {
+        notify(
+          'error',
+          result.blocked
+            ? 'Nie usunięto — cena tymczasowa jest jeszcze aktywna. Najpierw wyłącz harmonogram.'
+            : 'Nie udało się usunąć zaznaczonych harmonogramów',
+        );
+        return;
+      }
+      const blockedPart = result.blocked
+        ? `, ${result.blocked} pominięte (aktywna cena tymczasowa)`
+        : '';
+      const failedPart = result.failed ? `, ${result.failed} nieudane` : '';
+      notify(
+        result.failed || result.blocked ? 'warning' : 'success',
+        `Usunięto ${result.deleted}${blockedPart}${failedPart}`,
+      );
+    } catch {
+      notify('error', 'Nie udało się usunąć zaznaczonych harmonogramów');
     }
   };
 
@@ -834,12 +891,18 @@ export const PriceSchedulesPage = () => {
     {
       field: 'actions',
       headerName: '',
-      width: 280,
+      width: 360,
+      minWidth: 360,
       sortable: false,
       renderCell: (params) => {
         const schedule = params.row;
         return (
-          <Stack direction="row" spacing={1} alignItems="center">
+          <Stack
+            direction="row"
+            spacing={1}
+            alignItems="center"
+            sx={{ flexShrink: 0 }}
+          >
             <IconButton
               size="small"
               aria-label="Historia zmian ceny"
@@ -875,14 +938,14 @@ export const PriceSchedulesPage = () => {
                 >
                   {'Włącz'}
                 </Button>
-                <IconButton
+                <Button
                   size="small"
-                  aria-label="Usuń harmonogram"
+                  color="error"
                   disabled={isMutationBusy}
                   onClick={() => setDeleteTarget(schedule)}
                 >
-                  <DeleteOutlineIcon fontSize="small" />
-                </IconButton>
+                  {'Usuń'}
+                </Button>
               </>
             )}
           </Stack>
@@ -922,7 +985,12 @@ export const PriceSchedulesPage = () => {
         onChange={(_event, value: 'active' | 'inactive') => {
           setSelectedIds([]);
           setEditedSchedule(null);
-          replaceListParams({ tab: value, page: 0, scheduleId: null });
+          replaceListParams({
+            tab: value,
+            page: 0,
+            scheduleId: null,
+            ...(value === 'active' ? { offerHasActive: false } : {}),
+          });
         }}
         sx={{ borderBottom: 1, borderColor: 'divider' }}
       >
@@ -938,6 +1006,25 @@ export const PriceSchedulesPage = () => {
           onChange={(e) => setSearchInput(e.target.value)}
           sx={{ maxWidth: 480, flex: 1 }}
         />
+        {!isActiveTab && (
+          <FormControlLabel
+            control={
+              <Checkbox
+                size="small"
+                checked={offerHasActive}
+                onChange={(_event, checked) => {
+                  setSelectedIds([]);
+                  replaceListParams({
+                    offerHasActive: checked,
+                    page: 0,
+                  });
+                }}
+              />
+            }
+            label="Oferta ma już aktywną zmianę"
+            sx={{ flexShrink: 0, mr: 0 }}
+          />
+        )}
         {visibleSchedules.length > 0 && (
           <Button
             size="small"
@@ -995,9 +1082,28 @@ export const PriceSchedulesPage = () => {
             {`Włącz zaznaczone (${selectedIds.length})`}
           </LoadingButton>
         )}
+        {!isActiveTab && (
+          <LoadingButton
+            variant="outlined"
+            color="error"
+            loading={isBulkDeleting}
+            disabled={selectedIds.length === 0 || isMutationBusy}
+            onClick={() => setConfirmBulkDeleteIds([...selectedIds])}
+            sx={{ flexShrink: 0 }}
+            title={
+              selectedIds.length === 0
+                ? 'Zaznacz wiersze (lub „Zaznacz wszystkie”), aby je usunąć'
+                : undefined
+            }
+          >
+            {selectedIds.length > 0
+              ? `Usuń zaznaczone (${selectedIds.length})`
+              : 'Usuń zaznaczone'}
+          </LoadingButton>
+        )}
       </Stack>
 
-      {(isLoading || isPlaceholderData) && visibleSchedules.length === 0 ? (
+      {!listReady ? (
         <Box display="flex" justifyContent="center" py={6}>
           <CircularProgress size={28} />
         </Box>
@@ -1005,9 +1111,11 @@ export const PriceSchedulesPage = () => {
         <Typography variant="body2" color="text.secondary">
           {query
             ? 'Brak harmonogramów pasujących do wyszukiwania.'
-            : isActiveTab
-              ? 'Brak aktywnych harmonogramów cenowych.'
-              : 'Brak nieaktywnych harmonogramów cenowych.'}
+            : offerHasActive
+              ? 'Brak nieaktywnych harmonogramów dla ofert, które mają już aktywną zmianę.'
+              : isActiveTab
+                ? 'Brak aktywnych harmonogramów cenowych.'
+                : 'Brak nieaktywnych harmonogramów cenowych.'}
         </Typography>
       ) : (
         <PersistedDataGrid
@@ -1180,6 +1288,35 @@ export const PriceSchedulesPage = () => {
             onClick={handleBulkEnable}
           >
             {'Włącz'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={confirmBulkDeleteIds != null}
+        onClose={() => setConfirmBulkDeleteIds(null)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>{'Usunięcie zaznaczonych harmonogramów'}</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2">
+            {`Usunąć ${confirmBulkDeleteIds?.length ?? 0} ${scheduleNoun(
+              confirmBulkDeleteIds?.length ?? 0,
+            )}? Historia zdarzeń zostanie usunięta. Tej operacji nie można cofnąć. Harmonogram z aktywną ceną tymczasową zostanie pominięty.`}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmBulkDeleteIds(null)}>
+            {'Anuluj'}
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            disabled={isBulkDeleting}
+            onClick={handleBulkDelete}
+          >
+            {'Usuń'}
           </Button>
         </DialogActions>
       </Dialog>

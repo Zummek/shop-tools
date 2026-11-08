@@ -4,6 +4,7 @@ export * from './useConnectWooCommerce';
 export * from './useDeleteEcommerceOrders';
 export * from './useErliDisconnect';
 export * from './useBulkCreatePriceScheduleDrafts';
+export * from './useBulkDeletePriceSchedules';
 export * from './useBulkDisablePriceSchedules';
 export * from './useBulkEnablePriceSchedules';
 export * from './useCreatePriceSchedule';

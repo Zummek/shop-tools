@@ -40,6 +40,8 @@ interface Filters {
   linkId?: number;
   isEnabled?: boolean;
   query?: string;
+  /** Keep schedules whose offer already has another enabled schedule. */
+  hasActiveOnOffer?: boolean;
 }
 
 export const useGetPriceSchedules = (filters: Filters = {}) => {
@@ -58,6 +60,9 @@ export const useGetPriceSchedules = (filters: Filters = {}) => {
                   ? undefined
                   : String(filters.isEnabled),
               query: filters.query || undefined,
+              has_active_on_offer: filters.hasActiveOnOffer
+                ? 'true'
+                : undefined,
             },
           },
         );

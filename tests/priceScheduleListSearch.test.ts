@@ -16,6 +16,7 @@ test('parsePriceScheduleListParams reads tab, query, page, and schedule', () => 
     query: 'ALINESS',
     page: 1,
     scheduleId: 68,
+    offerHasActive: false,
   });
 });
 
@@ -28,7 +29,15 @@ test('parsePriceScheduleListParams defaults and ignores junk', () => {
     query: '',
     page: 0,
     scheduleId: null,
+    offerHasActive: false,
   });
+});
+
+test('parsePriceScheduleListParams reads the offer-has-active filter', () => {
+  const params = parsePriceScheduleListParams(
+    new URLSearchParams('tab=inactive&with_active=1'),
+  );
+  assert.equal(params.offerHasActive, true);
 });
 
 test('applyPriceScheduleListParams omits defaults and keeps schedule', () => {
@@ -37,23 +46,27 @@ test('applyPriceScheduleListParams omits defaults and keeps schedule', () => {
     query: 'ALINESS',
     page: 1,
     scheduleId: 114,
+    offerHasActive: true,
   });
   assert.equal(next.get('foo'), '1');
   assert.equal(next.get('tab'), 'inactive');
   assert.equal(next.get('q'), 'ALINESS');
   assert.equal(next.get('page'), '2');
   assert.equal(next.get('schedule'), '114');
+  assert.equal(next.get('with_active'), '1');
 
   const cleared = applyPriceScheduleListParams(next, {
     tab: 'active',
     query: '',
     page: 0,
     scheduleId: null,
+    offerHasActive: false,
   });
   assert.equal(cleared.get('tab'), null);
   assert.equal(cleared.get('q'), null);
   assert.equal(cleared.get('page'), null);
   assert.equal(cleared.get('schedule'), null);
+  assert.equal(cleared.get('with_active'), null);
   assert.equal(cleared.get('foo'), '1');
 });
 

@@ -6,6 +6,8 @@ export type PriceScheduleListParams = {
   /** Zero-based DataGrid page. URL stores it 1-based. */
   page: number;
   scheduleId: number | null;
+  /** Inactive tab: offer already has another enabled schedule. */
+  offerHasActive: boolean;
 };
 
 const parsePage = (searchParams: URLSearchParams): number => {
@@ -29,6 +31,7 @@ export const parsePriceScheduleListParams = (
   query: searchParams.get('q') ?? '',
   page: parsePage(searchParams),
   scheduleId: parseScheduleId(searchParams),
+  offerHasActive: searchParams.get('with_active') === '1',
 });
 
 export type ScheduleDeepLinkAction =
@@ -85,6 +88,9 @@ export const applyPriceScheduleListParams = (
   if (merged.scheduleId != null)
     params.set('schedule', String(merged.scheduleId));
   else params.delete('schedule');
+
+  if (merged.offerHasActive) params.set('with_active', '1');
+  else params.delete('with_active');
 
   return params;
 };

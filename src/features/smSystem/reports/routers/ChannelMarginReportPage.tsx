@@ -48,6 +48,7 @@ import {
 import { HowWeCalculateAccordion } from '../components/MarginCalculationBreakdown';
 import { ProductMarginSourceModal } from '../components/ProductMarginSourceModal';
 import {
+  averageMarginPerUnitCents,
   formatSharePercent,
   SHARE_PERCENT_DESCRIPTION,
   shareOfMarginBasePercent,
@@ -411,6 +412,18 @@ export const ChannelMarginReportPage = () => {
         ),
       },
       {
+        field: 'avgMarginPerUnitCents',
+        headerName: 'Śr. marża brutto\n/ szt. (PLN)',
+        description:
+          'Marża brutto wiersza podzielona przez sprzedane sztuki. Zaokrąglona do grosza. Wielosztuka Allegro jest już wliczona w sztuki.',
+        type: 'number',
+        width: 140,
+        valueGetter: (_value, row) =>
+          averageMarginPerUnitCents(row.marginCents, row.units),
+        valueFormatter: (value) =>
+          value == null ? '—' : formatPrice(Number(value)),
+      },
+      {
         field: 'marginNetCents',
         headerName: 'Marża\nnetto (PLN)',
         description:
@@ -424,6 +437,18 @@ export const ChannelMarginReportPage = () => {
             percent={params.row.marginNetPercent}
           />
         ),
+      },
+      {
+        field: 'avgMarginNetPerUnitCents',
+        headerName: 'Śr. marża netto\n/ szt. (PLN)',
+        description:
+          'Marża netto wiersza podzielona przez sprzedane sztuki. Zaokrąglona do grosza. Wielosztuka Allegro jest już wliczona w sztuki.',
+        type: 'number',
+        width: 140,
+        valueGetter: (_value, row) =>
+          averageMarginPerUnitCents(row.marginNetCents, row.units),
+        valueFormatter: (value) =>
+          value == null ? '—' : formatPrice(Number(value)),
       },
     ];
   }, [lens, rowMode]);

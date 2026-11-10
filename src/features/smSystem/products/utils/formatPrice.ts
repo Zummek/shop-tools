@@ -1,11 +1,11 @@
 export const formatPrice = (price: number | string, currency?: string) => {
-  const priceNumber = Number(price);
-  const firstPart = priceNumber.toString().slice(0, -2);
-  const secondPart = priceNumber.toString().slice(-2).padStart(2, '0');
+  const cents = Number(price);
+  if (!Number.isFinite(cents)) return currency ? `0,00 ${currency}` : '0,00';
 
-  if (firstPart === '')
-    return '0,' + secondPart + (currency ? ' ' + currency : '');
-  if (firstPart === '0')
-    return firstPart + ',' + secondPart + (currency ? ' ' + currency : '');
-  return firstPart + ',' + secondPart + (currency ? ' ' + currency : '');
+  const sign = cents < 0 ? '-' : '';
+  const abs = Math.abs(Math.trunc(cents));
+  const whole = Math.floor(abs / 100);
+  const part = String(abs % 100).padStart(2, '0');
+  const amount = `${sign}${whole},${part}`;
+  return currency ? `${amount} ${currency}` : amount;
 };

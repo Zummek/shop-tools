@@ -12,5 +12,17 @@ export const shareOfMarginBasePercent = (
 export const formatSharePercent = (percent: number | null) =>
   percent == null ? '—' : `${percent.toFixed(1)}%`;
 
+/** Row margin divided by sold units, rounded to a grosz. Null when there are no units. */
+export const averageMarginPerUnitCents = (
+  marginCents: number,
+  units: number,
+): number | null => {
+  if (!Number.isFinite(marginCents) || !Number.isFinite(units) || units <= 0)
+    return null;
+  const perUnit = marginCents / units;
+  const sign = perUnit < 0 ? -1 : 1;
+  return sign * Math.round(Math.abs(perUnit));
+};
+
 export const SHARE_PERCENT_DESCRIPTION =
   'Szary % pod kwotą = udział względem (przychód + dostawa od klienta), jak przy marży %.';

@@ -1,16 +1,18 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import { axiosInstance } from '../../../../services';
 import { ListResponse } from '../../app/types';
 import { OrderStatus } from '../types';
+import { ORDER_STATUSES } from '../utils/orderStatusConfig';
 
 const pageSize = 25;
 const endpoint = '/api/v1/ecommerce/orders/';
 export const getEcommerceOrdersQueryKeyBase = 'ecommerceOrders';
 
 export type OrderSourceFilter = 'allegro' | 'woocommerce' | 'erli' | '';
+export type OrderStatusFilter = OrderStatus | '';
 
 export interface EcommerceOrderListItem {
   id: number;
@@ -47,6 +49,11 @@ const parseOrderSource = (value: string | null): OrderSourceFilter =>
     ? value
     : '';
 
+const parseStatus = (value: string | null): OrderStatusFilter =>
+  value && ORDER_STATUSES.includes(value as OrderStatus)
+    ? (value as OrderStatus)
+    : '';
+
 const parsePage = (value: string | null): number => {
   const parsed = value ? Number(value) : 1;
   if (!Number.isInteger(parsed) || parsed < 1) return 0;
@@ -70,7 +77,9 @@ const replaceSearchParams = (
 
 const readListParams = (params: URLSearchParams) => ({
   page: parsePage(params.get('page')),
+  query: (params.get('query') || '').trim(),
   orderSource: parseOrderSource(params.get('orderSource')),
+  status: parseStatus(params.get('status')),
   needsProductReview:
     params.get('needsProductReview') === '1' ||
     params.get('needsProductReview') === 'true',
@@ -80,10 +89,11 @@ const readListParams = (params: URLSearchParams) => ({
 
 export const useGetEcommerceOrders = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [query, setQuery] = useState<string>('');
   const {
     page,
+    query,
     orderSource,
+    status,
     needsProductReview,
     deliveryGroupIds,
     deliveryIds,
@@ -98,6 +108,31 @@ export const useGetEcommerceOrders = () => {
         if (readListParams(params).page === normalized) return;
         if (normalized <= 0) params.delete('page');
         else params.set('page', String(normalized + 1));
+      });
+    },
+    [setSearchParams],
+  );
+
+  const setQuery = useCallback(
+    (value: string) => {
+      const next = value.trim();
+      replaceSearchParams(setSearchParams, (params) => {
+        if (readListParams(params).query === next) return;
+        if (next) params.set('query', next);
+        else params.delete('query');
+        params.delete('page');
+      });
+    },
+    [setSearchParams],
+  );
+
+  const setStatus = useCallback(
+    (nextStatus: OrderStatusFilter) => {
+      replaceSearchParams(setSearchParams, (params) => {
+        if (readListParams(params).status === nextStatus) return;
+        if (nextStatus) params.set('status', nextStatus);
+        else params.delete('status');
+        params.delete('page');
       });
     },
     [setSearchParams],
@@ -155,10 +190,11 @@ export const useGetEcommerceOrders = () => {
   const getEcommerceOrdersRequest = async () => {
     const response = await axiosInstance.get<Response>(endpoint, {
       params: {
-        query,
         page: page + 1,
         pageSize,
+        ...(query ? { query } : {}),
         ...(orderSource ? { orderSource } : {}),
+        ...(status ? { status } : {}),
         ...(needsProductReview ? { needsProductReview: true } : {}),
         ...(deliveryGroupIds.length ? { deliveryGroupIds } : {}),
         ...(deliveryIds.length ? { deliveryIds } : {}),
@@ -173,6 +209,7 @@ export const useGetEcommerceOrders = () => {
       query,
       page,
       orderSource,
+      status,
       needsProductReview,
       deliveryGroupIds,
       deliveryIds,
@@ -197,6 +234,8 @@ export const useGetEcommerceOrders = () => {
     pageSize,
     orderSource,
     setOrderSource,
+    status,
+    setStatus,
     needsProductReview,
     setNeedsProductReview,
     deliveryGroupIds,

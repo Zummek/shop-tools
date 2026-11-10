@@ -13,12 +13,13 @@ import {
   SelectChangeEvent,
   Stack,
   Switch,
+  TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
 import { GridColDef, GridRowParams } from '@mui/x-data-grid';
 import dayjs from 'dayjs';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { PersistedDataGrid } from '../../../../components/dataGrid/PersistedDataGrid';
@@ -41,7 +42,12 @@ import {
   WooStatusChip,
 } from '../components';
 import { ImportEcommerceOrderModal } from '../modals/ImportEcommerceOrderModal/ImportEcommerceOrderModal';
-import { externalStatusLabel } from '../utils';
+import type { OrderStatus } from '../types';
+import {
+  externalStatusLabel,
+  ORDER_STATUSES,
+  orderStatusConfig,
+} from '../utils';
 
 const SYNC_STALE_MINUTES = 30;
 
@@ -270,14 +276,29 @@ export const EcommerceOrdersListPage = () => {
     page,
     pageSize,
     setPage,
+    query,
+    setQuery,
     orderSource,
     setOrderSource,
+    status,
+    setStatus,
     needsProductReview,
     setNeedsProductReview,
     deliveryGroupIds,
     deliveryIds,
     setDeliveryFilters,
   } = useGetEcommerceOrders();
+  const [searchInput, setSearchInput] = useState(query);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => setQuery(searchInput), 300);
+    return () => clearTimeout(timeout);
+  }, [searchInput, setQuery]);
+
+  useEffect(() => {
+    setSearchInput((current) => (current.trim() === query ? current : query));
+  }, [query]);
+
   const { deliveryMethods } = useGetDeliveryMethods();
   const { allegroConnection } = useGetAllegroConnection();
   const { wooCommerceConnection } = useGetWooCommerceConnection();
@@ -356,6 +377,13 @@ export const EcommerceOrdersListPage = () => {
         flexWrap="wrap"
       >
         <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
+          <TextField
+            size="small"
+            label="Kupujący, login lub ID zamówienia"
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+            sx={{ minWidth: 280 }}
+          />
           <FormControl size="small" sx={{ minWidth: 200 }}>
             <InputLabel id="order-source-filter-label">{'Źródło'}</InputLabel>
             <Select
@@ -370,6 +398,22 @@ export const EcommerceOrdersListPage = () => {
               <MenuItem value="allegro">{'Allegro'}</MenuItem>
               <MenuItem value="woocommerce">{'WooCommerce'}</MenuItem>
               <MenuItem value="erli">{'Erli'}</MenuItem>
+            </Select>
+          </FormControl>
+          <FormControl size="small" sx={{ minWidth: 200 }}>
+            <InputLabel id="order-status-filter-label">{'Status SM'}</InputLabel>
+            <Select
+              labelId="order-status-filter-label"
+              label="Status SM"
+              value={status}
+              onChange={(e) => setStatus(e.target.value as OrderStatus | '')}
+            >
+              <MenuItem value="">{'Wszystkie'}</MenuItem>
+              {ORDER_STATUSES.map((item) => (
+                <MenuItem key={item} value={item}>
+                  {orderStatusConfig[item].label}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
           <FormControl size="small" sx={{ minWidth: 240 }}>

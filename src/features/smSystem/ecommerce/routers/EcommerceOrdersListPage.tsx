@@ -19,7 +19,7 @@ import {
 } from '@mui/material';
 import { GridColDef, GridRowParams } from '@mui/x-data-grid';
 import dayjs from 'dayjs';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { PersistedDataGrid } from '../../../../components/dataGrid/PersistedDataGrid';
@@ -289,14 +289,21 @@ export const EcommerceOrdersListPage = () => {
     setDeliveryFilters,
   } = useGetEcommerceOrders();
   const [searchInput, setSearchInput] = useState(query);
+  const committedQuery = useRef(query);
 
   useEffect(() => {
-    const timeout = setTimeout(() => setQuery(searchInput), 300);
+    const timeout = setTimeout(() => {
+      const next = searchInput.trim();
+      committedQuery.current = next;
+      setQuery(next);
+    }, 300);
     return () => clearTimeout(timeout);
   }, [searchInput, setQuery]);
 
   useEffect(() => {
-    setSearchInput((current) => (current.trim() === query ? current : query));
+    if (query === committedQuery.current) return;
+    committedQuery.current = query;
+    setSearchInput(query);
   }, [query]);
 
   const { deliveryMethods } = useGetDeliveryMethods();

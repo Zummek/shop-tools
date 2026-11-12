@@ -63,10 +63,9 @@ export const parsePriceScheduleApiError = (
   };
 };
 
-/** Hash-router location for a conflicting schedule (active tab, no search). */
+/** Hash-router location for a conflicting schedule, without the list search. */
 export const priceScheduleConflictHash = (scheduleId: number, path: string) => {
   const params = new URLSearchParams();
-  params.set('tab', 'active');
   params.set('schedule', String(scheduleId));
   return `${path}?${params.toString()}`;
 };

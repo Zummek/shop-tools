@@ -1,56 +1,38 @@
 import AddIcon from '@mui/icons-material/Add';
-import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
-import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Button,
   Checkbox,
-  Chip,
   CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
   FormControlLabel,
-  IconButton,
   Menu,
   MenuItem,
+  Pagination,
   Stack,
-  Tab,
   Table,
+  ToggleButton,
+  ToggleButtonGroup,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
-  Tabs,
   TextField,
   Typography,
 } from '@mui/material';
-import {
-  GRID_CHECKBOX_SELECTION_COL_DEF,
-  GridColDef,
-  GridPaginationModel,
-  GridRowSelectionModel,
-  useGridApiRef,
-} from '@mui/x-data-grid';
 import dayjs from 'dayjs';
-import {
-  MouseEvent,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 
-import { PersistedDataGrid } from '../../../../components/dataGrid/PersistedDataGrid';
-import { gridStorageIds } from '../../../../components/dataGrid/persistedGridState';
 import { useAppSelector, useNotify } from '../../../../hooks';
 import { Pages } from '../../../../utils';
 import { formatPrice } from '../../products/utils';
-import { usePinDataGridColumns } from '../../reports/utils/usePinDataGridColumn';
 import {
   ChannelPriceSchedule,
   ChannelProductLink,
@@ -65,6 +47,7 @@ import {
   useGetPriceSchedules,
   useRefreshPriceSchedulePrices,
 } from '../api';
+import { PriceScheduleProductGroups } from '../components';
 import {
   SchedulePriceChangeModal,
   SchedulePriceDraftWizard,
@@ -73,77 +56,17 @@ import {
 import {
   applyPriceScheduleListParams,
   formatPriceScheduleEventLabel,
-  formatPriceScheduleNextChange,
-  formatPriceScheduleWindowSummary,
+  groupSchedulesByProduct,
   isPriceScheduleChannelMismatch,
-  isPriceScheduleExpectingTemporary,
-  isPriceScheduleSnoozed,
   notifyPriceScheduleConflictText,
   notifyPriceScheduleFailure,
+  pageOfGroups,
   parsePriceScheduleListParams,
   resolveScheduleDeepLink,
+  type PriceScheduleEnabledFilter,
 } from '../utils';
 
 const PAGE_SIZE = 25;
-
-const statusChip = (schedule: ChannelPriceSchedule) => {
-  if (!schedule.isEnabled) {
-    if (schedule.temporaryPrice == null) {
-      return (
-        <Chip
-          size="small"
-          label="Szkic"
-          color="default"
-          title="Cena tymczasowa nieuzupełniona — harmonogram jest nieaktywny"
-        />
-      );
-    }
-    return <Chip size="small" label="Wyłączona" color="default" />;
-  }
-  if (schedule.consecutiveFailures > 0) {
-    return (
-      <Chip
-        size="small"
-        label="Błąd — ponawiam"
-        color="error"
-        title={schedule.lastError ?? undefined}
-      />
-    );
-  }
-  if (schedule.disableAfterRevert)
-    return <Chip size="small" label="Wyłączanie po oknie" color="warning" />;
-  if (schedule.isApplied)
-    return <Chip size="small" label="Zmiana ceny aktywna" color="success" />;
-  if (isPriceScheduleSnoozed(schedule)) {
-    return (
-      <Chip
-        size="small"
-        label={`Wstrzymana do ${dayjs(schedule.snoozedUntil).format(
-          'DD.MM HH:mm',
-        )}`}
-        color="warning"
-        title="Cena bazowa zastosowana od razu — cena tymczasowa wróci przy następnym oknie"
-      />
-    );
-  }
-  return <Chip size="small" label="Zaplanowana" color="info" />;
-};
-
-const allegroOfferUrl = (offerId: string, marketplace?: string | null) => {
-  if (marketplace?.includes('cz'))
-    return `https://allegro.cz/oferta/${offerId}`;
-  if (marketplace?.includes('sk'))
-    return `https://allegro.sk/oferta/${offerId}`;
-  if (marketplace?.includes('hu'))
-    return `https://allegro.hu/oferta/${offerId}`;
-  return `https://allegro.pl/oferta/${offerId}`;
-};
-
-const scheduleOfferUrl = (schedule: ChannelPriceSchedule) => {
-  if (schedule.channel === 'allegro' && schedule.externalOfferId)
-    return allegroOfferUrl(schedule.externalOfferId, schedule.marketplace);
-  return null;
-};
 
 const formatEventPriceChange = (
   event: PriceScheduleEvent,
@@ -160,9 +83,6 @@ const formatEventPriceChange = (
   return formatPrice(event.priceBefore as number | string, currency);
 };
 
-const latestEvent = (schedule: ChannelPriceSchedule) =>
-  schedule.events?.[0] ?? null;
-
 const scheduleNoun = (count: number) => {
   if (count === 1) return 'harmonogram';
   const mod10 = count % 10;
@@ -172,45 +92,6 @@ const scheduleNoun = (count: number) => {
 
   return 'harmonogramów';
 };
-
-const NameWithEyeButton = ({
-  name,
-  ariaLabel,
-  href,
-  onClick,
-}: {
-  name: string | null;
-  ariaLabel: string;
-  href?: string;
-  onClick?: () => void;
-}) => (
-  <Stack
-    direction="row"
-    alignItems="center"
-    spacing={0.5}
-    sx={{ minWidth: 0, width: '100%' }}
-  >
-    <Typography variant="body2" noWrap sx={{ flex: 1, minWidth: 0 }}>
-      {name || '—'}
-    </Typography>
-    {(href || onClick) && (
-      <IconButton
-        size="small"
-        component={href ? 'a' : 'button'}
-        href={href}
-        target={href ? '_blank' : undefined}
-        rel={href ? 'noopener noreferrer' : undefined}
-        aria-label={ariaLabel}
-        onClick={(event: MouseEvent) => {
-          event.stopPropagation();
-          onClick?.();
-        }}
-      >
-        <VisibilityOutlinedIcon fontSize="small" />
-      </IconButton>
-    )}
-  </Stack>
-);
 
 /** Minimal link shape the modal needs, reconstructed from schedule context. */
 const scheduleToLink = (
@@ -243,23 +124,15 @@ const scheduleToLink = (
 
 export const PriceSchedulesPage = () => {
   const navigate = useNavigate();
-  const gridApiRef = useGridApiRef();
   const [searchParams, setSearchParams] = useSearchParams();
   const listParams = parsePriceScheduleListParams(searchParams);
-  const {
-    tab,
-    query,
-    page,
-    scheduleId,
-    offerHasActive: offerHasActiveParam,
-  } = listParams;
+  const { query, page, scheduleId, status, offerHasActive } = listParams;
   const { user } = useAppSelector((state) => state.smSystemUser);
   const { notify } = useNotify();
   const [searchInput, setSearchInput] = useState(query);
   const [editedSchedule, setEditedSchedule] =
     useState<ChannelPriceSchedule | null>(null);
   const openedScheduleIdRef = useRef<number | null>(null);
-  const triedOtherTabForRef = useRef<number | null>(null);
   const missingNoticeKeyRef = useRef<string | null>(null);
   const [draftWizardOpen, setDraftWizardOpen] = useState(false);
   const [oneOffOpen, setOneOffOpen] = useState(false);
@@ -280,10 +153,16 @@ export const PriceSchedulesPage = () => {
   >(null);
   const [bulkDisableMenuAnchor, setBulkDisableMenuAnchor] =
     useState<HTMLElement | null>(null);
+  const [actionsMenuAnchor, setActionsMenuAnchor] =
+    useState<HTMLElement | null>(null);
+  const actionsButtonRef = useRef<HTMLButtonElement | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ChannelPriceSchedule | null>(
     null,
   );
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [collapsedKeys, setCollapsedKeys] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
   const [confirmBulkDeleteIds, setConfirmBulkDeleteIds] = useState<
     number[] | null
   >(null);
@@ -302,41 +181,64 @@ export const PriceSchedulesPage = () => {
     [setSearchParams],
   );
 
-  const isActiveTab = tab === 'active';
-  const offerHasActive = !isActiveTab && offerHasActiveParam;
   const { schedules, isLoading, isFetching, isPlaceholderData, isError } =
     useGetPriceSchedules({
-      isEnabled: isActiveTab,
       ...(query ? { query } : {}),
       ...(offerHasActive ? { hasActiveOnOffer: true } : {}),
     });
   // keepPreviousData would otherwise leave the previous, wider list on screen
   // while a new filter is in flight. Those rows must not be selectable.
   const listReady = !isLoading && !isPlaceholderData;
-  const visibleSchedules = useMemo(
+  const visibleSchedules = useMemo(() => {
+    if (!listReady) return [];
+    if (status === 'enabled')
+      return schedules.filter((schedule) => schedule.isEnabled);
+    if (status === 'disabled')
+      return schedules.filter((schedule) => !schedule.isEnabled);
+    return schedules;
+  }, [listReady, schedules, status]);
+  const productGroups = useMemo(
+    () => groupSchedulesByProduct(visibleSchedules),
+    [visibleSchedules],
+  );
+  const groupPage = pageOfGroups(productGroups, page, PAGE_SIZE);
+  const pageScheduleIds = useMemo(
     () =>
-      listReady
-        ? schedules.filter((schedule) => schedule.isEnabled === isActiveTab)
-        : [],
-    [schedules, isActiveTab, listReady],
+      groupPage.rows.flatMap((group) =>
+        group.schedules.map((schedule) => schedule.id),
+      ),
+    [groupPage.rows],
   );
-  usePinDataGridColumns(
-    gridApiRef,
-    {
-      left: [GRID_CHECKBOX_SELECTION_COL_DEF.field, 'offerName'],
-      right: ['actions'],
-    },
-    visibleSchedules.length > 0,
-  );
+  const allGroupsCollapsed =
+    productGroups.length > 0 &&
+    productGroups.every((group) => collapsedKeys.has(group.key));
+  useEffect(() => {
+    if (!listReady || groupPage.page === page) return;
+    replaceListParams({ page: groupPage.page });
+  }, [groupPage.page, listReady, page, replaceListParams]);
+  useEffect(() => {
+    if (!listReady) return;
+    const visible = new Set(visibleSchedules.map((schedule) => schedule.id));
+    setSelectedIds((current) => {
+      const next = current.filter((id) => visible.has(id));
+      return next.length === current.length ? current : next;
+    });
+  }, [listReady, visibleSchedules]);
   const selectedSchedules = visibleSchedules.filter((schedule) =>
     selectedIds.includes(schedule.id),
   );
+  const selectedEnabledIds = selectedSchedules
+    .filter((schedule) => schedule.isEnabled)
+    .map((schedule) => schedule.id);
+  const selectedDisabledIds = selectedSchedules
+    .filter((schedule) => !schedule.isEnabled)
+    .map((schedule) => schedule.id);
   const anySelectedApplied = selectedSchedules.some(
-    (schedule) => schedule.isApplied,
+    (schedule) => schedule.isEnabled && schedule.isApplied,
   );
-  const allVisibleSelected =
-    visibleSchedules.length > 0 &&
-    visibleSchedules.every((schedule) => selectedIds.includes(schedule.id));
+  const allPageSelected =
+    pageScheduleIds.length > 0 &&
+    pageScheduleIds.every((id) => selectedIds.includes(id));
   const { disablePriceSchedule, isPending: isDisabling } =
     useDisablePriceSchedule();
   const { enablePriceSchedule, isPending: isEnabling } =
@@ -372,6 +274,14 @@ export const PriceSchedulesPage = () => {
     return () => clearTimeout(timeout);
   }, [searchInput, query, replaceListParams]);
 
+  const toggleGroup = (key: string) =>
+    setCollapsedKeys((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+
   const openSchedule = useCallback(
     (schedule: ChannelPriceSchedule) => {
       openedScheduleIdRef.current = schedule.id;
@@ -394,13 +304,11 @@ export const PriceSchedulesPage = () => {
       isFetching,
       isError,
       found: visibleSchedules.some((schedule) => schedule.id === scheduleId),
-      hasQuery: query.length > 0 || offerHasActive,
-      triedOtherTab: triedOtherTabForRef.current === scheduleId,
+      hasFilter: query.length > 0 || status !== 'all' || offerHasActive,
     });
 
     if (action === 'idle') {
       openedScheduleIdRef.current = null;
-      triedOtherTabForRef.current = null;
       missingNoticeKeyRef.current = null;
       return;
     }
@@ -418,7 +326,9 @@ export const PriceSchedulesPage = () => {
     }
 
     if (action === 'clear-filter') {
-      const noticeKey = `filter:${scheduleId}:${query}`;
+      const noticeKey = `filter:${scheduleId}:${query}:${status}:${
+        offerHasActive ? 1 : 0
+      }`;
       if (missingNoticeKeyRef.current === noticeKey) return;
       missingNoticeKeyRef.current = noticeKey;
       notify(
@@ -430,19 +340,11 @@ export const PriceSchedulesPage = () => {
             replaceListParams({
               query: '',
               page: 0,
+              status: 'all',
               offerHasActive: false,
             }),
         },
       );
-      return;
-    }
-
-    if (action === 'switch-tab') {
-      triedOtherTabForRef.current = scheduleId;
-      replaceListParams({
-        tab: tab === 'active' ? 'inactive' : 'active',
-        page: 0,
-      });
       return;
     }
 
@@ -461,7 +363,7 @@ export const PriceSchedulesPage = () => {
     query,
     replaceListParams,
     scheduleId,
-    tab,
+    status,
     visibleSchedules,
   ]);
 
@@ -703,9 +605,12 @@ export const PriceSchedulesPage = () => {
   };
 
   const handleRefreshPrices = async () => {
-    if (selectedIds.length === 0) return;
+    const ids = visibleSchedules
+      .filter((schedule) => selectedIds.includes(schedule.id))
+      .map((schedule) => schedule.id);
+    if (ids.length === 0) return;
     try {
-      const result = await refreshPriceSchedulePrices(selectedIds);
+      const result = await refreshPriceSchedulePrices(ids);
       const mismatchCount = result.results.filter(
         isPriceScheduleChannelMismatch,
       ).length;
@@ -728,243 +633,13 @@ export const PriceSchedulesPage = () => {
     }
   };
 
-  const columns: GridColDef<ChannelPriceSchedule>[] = [
-    {
-      field: 'offerName',
-      headerName: 'Oferta',
-      flex: 1.4,
-      minWidth: 220,
-      renderCell: (params) => {
-        const url = scheduleOfferUrl(params.row);
-        return (
-          <NameWithEyeButton
-            name={params.row.offerName}
-            ariaLabel="Otwórz ofertę"
-            href={url ?? undefined}
-          />
-        );
-      },
-    },
-    {
-      field: 'productName',
-      headerName: 'Produkt',
-      flex: 1,
-      minWidth: 180,
-      renderCell: (params) => (
-        <NameWithEyeButton
-          name={params.row.productName}
-          ariaLabel="Otwórz produkt"
-          onClick={
-            params.row.productId
-              ? () =>
-                  navigate(
-                    Pages.smSystemProductDetails.replace(
-                      ':productId',
-                      String(params.row.productId),
-                    ),
-                  )
-              : undefined
-          }
-        />
-      ),
-    },
-    {
-      field: 'temporaryPrice',
-      headerName: 'Cena tymczasowa',
-      width: 130,
-      valueGetter: (_value, row) =>
-        row.temporaryPrice == null
-          ? '—'
-          : formatPrice(row.temporaryPrice, row.currency),
-    },
-    {
-      field: 'originalPrice',
-      headerName: 'Cena bazowa',
-      width: 120,
-      valueGetter: (_value, row) =>
-        formatPrice(row.originalPrice, row.currency),
-    },
-    {
-      field: 'linkPrice',
-      headerName: 'Cena na kanale',
-      width: 200,
-      renderCell: (params) => {
-        const mismatch = isPriceScheduleChannelMismatch(params.row);
-        return (
-          <Stack
-            direction="row"
-            spacing={0.5}
-            alignItems="center"
-            sx={{ minWidth: 0 }}
-          >
-            <Typography
-              variant="body2"
-              noWrap
-              title="Ostatnia znana cena na ofercie"
-            >
-              {params.row.linkPrice != null
-                ? formatPrice(params.row.linkPrice, params.row.currency)
-                : '—'}
-            </Typography>
-            {mismatch && (
-              <Chip
-                size="small"
-                color="warning"
-                label={
-                  isPriceScheduleExpectingTemporary(params.row)
-                    ? 'Inna niż tymczasowa'
-                    : 'Inna niż bazowa'
-                }
-              />
-            )}
-          </Stack>
-        );
-      },
-    },
-    {
-      field: 'windows',
-      headerName: 'Okna',
-      flex: 1.6,
-      minWidth: 240,
-      sortable: false,
-      valueGetter: (_value, row) => formatPriceScheduleWindowSummary(row),
-    },
-    {
-      field: 'status',
-      headerName: 'Status',
-      width: 170,
-      sortable: false,
-      renderCell: (params) => statusChip(params.row),
-    },
-    {
-      field: 'lastEvent',
-      headerName: 'Ostatnie zdarzenie',
-      flex: 1.2,
-      minWidth: 220,
-      sortable: false,
-      renderCell: (params) => {
-        const event = latestEvent(params.row);
-        if (!event) {
-          return (
-            <Typography variant="body2" color="text.secondary">
-              {'Brak'}
-            </Typography>
-          );
-        }
-        return (
-          <Stack spacing={0} sx={{ minWidth: 0 }}>
-            <Typography variant="body2" noWrap>
-              {formatPriceScheduleEventLabel(event)}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {dayjs(event.createdAt).format('DD.MM HH:mm')}
-            </Typography>
-          </Stack>
-        );
-      },
-    },
-    {
-      field: 'nextWindowStartsAt',
-      headerName: 'Następna zmiana',
-      width: 160,
-      valueGetter: (_value, row) => {
-        const { primary, secondary } = formatPriceScheduleNextChange(
-          row,
-          (iso) => dayjs(iso).format('DD.MM HH:mm'),
-        );
-        return secondary ? `${primary} (${secondary})` : primary;
-      },
-      renderCell: (params) => {
-        const { primary, secondary } = formatPriceScheduleNextChange(
-          params.row,
-          (iso) => dayjs(iso).format('DD.MM HH:mm'),
-        );
-        return (
-          <Stack spacing={0} sx={{ minWidth: 0, justifyContent: 'center' }}>
-            <Typography variant="body2" noWrap>
-              {primary}
-            </Typography>
-            {secondary && (
-              <Typography variant="caption" color="text.secondary" noWrap>
-                {secondary}
-              </Typography>
-            )}
-          </Stack>
-        );
-      },
-    },
-    {
-      field: 'actions',
-      headerName: '',
-      width: 360,
-      minWidth: 360,
-      sortable: false,
-      renderCell: (params) => {
-        const schedule = params.row;
-        return (
-          <Stack
-            direction="row"
-            spacing={1}
-            alignItems="center"
-            sx={{ flexShrink: 0 }}
-          >
-            <IconButton
-              size="small"
-              aria-label="Historia zmian ceny"
-              disabled={isMutationBusy}
-              onClick={() => setHistorySchedule(schedule)}
-            >
-              <HistoryOutlinedIcon fontSize="small" />
-            </IconButton>
-            <Button
-              size="small"
-              disabled={isMutationBusy}
-              onClick={() => openSchedule(schedule)}
-            >
-              {'Edytuj'}
-            </Button>
-            {schedule.isEnabled ? (
-              <Button
-                size="small"
-                color="error"
-                disabled={isMutationBusy}
-                onClick={(e) =>
-                  setMenuState({ anchor: e.currentTarget, schedule })
-                }
-              >
-                {'Wyłącz'}
-              </Button>
-            ) : (
-              <>
-                <Button
-                  size="small"
-                  disabled={isMutationBusy}
-                  onClick={() => handleEnable(schedule)}
-                >
-                  {'Włącz'}
-                </Button>
-                <Button
-                  size="small"
-                  color="error"
-                  disabled={isMutationBusy}
-                  onClick={() => setDeleteTarget(schedule)}
-                >
-                  {'Usuń'}
-                </Button>
-              </>
-            )}
-          </Stack>
-        );
-      },
-    },
-  ];
 
   return (
     <Stack spacing={2}>
       <Stack
-        direction="row"
+        direction={{ xs: 'column', sm: 'row' }}
         justifyContent="space-between"
-        alignItems="flex-start"
+        alignItems={{ xs: 'stretch', sm: 'flex-start' }}
         gap={2}
       >
         <Stack spacing={0.5}>
@@ -979,39 +654,54 @@ export const PriceSchedulesPage = () => {
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => setDraftWizardOpen(true)}
-          sx={{ flexShrink: 0 }}
+          sx={{ flexShrink: 0, alignSelf: { xs: 'flex-start', sm: 'auto' } }}
         >
           {'Zaplanuj zmianę ceny'}
         </Button>
       </Stack>
 
-      <Tabs
-        value={tab}
-        onChange={(_event, value: 'active' | 'inactive') => {
-          setSelectedIds([]);
-          setEditedSchedule(null);
-          replaceListParams({
-            tab: value,
-            page: 0,
-            scheduleId: null,
-            ...(value === 'active' ? { offerHasActive: false } : {}),
-          });
-        }}
-        sx={{ borderBottom: 1, borderColor: 'divider' }}
+      <Stack
+        direction="row"
+        gap={1}
+        alignItems="center"
+        flexWrap="wrap"
+        useFlexGap
       >
-        <Tab value="active" label="Aktywne" />
-        <Tab value="inactive" label="Nieaktywne" />
-      </Tabs>
-
-      <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
+        <ToggleButtonGroup
+          size="small"
+          exclusive
+          value={status}
+          aria-label="Status harmonogramu"
+          onChange={(
+            _event,
+            value: PriceScheduleEnabledFilter | null,
+          ) => {
+            if (!value || value === status) return;
+            setSelectedIds([]);
+            replaceListParams({
+              status: value,
+              page: 0,
+              ...(value !== 'disabled' ? { offerHasActive: false } : {}),
+            });
+          }}
+          sx={{ flexShrink: 0 }}
+        >
+          <ToggleButton value="all">{'Wszystkie'}</ToggleButton>
+          <ToggleButton value="enabled">{'Włączone'}</ToggleButton>
+          <ToggleButton value="disabled">{'Wyłączone'}</ToggleButton>
+        </ToggleButtonGroup>
         <TextField
           size="small"
           label="Szukaj po nazwie, kodzie kreskowym lub ID wewnętrznym"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          sx={{ maxWidth: 480, flex: 1 }}
+          sx={{
+            flex: '1 1 240px',
+            minWidth: { xs: '100%', sm: 240 },
+            maxWidth: { xs: '100%', sm: 480 },
+          }}
         />
-        {!isActiveTab && (
+        {(status === 'disabled' || offerHasActive) && (
           <FormControlLabel
             control={
               <Checkbox
@@ -1030,92 +720,65 @@ export const PriceSchedulesPage = () => {
             sx={{ flexShrink: 0, mr: 0 }}
           />
         )}
-        {visibleSchedules.length > 0 && (
-          <Button
-            size="small"
-            disabled={isMutationBusy}
-            onClick={() =>
-              setSelectedIds(
-                allVisibleSelected
-                  ? []
-                  : visibleSchedules.map((schedule) => schedule.id),
-              )
-            }
-            sx={{ flexShrink: 0 }}
-          >
-            {allVisibleSelected
-              ? 'Odznacz wszystkie'
-              : `Zaznacz wszystkie (${visibleSchedules.length})`}
-          </Button>
-        )}
+        <Button
+          size="small"
+          disabled={productGroups.length === 0}
+          onClick={() =>
+            setCollapsedKeys(
+              allGroupsCollapsed
+                ? new Set()
+                : new Set(productGroups.map((group) => group.key)),
+            )
+          }
+          sx={{ flexShrink: 0 }}
+        >
+          {allGroupsCollapsed ? 'Rozwiń wszystkie' : 'Zwiń wszystkie'}
+        </Button>
+        <Button
+          size="small"
+          disabled={pageScheduleIds.length === 0 || isMutationBusy}
+          onClick={() => {
+            const pageIds = new Set(pageScheduleIds);
+            setSelectedIds((current) =>
+              allPageSelected
+                ? current.filter((id) => !pageIds.has(id))
+                : [
+                    ...current.filter((id) => !pageIds.has(id)),
+                    ...pageScheduleIds,
+                  ],
+            );
+          }}
+          sx={{ flexShrink: 0 }}
+        >
+          {allPageSelected
+            ? groupPage.pageCount > 1
+              ? 'Odznacz stronę'
+              : 'Odznacz wszystkie'
+            : groupPage.pageCount > 1
+              ? `Zaznacz stronę (${pageScheduleIds.length})`
+              : `Zaznacz wszystkie (${pageScheduleIds.length})`}
+        </Button>
         <LoadingButton
+          ref={actionsButtonRef}
+          size="small"
           variant="outlined"
-          onClick={handleRefreshPrices}
-          loading={isRefreshing}
-          disabled={selectedIds.length === 0 || isMutationBusy}
+          loading={
+            isRefreshing || isBulkDisabling || isBulkEnabling || isBulkDeleting
+          }
+          disabled={selectedSchedules.length === 0 || isMutationBusy}
+          endIcon={<ArrowDropDownIcon />}
+          onClick={(event) => setActionsMenuAnchor(event.currentTarget)}
           sx={{ flexShrink: 0 }}
           title={
-            selectedIds.length === 0
-              ? 'Zaznacz wiersze (lub „Zaznacz wszystkie”), aby pobrać aktualne ceny'
+            selectedSchedules.length === 0
+              ? 'Zaznacz harmonogramy, aby wybrać akcję'
               : undefined
           }
         >
-          {selectedIds.length > 0
-            ? `Pobierz aktualne ceny (${selectedIds.length})`
-            : 'Pobierz aktualne ceny'}
+          {selectedSchedules.length > 0
+            ? `Akcje (${selectedSchedules.length})`
+            : 'Akcje'}
         </LoadingButton>
-        {selectedIds.length > 0 && (
-          <Button
-            variant="outlined"
-            disabled={isMutationBusy}
-            onClick={() => setOneOffOpen(true)}
-            sx={{ flexShrink: 0 }}
-          >
-            {`Dodaj jednorazowe okno (${selectedIds.length})`}
-          </Button>
-        )}
-        {selectedIds.length > 0 && isActiveTab && (
-          <LoadingButton
-            variant="outlined"
-            color="error"
-            loading={isBulkDisabling}
-            disabled={isMutationBusy}
-            onClick={(e) => setBulkDisableMenuAnchor(e.currentTarget)}
-            sx={{ flexShrink: 0 }}
-          >
-            {`Wyłącz zaznaczone (${selectedIds.length})`}
-          </LoadingButton>
-        )}
-        {selectedIds.length > 0 && !isActiveTab && (
-          <LoadingButton
-            variant="outlined"
-            loading={isBulkEnabling}
-            disabled={isMutationBusy}
-            onClick={() => setConfirmBulkEnableIds([...selectedIds])}
-            sx={{ flexShrink: 0 }}
-          >
-            {`Włącz zaznaczone (${selectedIds.length})`}
-          </LoadingButton>
-        )}
-        {!isActiveTab && (
-          <LoadingButton
-            variant="outlined"
-            color="error"
-            loading={isBulkDeleting}
-            disabled={selectedIds.length === 0 || isMutationBusy}
-            onClick={() => setConfirmBulkDeleteIds([...selectedIds])}
-            sx={{ flexShrink: 0 }}
-            title={
-              selectedIds.length === 0
-                ? 'Zaznacz wiersze (lub „Zaznacz wszystkie”), aby je usunąć'
-                : undefined
-            }
-          >
-            {selectedIds.length > 0
-              ? `Usuń zaznaczone (${selectedIds.length})`
-              : 'Usuń zaznaczone'}
-          </LoadingButton>
-        )}
       </Stack>
 
       {!listReady ? (
@@ -1124,48 +787,46 @@ export const PriceSchedulesPage = () => {
         </Box>
       ) : visibleSchedules.length === 0 ? (
         <Typography variant="body2" color="text.secondary">
-          {query
-            ? 'Brak harmonogramów pasujących do wyszukiwania.'
-            : offerHasActive
-              ? 'Brak nieaktywnych harmonogramów dla ofert, które mają już aktywną zmianę.'
-              : isActiveTab
-                ? 'Brak aktywnych harmonogramów cenowych.'
-                : 'Brak nieaktywnych harmonogramów cenowych.'}
+          {query || status !== 'all' || offerHasActive
+            ? 'Brak harmonogramów pasujących do filtrów.'
+            : 'Brak harmonogramów cenowych.'}
         </Typography>
       ) : (
-        <PersistedDataGrid
-          storageKey={gridStorageIds.priceSchedules}
-          apiRef={gridApiRef}
-          rows={visibleSchedules}
-          columns={columns}
-          loading={isLoading}
-          autoHeight
-          checkboxSelection
-          disableColumnFilter
-          disableColumnMenu
-          disableRowSelectionOnClick
-          rowSelectionModel={selectedIds}
-          onRowSelectionModelChange={(ids: GridRowSelectionModel) =>
-            setSelectedIds(ids as number[])
-          }
-          pageSizeOptions={[PAGE_SIZE]}
-          paginationModel={{ page, pageSize: PAGE_SIZE }}
-          onPaginationModelChange={(model: GridPaginationModel) => {
-            if (model.page === page) return;
-            replaceListParams({ page: model.page });
-          }}
-          initialState={{
-            sorting: {
-              sortModel: [{ field: 'productName', sort: 'asc' }],
-            },
-          }}
-          sx={{
-            '& .MuiDataGrid-cell': {
-              display: 'flex',
-              alignItems: 'center',
-            },
-          }}
-        />
+        <Stack spacing={2}>
+          <PriceScheduleProductGroups
+            groups={groupPage.rows}
+            selectedIds={selectedIds}
+            onSelectedIdsChange={setSelectedIds}
+            collapsedKeys={collapsedKeys}
+            onToggleGroup={toggleGroup}
+            onOpenProduct={(productId) =>
+              navigate(
+                Pages.smSystemProductDetails.replace(
+                  ':productId',
+                  String(productId),
+                ),
+              )
+            }
+            onEdit={openSchedule}
+            onHistory={setHistorySchedule}
+            onEnable={handleEnable}
+            onDisableMenu={(schedule, anchor) =>
+              setMenuState({ anchor, schedule })
+            }
+            onDelete={setDeleteTarget}
+            disabled={isMutationBusy}
+          />
+          {groupPage.pageCount > 1 && (
+            <Pagination
+              count={groupPage.pageCount}
+              page={groupPage.page + 1}
+              onChange={(_event, value) =>
+                replaceListParams({ page: value - 1 })
+              }
+              sx={{ alignSelf: 'center' }}
+            />
+          )}
+        </Stack>
       )}
 
       <Menu
@@ -1213,6 +874,70 @@ export const PriceSchedulesPage = () => {
       </Menu>
 
       <Menu
+        anchorEl={actionsMenuAnchor}
+        open={!!actionsMenuAnchor}
+        onClose={() => setActionsMenuAnchor(null)}
+      >
+        <MenuItem
+          disabled={selectedSchedules.length === 0 || isMutationBusy}
+          onClick={() => {
+            setActionsMenuAnchor(null);
+            void handleRefreshPrices();
+          }}
+        >
+          {selectedSchedules.length > 0
+            ? `Pobierz aktualne ceny (${selectedSchedules.length})`
+            : 'Pobierz aktualne ceny'}
+        </MenuItem>
+        <MenuItem
+          disabled={selectedSchedules.length === 0 || isMutationBusy}
+          onClick={() => {
+            setActionsMenuAnchor(null);
+            setOneOffOpen(true);
+          }}
+        >
+          {selectedSchedules.length > 0
+            ? `Dodaj jednorazowe okno (${selectedSchedules.length})`
+            : 'Dodaj jednorazowe okno'}
+        </MenuItem>
+        <Divider />
+        <MenuItem
+          disabled={selectedEnabledIds.length === 0 || isMutationBusy}
+          onClick={() => {
+            setActionsMenuAnchor(null);
+            setBulkDisableMenuAnchor(actionsButtonRef.current);
+          }}
+        >
+          {selectedEnabledIds.length > 0
+            ? `Wyłącz zaznaczone (${selectedEnabledIds.length})`
+            : 'Wyłącz zaznaczone'}
+        </MenuItem>
+        <MenuItem
+          disabled={selectedDisabledIds.length === 0 || isMutationBusy}
+          onClick={() => {
+            setActionsMenuAnchor(null);
+            setConfirmBulkEnableIds([...selectedDisabledIds]);
+          }}
+        >
+          {selectedDisabledIds.length > 0
+            ? `Włącz zaznaczone (${selectedDisabledIds.length})`
+            : 'Włącz zaznaczone'}
+        </MenuItem>
+        <MenuItem
+          disabled={selectedDisabledIds.length === 0 || isMutationBusy}
+          onClick={() => {
+            setActionsMenuAnchor(null);
+            setConfirmBulkDeleteIds([...selectedDisabledIds]);
+          }}
+          sx={{ color: 'error.main' }}
+        >
+          {selectedDisabledIds.length > 0
+            ? `Usuń zaznaczone (${selectedDisabledIds.length})`
+            : 'Usuń zaznaczone'}
+        </MenuItem>
+      </Menu>
+
+      <Menu
         anchorEl={bulkDisableMenuAnchor}
         open={!!bulkDisableMenuAnchor}
         onClose={() => setBulkDisableMenuAnchor(null)}
@@ -1220,7 +945,7 @@ export const PriceSchedulesPage = () => {
         <MenuItem
           onClick={() => {
             setConfirmDisable({
-              ids: selectedIds,
+              ids: selectedEnabledIds,
               mode: 'revert_now',
             });
             setBulkDisableMenuAnchor(null);
@@ -1233,7 +958,7 @@ export const PriceSchedulesPage = () => {
         <MenuItem
           onClick={() => {
             setConfirmDisable({
-              ids: selectedIds,
+              ids: selectedEnabledIds,
               mode: 'revert_at_window_end',
             });
             setBulkDisableMenuAnchor(null);
@@ -1245,7 +970,7 @@ export const PriceSchedulesPage = () => {
         <MenuItem
           onClick={() => {
             setConfirmDisable({
-              ids: selectedIds,
+              ids: selectedEnabledIds,
               mode: 'revert_now',
               force: true,
             });
@@ -1423,10 +1148,11 @@ export const PriceSchedulesPage = () => {
           setSearchInput('');
           setEditedSchedule(null);
           replaceListParams({
-            tab: 'inactive',
             query: '',
             page: 0,
             scheduleId: null,
+            status: 'all',
+            offerHasActive: false,
           });
         }}
       />

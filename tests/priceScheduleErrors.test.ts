@@ -58,9 +58,9 @@ test('parsePriceScheduleApiError reads detail and ignores unknown failures', () 
   assert.equal(parsePriceScheduleApiError(new Error('nope')).known, false);
 });
 
-test('priceScheduleConflictHash points at the active tab', () => {
+test('priceScheduleConflictHash points at the schedule', () => {
   assert.equal(
     priceScheduleConflictHash(68, '/sm-system/ecommerce/price-schedules'),
-    '/sm-system/ecommerce/price-schedules?tab=active&schedule=68',
+    '/sm-system/ecommerce/price-schedules?schedule=68',
   );
 });

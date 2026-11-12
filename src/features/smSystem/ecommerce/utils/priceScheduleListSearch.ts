@@ -1,13 +1,26 @@
-export type PriceScheduleListTab = 'active' | 'inactive';
+export type PriceScheduleEnabledFilter = 'all' | 'enabled' | 'disabled';
 
 export type PriceScheduleListParams = {
-  tab: PriceScheduleListTab;
   query: string;
-  /** Zero-based DataGrid page. URL stores it 1-based. */
+  /** Zero-based page of product groups. URL stores it 1-based. */
   page: number;
   scheduleId: number | null;
-  /** Inactive tab: offer already has another enabled schedule. */
+  /** Whether the schedule is switched on. Absent in the URL means all. */
+  status: PriceScheduleEnabledFilter;
+  /** Offer already has another enabled schedule. Legacy `with_active=1`. */
   offerHasActive: boolean;
+};
+
+const parseStatus = (
+  searchParams: URLSearchParams,
+): PriceScheduleEnabledFilter => {
+  const status = searchParams.get('status');
+  if (status === 'enabled' || status === 'disabled') return status;
+  // Bookmarks from the old tabs. An explicit status wins.
+  const tab = searchParams.get('tab');
+  if (tab === 'inactive') return 'disabled';
+  if (tab === 'active') return 'enabled';
+  return 'all';
 };
 
 const parsePage = (searchParams: URLSearchParams): number => {
@@ -27,10 +40,10 @@ const parseScheduleId = (searchParams: URLSearchParams): number | null => {
 export const parsePriceScheduleListParams = (
   searchParams: URLSearchParams,
 ): PriceScheduleListParams => ({
-  tab: searchParams.get('tab') === 'inactive' ? 'inactive' : 'active',
   query: searchParams.get('q') ?? '',
   page: parsePage(searchParams),
   scheduleId: parseScheduleId(searchParams),
+  status: parseStatus(searchParams),
   offerHasActive: searchParams.get('with_active') === '1',
 });
 
@@ -39,7 +52,6 @@ export type ScheduleDeepLinkAction =
   | 'wait'
   | 'open'
   | 'clear-filter'
-  | 'switch-tab'
   | 'missing';
 
 export const resolveScheduleDeepLink = (input: {
@@ -49,8 +61,7 @@ export const resolveScheduleDeepLink = (input: {
   isFetching: boolean;
   isError: boolean;
   found: boolean;
-  hasQuery: boolean;
-  triedOtherTab: boolean;
+  hasFilter: boolean;
 }): ScheduleDeepLinkAction => {
   if (input.scheduleId == null) return 'idle';
   if (
@@ -61,8 +72,7 @@ export const resolveScheduleDeepLink = (input: {
   )
     return 'wait';
   if (input.found) return 'open';
-  if (input.hasQuery) return 'clear-filter';
-  if (!input.triedOtherTab) return 'switch-tab';
+  if (input.hasFilter) return 'clear-filter';
   return 'missing';
 };
 
@@ -76,8 +86,7 @@ export const applyPriceScheduleListParams = (
     ...next,
   };
 
-  if (merged.tab === 'inactive') params.set('tab', 'inactive');
-  else params.delete('tab');
+  params.delete('tab');
 
   if (merged.query) params.set('q', merged.query);
   else params.delete('q');
@@ -88,6 +97,9 @@ export const applyPriceScheduleListParams = (
   if (merged.scheduleId != null)
     params.set('schedule', String(merged.scheduleId));
   else params.delete('schedule');
+
+  if (merged.status === 'all') params.delete('status');
+  else params.set('status', merged.status);
 
   if (merged.offerHasActive) params.set('with_active', '1');
   else params.delete('with_active');

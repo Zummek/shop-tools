@@ -470,9 +470,21 @@ export const PriceScheduleProductGroups = ({
               spacing={0.5}
               sx={{ minWidth: 0, width: '100%' }}
             >
-              <Typography variant="body2" noWrap sx={{ flex: 1, minWidth: 0 }}>
-                {schedule.offerName || '—'}
-              </Typography>
+              <Stack sx={{ flex: 1, minWidth: 0 }}>
+                <Typography variant="body2" noWrap>
+                  {schedule.offerName || '—'}
+                </Typography>
+                {schedule.externalOfferId ? (
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    noWrap
+                    title={schedule.externalOfferId}
+                  >
+                    {schedule.externalOfferId}
+                  </Typography>
+                ) : null}
+              </Stack>
               {url && (
                 <IconButton
                   size="small"

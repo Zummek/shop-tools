@@ -22,12 +22,15 @@ import {
   ChannelPriceSchedule,
   ChannelProductLink,
   PriceScheduleApplyMode,
+  PriceScheduleOneOff,
   PriceScheduleOriginalApplyMode,
   PriceScheduleWindow,
   useCreatePriceSchedule,
+  useDeletePriceScheduleOneOff,
   useUpdatePriceSchedule,
 } from '../../api';
 import {
+  formatPriceScheduleOneOff,
   formatPriceScheduleWindows,
   isPriceScheduleWindowValid,
   notifyPriceScheduleFailure,
@@ -63,6 +66,7 @@ export const SchedulePriceChangeModal = ({
   const [priceInput, setPriceInput] = useState('');
   const [originalPriceInput, setOriginalPriceInput] = useState('');
   const [windows, setWindows] = useState<PriceScheduleWindow[]>([]);
+  const [oneOffs, setOneOffs] = useState<PriceScheduleOneOff[]>([]);
   const [apiError, setApiError] = useState<string | null>(null);
   const [applyMode, setApplyMode] =
     useState<PriceScheduleApplyMode>('apply_now');
@@ -73,7 +77,9 @@ export const SchedulePriceChangeModal = ({
     useCreatePriceSchedule();
   const { updatePriceSchedule, isPending: isUpdating } =
     useUpdatePriceSchedule();
-  const isPending = isCreating || isUpdating;
+  const { deletePriceScheduleOneOff, isPending: isDeletingOneOff } =
+    useDeletePriceScheduleOneOff();
+  const isPending = isCreating || isUpdating || isDeletingOneOff;
 
   useEffect(() => {
     if (!open) return;
@@ -88,14 +94,36 @@ export const SchedulePriceChangeModal = ({
       );
       setOriginalPriceInput((schedule.originalPrice / 100).toFixed(2));
       setWindows(schedule.windows.map((w) => ({ ...w })));
+      setOneOffs(schedule.oneOffs ?? []);
     } else {
       setPriceInput('');
       setOriginalPriceInput(
         link.price != null ? (link.price / 100).toFixed(2) : '',
       );
       setWindows([]);
+      setOneOffs([]);
     }
   }, [open, schedule, link.price]);
+
+  const handleDeleteOneOff = async (oneOff: PriceScheduleOneOff) => {
+    if (
+      !window.confirm(
+        `Usunąć jednorazowe okno ${formatPriceScheduleOneOff(oneOff)}? Dotyczy ono wszystkich harmonogramów tej oferty.`,
+      )
+    )
+      return;
+    try {
+      await deletePriceScheduleOneOff(oneOff.id);
+      setOneOffs((current) => current.filter((item) => item.id !== oneOff.id));
+      notify('success', 'Usunięto jednorazowe okno.');
+    } catch (err) {
+      notifyPriceScheduleFailure(
+        notify,
+        err,
+        'Nie udało się usunąć jednorazowego okna',
+      );
+    }
+  };
 
   const priceCents = parsePriceInput(priceInput);
   const originalPriceCents = parsePriceInput(originalPriceInput);
@@ -345,6 +373,35 @@ export const SchedulePriceChangeModal = ({
               />
             </RadioGroup>
           </FormControl>
+        )}
+
+        {isEdit && oneOffs.length > 0 && (
+          <Stack spacing={1}>
+            <Typography fontWeight={600}>
+              {'Jednorazowe okna tej oferty'}
+            </Typography>
+            {oneOffs.map((oneOff) => (
+              <Stack
+                key={oneOff.id}
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
+                spacing={1}
+              >
+                <Typography variant="body2">
+                  {formatPriceScheduleOneOff(oneOff)}
+                </Typography>
+                <Button
+                  size="small"
+                  color="error"
+                  disabled={isPending}
+                  onClick={() => handleDeleteOneOff(oneOff)}
+                >
+                  {'Usuń'}
+                </Button>
+              </Stack>
+            ))}
+          </Stack>
         )}
 
         <PriceScheduleWindowsEditor

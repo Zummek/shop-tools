@@ -8,6 +8,14 @@ export interface PriceScheduleWindow {
   endTime: string;
 }
 
+/** Absolute interval on the offer. It has no price of its own. */
+export interface PriceScheduleOneOff {
+  id: number;
+  startsAt: string;
+  endsAt: string;
+  label: string;
+}
+
 export type PriceScheduleDisableMode = 'revert_now' | 'revert_at_window_end';
 
 export type PriceScheduleApplyMode = 'next_window' | 'apply_now';
@@ -51,6 +59,8 @@ export interface ChannelPriceSchedule {
   lastRevertedAt: string | null;
   createdAt: string;
   windows: PriceScheduleWindow[];
+  /** Non-expired one-off intervals on this offer, shared by every schedule of it. */
+  oneOffs: PriceScheduleOneOff[];
   events: PriceScheduleEvent[];
   channel: string;
   offerName: string;
@@ -125,3 +135,24 @@ export interface PriceScheduleBulkDisableResponse {
 
 /** Soft cap shared with the backend bulk/refresh endpoints. */
 export const PRICE_SCHEDULE_BULK_MAX_IDS = 500;
+
+export interface PriceScheduleOneOffResult extends PriceScheduleOneOff {
+  linkId: number;
+  offerName: string;
+  duplicate: boolean;
+  warnings: string[];
+}
+
+export interface PriceScheduleOneOffError {
+  /** Link id, or schedule id when the schedule was not found. */
+  id: number;
+  linkId: number | null;
+  scheduleId: number | null;
+  offerName: string;
+  error: string;
+}
+
+export interface PriceScheduleOneOffBulkResponse {
+  results: PriceScheduleOneOffResult[];
+  errors: PriceScheduleOneOffError[];
+}

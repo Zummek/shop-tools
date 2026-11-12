@@ -1,7 +1,10 @@
-import {
+import dayjs from 'dayjs';
+
+import type {
   ChannelPriceSchedule,
   PriceScheduleEvent,
   PriceScheduleEventType,
+  PriceScheduleOneOff,
   PriceScheduleWindow,
 } from '../types/priceSchedules';
 
@@ -26,6 +29,27 @@ export const formatPriceScheduleWindow = (window: PriceScheduleWindow) =>
 
 export const formatPriceScheduleWindows = (windows: PriceScheduleWindow[]) =>
   windows.map(formatPriceScheduleWindow).join(' · ');
+
+/** "11.11 08:00–22:00", or with the end date when the interval crosses midnight. */
+export const formatPriceScheduleOneOff = (oneOff: PriceScheduleOneOff) => {
+  const start = dayjs(oneOff.startsAt);
+  const end = dayjs(oneOff.endsAt);
+  const range = start.isSame(end, 'day')
+    ? `${start.format('D.MM HH:mm')}–${end.format('HH:mm')}`
+    : `${start.format('D.MM HH:mm')}–${end.format('D.MM HH:mm')}`;
+  const label = oneOff.label.trim();
+  return label ? `${label} ${range}` : range;
+};
+
+export const formatPriceScheduleWindowSummary = (
+  schedule: Pick<ChannelPriceSchedule, 'windows' | 'oneOffs'>,
+) =>
+  [
+    formatPriceScheduleWindows(schedule.windows),
+    ...(schedule.oneOffs ?? []).map(formatPriceScheduleOneOff),
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
 export const isPriceScheduleWindowValid = (window: PriceScheduleWindow) =>
   !!window.startTime &&

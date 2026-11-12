@@ -65,12 +65,16 @@ import {
   useGetPriceSchedules,
   useRefreshPriceSchedulePrices,
 } from '../api';
-import { SchedulePriceChangeModal, SchedulePriceDraftWizard } from '../modals';
+import {
+  SchedulePriceChangeModal,
+  SchedulePriceDraftWizard,
+  SchedulePriceOneOffModal,
+} from '../modals';
 import {
   applyPriceScheduleListParams,
   formatPriceScheduleEventLabel,
   formatPriceScheduleNextChange,
-  formatPriceScheduleWindows,
+  formatPriceScheduleWindowSummary,
   isPriceScheduleChannelMismatch,
   isPriceScheduleExpectingTemporary,
   isPriceScheduleSnoozed,
@@ -258,6 +262,7 @@ export const PriceSchedulesPage = () => {
   const triedOtherTabForRef = useRef<number | null>(null);
   const missingNoticeKeyRef = useRef<string | null>(null);
   const [draftWizardOpen, setDraftWizardOpen] = useState(false);
+  const [oneOffOpen, setOneOffOpen] = useState(false);
   const [historySchedule, setHistorySchedule] =
     useState<ChannelPriceSchedule | null>(null);
   const [menuState, setMenuState] = useState<{
@@ -822,7 +827,7 @@ export const PriceSchedulesPage = () => {
       flex: 1.6,
       minWidth: 240,
       sortable: false,
-      valueGetter: (_value, row) => formatPriceScheduleWindows(row.windows),
+      valueGetter: (_value, row) => formatPriceScheduleWindowSummary(row),
     },
     {
       field: 'status',
@@ -1059,6 +1064,16 @@ export const PriceSchedulesPage = () => {
             ? `Pobierz aktualne ceny (${selectedIds.length})`
             : 'Pobierz aktualne ceny'}
         </LoadingButton>
+        {selectedIds.length > 0 && (
+          <Button
+            variant="outlined"
+            disabled={isMutationBusy}
+            onClick={() => setOneOffOpen(true)}
+            sx={{ flexShrink: 0 }}
+          >
+            {`Dodaj jednorazowe okno (${selectedIds.length})`}
+          </Button>
+        )}
         {selectedIds.length > 0 && isActiveTab && (
           <LoadingButton
             variant="outlined"
@@ -1414,6 +1429,14 @@ export const PriceSchedulesPage = () => {
             scheduleId: null,
           });
         }}
+      />
+
+      <SchedulePriceOneOffModal
+        open={oneOffOpen}
+        schedules={visibleSchedules.filter((schedule) =>
+          selectedIds.includes(schedule.id),
+        )}
+        onClose={() => setOneOffOpen(false)}
       />
 
       {editedSchedule && (

@@ -7,5 +7,6 @@ export * from './OrderDetailsSection';
 export * from './OrderStatusChip';
 export * from './WooStatusChip';
 export * from './OrdersStatsCards';
+export * from './OrderProductFilter';
 export * from './OrdersDailyChart';
 export * from './PriceScheduleProductGroups';

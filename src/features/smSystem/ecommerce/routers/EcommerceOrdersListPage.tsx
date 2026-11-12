@@ -37,6 +37,7 @@ import {
 } from '../api';
 import {
   OrderStatusChip,
+  OrderProductFilter,
   OrdersDailyChart,
   OrdersStatsCards,
   WooStatusChip,
@@ -278,6 +279,8 @@ export const EcommerceOrdersListPage = () => {
     setPage,
     query,
     setQuery,
+    productId,
+    setProductId,
     orderSource,
     setOrderSource,
     status,
@@ -391,6 +394,7 @@ export const EcommerceOrdersListPage = () => {
             onChange={(event) => setSearchInput(event.target.value)}
             sx={{ minWidth: 280 }}
           />
+          <OrderProductFilter productId={productId} onChange={setProductId} />
           <FormControl size="small" sx={{ minWidth: 200 }}>
             <InputLabel id="order-source-filter-label">{'Źródło'}</InputLabel>
             <Select

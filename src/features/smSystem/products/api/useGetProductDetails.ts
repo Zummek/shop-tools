@@ -11,14 +11,15 @@ export const getProductDetailsQueryKey = (productId: number) => [
 ];
 
 export const useGetProductDetails = (productId: number | undefined) => {
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading, isSuccess, refetch } = useQuery({
     queryKey: getProductDetailsQueryKey(productId ?? 0),
     queryFn: () => axiosInstance.get<Product>(endpoint(productId!)),
     enabled: !!productId,
   });
 
   return {
-    product: data?.data,
+    product: data?.status === 200 ? data.data : undefined,
+    isMissing: !!productId && isSuccess && data?.status === 404,
     isLoading,
     refetch,
   };

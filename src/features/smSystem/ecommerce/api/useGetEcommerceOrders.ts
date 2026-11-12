@@ -75,9 +75,17 @@ const replaceSearchParams = (
   );
 };
 
+const parseProductId = (value: string | null): number | null => {
+  if (!value || !/^[1-9]\d*$/.test(value)) return null;
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed <= 0) return null;
+  return parsed;
+};
+
 const readListParams = (params: URLSearchParams) => ({
   page: parsePage(params.get('page')),
   query: (params.get('query') || '').trim(),
+  productId: parseProductId(params.get('product')),
   orderSource: parseOrderSource(params.get('orderSource')),
   status: parseStatus(params.get('status')),
   needsProductReview:
@@ -92,6 +100,7 @@ export const useGetEcommerceOrders = () => {
   const {
     page,
     query,
+    productId,
     orderSource,
     status,
     needsProductReview,
@@ -132,6 +141,18 @@ export const useGetEcommerceOrders = () => {
         if (readListParams(params).status === nextStatus) return;
         if (nextStatus) params.set('status', nextStatus);
         else params.delete('status');
+        params.delete('page');
+      });
+    },
+    [setSearchParams],
+  );
+
+  const setProductId = useCallback(
+    (nextId: number | null) => {
+      replaceSearchParams(setSearchParams, (params) => {
+        if (readListParams(params).productId === nextId) return;
+        if (nextId) params.set('product', String(nextId));
+        else params.delete('product');
         params.delete('page');
       });
     },
@@ -193,6 +214,7 @@ export const useGetEcommerceOrders = () => {
         page: page + 1,
         pageSize,
         ...(query ? { query } : {}),
+        ...(productId ? { product: productId } : {}),
         ...(orderSource ? { orderSource } : {}),
         ...(status ? { status } : {}),
         ...(needsProductReview ? { needsProductReview: true } : {}),
@@ -207,6 +229,7 @@ export const useGetEcommerceOrders = () => {
     queryKey: [
       getEcommerceOrdersQueryKeyBase,
       query,
+      productId,
       page,
       orderSource,
       status,
@@ -229,6 +252,8 @@ export const useGetEcommerceOrders = () => {
     hasNextPage,
     setQuery,
     query,
+    productId,
+    setProductId,
     setPage,
     page,
     pageSize,

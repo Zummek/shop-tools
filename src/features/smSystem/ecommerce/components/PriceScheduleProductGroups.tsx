@@ -429,9 +429,7 @@ export const PriceScheduleProductGroups = ({
                   size="small"
                   aria-label={collapsed ? 'Rozwiń grupę' : 'Zwiń grupę'}
                   aria-expanded={!collapsed}
-                  onClick={() =>
-                    handlersRef.current.onToggleGroup(group.key)
-                  }
+                  onClick={() => handlersRef.current.onToggleGroup(group.key)}
                 >
                   {collapsed ? (
                     <KeyboardArrowRightIcon fontSize="small" />
@@ -702,6 +700,9 @@ export const PriceScheduleProductGroups = ({
         disableColumnFilter
         disableColumnMenu
         disableRowSelectionOnClick
+        // The render zone is translated while rows are virtualized, which
+        // keeps a sticky product header from staying under the column titles.
+        disableVirtualization
         getRowHeight={() => 'auto'}
         getRowClassName={(params) =>
           params.row.kind === 'product' ? 'price-schedule-product-row' : ''
@@ -727,12 +728,23 @@ export const PriceScheduleProductGroups = ({
             {
               boxShadow: '-4px 0 6px -2px rgba(0, 0, 0, 0.18)',
             },
+          '& .MuiDataGrid-virtualScrollerRenderZone': {
+            transform: 'none !important',
+          },
           '& .price-schedule-product-row': {
-            bgcolor: 'action.hover',
+            position: 'sticky',
+            top: 0,
+            // Above horizontally pinned cells (30), below the column headers (40).
+            zIndex: 35,
+            background: (theme) =>
+              `linear-gradient(${theme.palette.action.hover}, ${theme.palette.action.hover}), ${theme.palette.background.paper}`,
+            boxShadow: (theme) => `inset 0 -1px 0 ${theme.palette.divider}`,
           },
           '& .price-schedule-product-row .MuiDataGrid-cell--pinnedLeft, & .price-schedule-product-row .MuiDataGrid-cell--pinnedRight':
             {
-              bgcolor: 'action.hover',
+              zIndex: 36,
+              background: (theme) =>
+                `linear-gradient(${theme.palette.action.hover}, ${theme.palette.action.hover}), ${theme.palette.background.paper}`,
             },
         }}
       />

@@ -58,6 +58,7 @@ import {
   formatPriceScheduleEventLabel,
   groupSchedulesByProduct,
   isPriceScheduleChannelMismatch,
+  isPriceScheduleOfferClosed,
   notifyPriceScheduleConflictText,
   notifyPriceScheduleFailure,
   pageOfGroups,
@@ -107,14 +108,14 @@ const scheduleToLink = (
   offerName: schedule.offerName,
   matchType: 'NONE',
   matchStatus: 'confirmed',
-  isActive: true,
+  isActive: schedule.linkIsActive,
   price: schedule.linkPrice ?? schedule.originalPrice,
   currency: schedule.currency,
   stockAvailable: null,
   stockSold: null,
   stockPublishEnabled: false,
   unitsInOffer: 1,
-  offerStatus: null,
+  offerStatus: schedule.offerStatus,
   lastSyncedAt: null,
   externalUrl: null,
   productId: schedule.productId,
@@ -521,22 +522,42 @@ export const PriceSchedulesPage = () => {
     const ids = confirmBulkEnableIds ?? [];
     const count = ids.length;
     const noun = scheduleNoun(count);
-    const drafts = ids.filter((id) =>
-      schedules.some(
-        (schedule) => schedule.id === id && schedule.temporaryPrice == null,
-      ),
+    const selected = ids
+      .map((id) => schedules.find((schedule) => schedule.id === id))
+      .filter((schedule): schedule is ChannelPriceSchedule => schedule != null);
+    const drafts = selected.filter(
+      (schedule) => schedule.temporaryPrice == null,
+    ).length;
+    const ended = selected.filter(
+      (schedule) =>
+        schedule.temporaryPrice != null &&
+        isPriceScheduleOfferClosed(schedule),
     ).length;
     if (count > 0 && drafts === count) {
       const missing = count === 1 ? 'Nie ma' : 'Nie mają';
       return `Włączyć ${count} ${noun}? ${missing} ceny tymczasowej. Uzupełnij ją w edycji — bez niej włączenie się nie uda.`;
     }
-    if (drafts > 0) {
-      const missing = drafts === 1 ? 'nie ma' : 'nie mają';
+    if (count > 0 && ended === count) {
+      const offers =
+        count === 1
+          ? 'Oferta jest zakończona lub nieaktywna'
+          : 'Oferty są zakończone lub nieaktywne';
+      return `Włączyć ${count} ${noun}? ${offers} — włączenie się nie uda. Podepnij harmonogram do aktywnej oferty.`;
+    }
+    if (drafts > 0 || ended > 0) {
+      const skippedParts = [
+        drafts > 0
+          ? `${drafts} ${drafts === 1 ? 'nie ma' : 'nie mają'} ceny tymczasowej`
+          : '',
+        ended > 0
+          ? `${ended} ${ended === 1 ? 'jest' : 'są'} na zakończonej lub nieaktywnej ofercie`
+          : '',
+      ].filter(Boolean);
       const skipped =
-        drafts === 1 ? 'nie zostanie włączony' : 'nie zostaną włączone';
+        drafts + ended === 1 ? 'nie zostanie włączony' : 'nie zostaną włączone';
       return (
-        `Włączyć ${count} ${noun}? ${drafts} ${missing} ceny tymczasowej i ${skipped}. ` +
-        'Uzupełnij cenę w edycji. Przy pozostałych cena tymczasowa zastosuje się od razu, jeśli trwa okno.'
+        `Włączyć ${count} ${noun}? ${skippedParts.join(' i ')} i ${skipped}. ` +
+        'Uzupełnij cenę albo podepnij harmonogram do aktywnej oferty. Przy pozostałych cena tymczasowa zastosuje się od razu, jeśli trwa okno.'
       );
     }
     return `Włączyć ${count} ${noun}? Jeśli bieżący czas przypada w oknie, cena tymczasowa zostanie zastosowana od razu.`;
@@ -692,7 +713,7 @@ export const PriceSchedulesPage = () => {
         </ToggleButtonGroup>
         <TextField
           size="small"
-          label="Szukaj po nazwie, kodzie kreskowym lub ID wewnętrznym"
+          label="Szukaj po nazwie, kodzie kreskowym, ID wewnętrznym lub numerze oferty"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           sx={{

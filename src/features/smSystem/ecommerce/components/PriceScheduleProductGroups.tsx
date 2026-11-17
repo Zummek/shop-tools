@@ -12,6 +12,7 @@ import {
   Menu,
   MenuItem,
   Stack,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { DataGrid, GridColDef, useGridApiRef } from '@mui/x-data-grid';
@@ -21,7 +22,10 @@ import { MouseEvent, useMemo, useRef, useState } from 'react';
 
 import { formatPrice } from '../../products/utils';
 import { usePinDataGridColumns } from '../../reports/utils/usePinDataGridColumn';
-import type { ChannelPriceSchedule } from '../types/priceSchedules';
+import type {
+  ChannelPriceSchedule,
+  PriceScheduleUnscheduledOffer,
+} from '../types/priceSchedules';
 import {
   formatPriceScheduleEventLabel,
   formatPriceScheduleNextChange,
@@ -29,7 +33,10 @@ import {
   formatPriceScheduleWindows,
   isPriceScheduleChannelMismatch,
   isPriceScheduleExpectingTemporary,
+  isPriceScheduleOfferClosed,
+  isPriceScheduleOfferEnded,
   isPriceScheduleSnoozed,
+  priceScheduleOfferClosedHint,
 } from '../utils';
 import {
   NO_PRODUCT_GROUP_KEY,
@@ -65,51 +72,104 @@ const ProductGroupSummary = ({
     (schedule) => !schedule.isEnabled,
   ).length;
   return (
-    <Stack
-      direction="row"
-      alignItems="center"
-      flexWrap="wrap"
-      useFlexGap
-      gap={0.75}
-      sx={{ py: 0.5, width: '100%', minWidth: 0 }}
-    >
-      <Chip
-        size="small"
-        variant="outlined"
-        label={`${group.schedules.length} ${scheduleNoun(group.schedules.length)}`}
-      />
-      {disabledCount > 0 && (
+    <Stack spacing={0.5} sx={{ py: 0.5, width: '100%', minWidth: 0 }}>
+      <Stack
+        direction="row"
+        alignItems="center"
+        flexWrap="wrap"
+        useFlexGap
+        gap={0.75}
+      >
         <Chip
           size="small"
           variant="outlined"
-          label={`Wyłączone: ${disabledCount}`}
+          label={`${group.schedules.length} ${scheduleNoun(group.schedules.length)}`}
         />
-      )}
-      {group.appliedCount > 0 && (
-        <Chip
-          size="small"
-          color="success"
-          label={`Aktywna zmiana: ${group.appliedCount}`}
-        />
-      )}
-      {group.failingCount > 0 && (
-        <Chip
-          size="small"
-          color="error"
-          label={`Błąd: ${group.failingCount}`}
-        />
-      )}
-      {group.nextChangeAt && (
-        <Typography variant="caption" color="text.secondary">
-          {`Najbliższa zmiana ${dayjs(group.nextChangeAt).format('DD.MM HH:mm')}`}
-        </Typography>
-      )}
+        {disabledCount > 0 && (
+          <Chip
+            size="small"
+            variant="outlined"
+            label={`Wyłączone: ${disabledCount}`}
+          />
+        )}
+        {group.appliedCount > 0 && (
+          <Chip
+            size="small"
+            color="success"
+            label={`Aktywna zmiana: ${group.appliedCount}`}
+          />
+        )}
+        {group.failingCount > 0 && (
+          <Chip
+            size="small"
+            color="error"
+            label={`Błąd: ${group.failingCount}`}
+          />
+        )}
+        {group.nextChangeAt && (
+          <Typography variant="caption" color="text.secondary">
+            {`Najbliższa zmiana ${dayjs(group.nextChangeAt).format('DD.MM HH:mm')}`}
+          </Typography>
+        )}
+      </Stack>
+      {group.offersWithoutSchedule.map((offer) => (
+        <UnscheduledOfferLine key={offer.linkId} offer={offer} />
+      ))}
     </Stack>
+  );
+};
+
+const UnscheduledOfferLine = ({
+  offer,
+}: {
+  offer: PriceScheduleUnscheduledOffer;
+}) => {
+  const ended = isPriceScheduleOfferEnded(offer.offerStatus);
+  const inactive = !ended && offer.isActive === false;
+  let statusLabel = 'aktywna';
+  if (ended) statusLabel = 'zakończona';
+  else if (inactive) statusLabel = 'nieaktywna';
+  const price =
+    offer.price != null
+      ? formatPrice(offer.price, offer.currency || undefined)
+      : '—';
+  const label = `Oferta ${offer.externalOfferId} · ${statusLabel} · ${price}`;
+  return (
+    <Typography
+      component="a"
+      href={allegroOfferUrl(offer.externalOfferId, offer.marketplace)}
+      target="_blank"
+      rel="noopener noreferrer"
+      variant="caption"
+      noWrap
+      title={label}
+      sx={{
+        color: ended || inactive ? 'text.secondary' : 'warning.main',
+        textDecoration: 'none',
+        maxWidth: '100%',
+      }}
+    >
+      {label}
+    </Typography>
   );
 };
 
 const statusChip = (schedule: ChannelPriceSchedule) => {
   if (!schedule.isEnabled) {
+    if (isPriceScheduleOfferClosed(schedule)) {
+      return (
+        <Chip
+          size="small"
+          label={
+            isPriceScheduleOfferEnded(schedule.offerStatus)
+              ? 'Oferta zakończona'
+              : 'Oferta nieaktywna'
+          }
+          color="warning"
+          title={priceScheduleOfferClosedHint(schedule)}
+        />
+      );
+    }
     if (schedule.temporaryPrice == null) {
       return (
         <Chip
@@ -243,6 +303,12 @@ const ScheduleRowActions = ({
           >
             {'Wyłącz'}
           </MenuItem>
+        ) : isPriceScheduleOfferClosed(schedule) ? (
+          <Tooltip title={priceScheduleOfferClosedHint(schedule)}>
+            <span>
+              <MenuItem disabled>{'Włącz'}</MenuItem>
+            </span>
+          </Tooltip>
         ) : (
           <MenuItem
             onClick={() => {
@@ -647,6 +713,16 @@ export const PriceScheduleProductGroups = ({
               <Typography variant="caption" color="text.secondary">
                 {dayjs(event.createdAt).format('DD.MM HH:mm')}
               </Typography>
+              {event.message ? (
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  noWrap
+                  title={event.message}
+                >
+                  {event.message}
+                </Typography>
+              ) : null}
             </Stack>
           );
         },

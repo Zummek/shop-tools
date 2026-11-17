@@ -1,4 +1,7 @@
-import type { ChannelPriceSchedule } from '../types/priceSchedules';
+import type {
+  ChannelPriceSchedule,
+  PriceScheduleUnscheduledOffer,
+} from '../types/priceSchedules';
 
 export interface PriceScheduleProductGroup {
   /** Stable key: the product id, or "none" for offers without a product. */
@@ -6,6 +9,8 @@ export interface PriceScheduleProductGroup {
   productId: number | null;
   productName: string | null;
   schedules: ChannelPriceSchedule[];
+  /** Allegro offers of this product that have no schedule, deduped by link. */
+  offersWithoutSchedule: PriceScheduleUnscheduledOffer[];
   appliedCount: number;
   failingCount: number;
   /**
@@ -52,6 +57,7 @@ export const groupSchedulesByProduct = (
         productId: schedule.productId,
         productName: schedule.productName,
         schedules: [],
+        offersWithoutSchedule: [],
         appliedCount: 0,
         failingCount: 0,
         nextChangeAt: null,
@@ -59,6 +65,15 @@ export const groupSchedulesByProduct = (
       byKey.set(key, group);
     }
     group.schedules.push(schedule);
+    for (const offer of schedule.productOffersWithoutSchedule ?? []) {
+      if (
+        group.offersWithoutSchedule.some(
+          (existing) => existing.linkId === offer.linkId,
+        )
+      )
+        continue;
+      group.offersWithoutSchedule.push(offer);
+    }
     if (schedule.isApplied) group.appliedCount += 1;
     if (schedule.consecutiveFailures > 0) group.failingCount += 1;
     const nextTime = nextChangeTime(schedule);
@@ -80,6 +95,9 @@ export const groupSchedulesByProduct = (
       if (a.isEnabled !== b.isEnabled) return a.isEnabled ? -1 : 1;
       return compareNames(a.offerName || '', b.offerName || '') || a.id - b.id;
     });
+    group.offersWithoutSchedule.sort((a, b) =>
+      compareNames(a.externalOfferId, b.externalOfferId),
+    );
   }
   groups.sort((a, b) => {
     if (a.key === NO_PRODUCT_GROUP_KEY) return 1;

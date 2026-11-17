@@ -139,6 +139,33 @@ test('rows inside a group are ordered by offer name then id', () => {
   );
 });
 
+test('collects offers without a schedule once per product', () => {
+  const active = {
+    linkId: 9,
+    externalOfferId: '19127942726',
+    offerStatus: 'ACTIVE',
+    isActive: true,
+    price: 4350,
+    currency: 'PLN',
+  };
+  const ended = {
+    ...active,
+    linkId: 4,
+    externalOfferId: '19099974301',
+    offerStatus: 'ENDED',
+  };
+  const [group] = groupSchedulesByProduct([
+    schedule(1, 8, 'Magnez', { productOffersWithoutSchedule: [active] }),
+    schedule(2, 8, 'Magnez', {
+      productOffersWithoutSchedule: [active, ended],
+    }),
+  ]);
+  assert.deepEqual(
+    group.offersWithoutSchedule.map((offer) => offer.externalOfferId),
+    ['19099974301', '19127942726'],
+  );
+});
+
 test('pageOfGroups clamps an out-of-range page', () => {
   const result = pageOfGroups([1, 2, 3, 4, 5], 9, 2);
   assert.equal(result.page, 2);

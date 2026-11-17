@@ -40,6 +40,18 @@ export interface PriceScheduleEvent {
   createdAt: string;
 }
 
+/** Allegro offer of the same product that has no price schedule. */
+export interface PriceScheduleUnscheduledOffer {
+  linkId: number;
+  externalOfferId: string;
+  offerStatus: string | null;
+  isActive: boolean;
+  marketplace: string | null;
+  /** cents */
+  price: number | null;
+  currency: string | null;
+}
+
 export interface ChannelPriceSchedule {
   id: number;
   linkId: number;
@@ -68,6 +80,10 @@ export interface ChannelPriceSchedule {
   marketplace: string | null;
   productId: number | null;
   productName: string | null;
+  offerStatus: string | null;
+  linkIsActive: boolean;
+  /** Allegro offers of the same product that have no schedule. Empty outside the list. */
+  productOffersWithoutSchedule: PriceScheduleUnscheduledOffer[];
   /** last synced offer price, cents — may differ from originalPrice */
   linkPrice: number | null;
   isInsideWindowNow: boolean;

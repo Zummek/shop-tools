@@ -38,6 +38,8 @@ import {
   ChannelProductLink,
   PriceScheduleDisableMode,
   PriceScheduleEvent,
+  PriceScheduleUnscheduledOffer,
+  PriceScheduleWindow,
   useBulkDeletePriceSchedules,
   useBulkDisablePriceSchedules,
   useBulkEnablePriceSchedules,
@@ -45,9 +47,14 @@ import {
   useDisablePriceSchedule,
   useEnablePriceSchedule,
   useGetPriceSchedules,
+  useMovePriceSchedule,
   useRefreshPriceSchedulePrices,
 } from '../api';
-import { PriceScheduleProductGroups } from '../components';
+import {
+  MovePriceScheduleDialog,
+  PriceScheduleProductGroups,
+  type MovePriceScheduleDraft,
+} from '../components';
 import {
   SchedulePriceChangeModal,
   SchedulePriceDraftWizard,
@@ -59,6 +66,7 @@ import {
   groupSchedulesByProduct,
   isPriceScheduleChannelMismatch,
   isPriceScheduleOfferClosed,
+  isSchedulableUnscheduledOffer,
   notifyPriceScheduleConflictText,
   notifyPriceScheduleFailure,
   pageOfGroups,
@@ -123,6 +131,43 @@ const scheduleToLink = (
   productInternalId: null,
 });
 
+const unscheduledOfferToLink = (
+  offer: PriceScheduleUnscheduledOffer,
+  neighbor: ChannelPriceSchedule | null,
+): ChannelProductLink => ({
+  id: offer.linkId,
+  channel: 'allegro',
+  externalOfferId: offer.externalOfferId,
+  externalProductId: null,
+  sku: null,
+  ean: null,
+  marketplace: offer.marketplace,
+  offerName: offer.externalOfferId,
+  matchType: 'NONE',
+  matchStatus: 'confirmed',
+  isActive: offer.isActive,
+  price: offer.price,
+  currency: offer.currency,
+  stockAvailable: null,
+  stockSold: null,
+  stockPublishEnabled: false,
+  unitsInOffer: 1,
+  offerStatus: offer.offerStatus,
+  lastSyncedAt: null,
+  externalUrl: null,
+  productId: neighbor?.productId ?? null,
+  productName: neighbor?.productName ?? null,
+  productInternalId: null,
+});
+
+const windowsWithoutIds = (windows: PriceScheduleWindow[] | undefined) =>
+  (windows ?? []).map(({ startWeekday, startTime, endWeekday, endTime }) => ({
+    startWeekday,
+    startTime,
+    endWeekday,
+    endTime,
+  }));
+
 export const PriceSchedulesPage = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -135,7 +180,15 @@ export const PriceSchedulesPage = () => {
     useState<ChannelPriceSchedule | null>(null);
   const openedScheduleIdRef = useRef<number | null>(null);
   const missingNoticeKeyRef = useRef<string | null>(null);
-  const [draftWizardOpen, setDraftWizardOpen] = useState(false);
+  const [draftWizard, setDraftWizard] = useState<{
+    links: ChannelProductLink[];
+    windows: PriceScheduleWindow[];
+    step: 'pick' | 'settings';
+    discountFromScheduleId: number | null;
+  } | null>(null);
+  const [moveDraft, setMoveDraft] = useState<MovePriceScheduleDraft | null>(
+    null,
+  );
   const [oneOffOpen, setOneOffOpen] = useState(false);
   const [historySchedule, setHistorySchedule] =
     useState<ChannelPriceSchedule | null>(null);
@@ -250,6 +303,7 @@ export const PriceSchedulesPage = () => {
     useBulkEnablePriceSchedules();
   const { deletePriceSchedule, isPending: isDeleting } =
     useDeletePriceSchedule();
+  const { movePriceSchedule, isPending: isMoving } = useMovePriceSchedule();
   const { bulkDeletePriceSchedules, isPending: isBulkDeleting } =
     useBulkDeletePriceSchedules();
   const { refreshPriceSchedulePrices, isPending: isRefreshing } =
@@ -261,7 +315,8 @@ export const PriceSchedulesPage = () => {
     isDisabling ||
     isEnabling ||
     isDeleting ||
-    isBulkDeleting;
+    isBulkDeleting ||
+    isMoving;
   useEffect(() => {
     setSearchInput((current) => (current.trim() === query ? current : query));
   }, [query]);
@@ -674,7 +729,14 @@ export const PriceSchedulesPage = () => {
         <Button
           variant="contained"
           startIcon={<AddIcon />}
-          onClick={() => setDraftWizardOpen(true)}
+          onClick={() =>
+            setDraftWizard({
+              links: [],
+              windows: [],
+              step: 'pick',
+              discountFromScheduleId: null,
+            })
+          }
           sx={{ flexShrink: 0, alignSelf: { xs: 'flex-start', sm: 'auto' } }}
         >
           {'Zaplanuj zmianę ceny'}
@@ -835,6 +897,50 @@ export const PriceSchedulesPage = () => {
               setMenuState({ anchor, schedule })
             }
             onDelete={setDeleteTarget}
+            onPlanOffer={(offer, neighbor) =>
+              setDraftWizard({
+                links: [unscheduledOfferToLink(offer, neighbor)],
+                windows: windowsWithoutIds(neighbor?.windows),
+                step: 'settings',
+                discountFromScheduleId: null,
+              })
+            }
+            onMoveSchedule={(schedule) => {
+              const offers = (
+                schedule.productOffersWithoutSchedule ?? []
+              ).filter(isSchedulableUnscheduledOffer);
+              if (
+                schedule.isEnabled ||
+                schedule.isApplied ||
+                offers.length === 0
+              )
+                return;
+              setMoveDraft({
+                schedules: [schedule],
+                offers,
+                scheduleId: schedule.id,
+                offerId: offers.length === 1 ? offers[0].linkId : null,
+              });
+            }}
+            onMoveOntoOffer={(offer, sources) => {
+              if (sources.length === 0) return;
+              setMoveDraft({
+                schedules: sources,
+                offers: [offer],
+                scheduleId: sources[0].id,
+                offerId: offer.linkId,
+              });
+            }}
+            onCopySchedule={(schedule) =>
+              setDraftWizard({
+                links: [],
+                windows: windowsWithoutIds(schedule.windows),
+                step: 'pick',
+                discountFromScheduleId:
+                  schedule.temporaryPrice != null ? schedule.id : null,
+              })
+            }
+            showUnscheduledOffers={status === 'all'}
             disabled={isMutationBusy}
           />
           {groupPage.pageCount > 1 && (
@@ -1162,8 +1268,12 @@ export const PriceSchedulesPage = () => {
       )}
 
       <SchedulePriceDraftWizard
-        open={draftWizardOpen}
-        onClose={() => setDraftWizardOpen(false)}
+        open={draftWizard != null}
+        initialLinks={draftWizard?.links}
+        initialWindows={draftWizard?.windows}
+        initialStep={draftWizard?.step}
+        discountFromScheduleId={draftWizard?.discountFromScheduleId}
+        onClose={() => setDraftWizard(null)}
         onCreated={() => {
           setSelectedIds([]);
           setSearchInput('');
@@ -1184,6 +1294,48 @@ export const PriceSchedulesPage = () => {
           selectedIds.includes(schedule.id),
         )}
         onClose={() => setOneOffOpen(false)}
+      />
+
+      <MovePriceScheduleDialog
+        draft={moveDraft}
+        pending={isMoving}
+        onClose={() => {
+          if (isMoving) return;
+          setMoveDraft(null);
+        }}
+        onScheduleId={(scheduleId) =>
+          setMoveDraft((current) =>
+            current ? { ...current, scheduleId } : current,
+          )
+        }
+        onOfferId={(offerId) =>
+          setMoveDraft((current) => (current ? { ...current, offerId } : current))
+        }
+        onConfirm={() => {
+          if (!moveDraft?.offerId) return;
+          const offer = moveDraft.offers.find(
+            (item) => item.linkId === moveDraft.offerId,
+          );
+          void movePriceSchedule({
+            id: moveDraft.scheduleId,
+            linkId: moveDraft.offerId,
+          })
+            .then(() => {
+              notify(
+                'success',
+                `Przeniesiono harmonogram na ofertę ${offer?.externalOfferId ?? ''}. Zostaje wyłączony — włącz go ręcznie.`,
+              );
+              setMoveDraft(null);
+              setSelectedIds([]);
+            })
+            .catch((err) => {
+              notifyPriceScheduleFailure(
+                notify,
+                err,
+                'Nie udało się przenieść harmonogramu',
+              );
+            });
+        }}
       />
 
       {editedSchedule && (

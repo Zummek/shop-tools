@@ -16,6 +16,7 @@ const endpoint = '/api/v1/ecommerce/price-schedules/bulk-create/';
 export interface BulkCreatePriceScheduleDraftsPayload {
   linkIds: number[];
   windows: PriceScheduleWindow[];
+  discountPercentFromScheduleId?: number;
 }
 
 export const useBulkCreatePriceScheduleDrafts = () => {

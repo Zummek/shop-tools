@@ -3,6 +3,55 @@ import type {
   PriceScheduleUnscheduledOffer,
 } from '../types/priceSchedules';
 
+const isEndedOfferStatus = (status: string | null | undefined) =>
+  (status ?? '').trim().toLowerCase() === 'ended';
+
+export const isSchedulableUnscheduledOffer = (
+  offer: PriceScheduleUnscheduledOffer,
+) =>
+  offer.isActive && offer.price != null && !isEndedOfferStatus(offer.offerStatus);
+
+export const foldedUnscheduledOffers = (group: PriceScheduleProductGroup) =>
+  group.offersWithoutSchedule.filter(
+    (offer) => !isSchedulableUnscheduledOffer(offer),
+  );
+
+const polishCount = (count: number, one: string, few: string, many: string) => {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  if (count === 1) return one;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return few;
+  return many;
+};
+
+export const foldedUnscheduledOfferLabel = (
+  offers: PriceScheduleUnscheduledOffer[],
+) => {
+  const count = offers.length;
+  if (offers.every((offer) => isEndedOfferStatus(offer.offerStatus))) {
+    return `+ ${count} ${polishCount(
+      count,
+      'zakończona oferta',
+      'zakończone oferty',
+      'zakończonych ofert',
+    )}`;
+  }
+  return `+ ${count} ${polishCount(
+    count,
+    'oferta bez harmonogramu',
+    'oferty bez harmonogramu',
+    'ofert bez harmonogramu',
+  )}`;
+};
+
+export const movableEndedSchedules = (schedules: ChannelPriceSchedule[]) =>
+  schedules.filter(
+    (schedule) =>
+      !schedule.isEnabled &&
+      !schedule.isApplied &&
+      isEndedOfferStatus(schedule.offerStatus),
+  );
+
 export interface PriceScheduleProductGroup {
   /** Stable key: the product id, or "none" for offers without a product. */
   key: string;
@@ -117,32 +166,93 @@ export type PriceScheduleGridRow =
       id: number;
       groupKey: string;
       schedule: ChannelPriceSchedule;
+    }
+  | {
+      kind: 'offer';
+      id: string;
+      groupKey: string;
+      offer: PriceScheduleUnscheduledOffer;
+      neighbor: ChannelPriceSchedule | null;
+      moveSources: ChannelPriceSchedule[];
+    }
+  | {
+      kind: 'endedToggle';
+      id: string;
+      groupKey: string;
+      offers: PriceScheduleUnscheduledOffer[];
+      expanded: boolean;
+    }
+  | {
+      kind: 'endedOffer';
+      id: string;
+      groupKey: string;
+      offer: PriceScheduleUnscheduledOffer;
     };
 
-/** Product header plus its schedules, unless that product is collapsed. */
 export const priceScheduleGridRows = (
   groups: PriceScheduleProductGroup[],
   collapsedKeys: ReadonlySet<string>,
-): PriceScheduleGridRow[] =>
-  groups.flatMap((group) => {
+  options?: {
+    includeUnscheduledOffers?: boolean;
+    expandedEndedKeys?: ReadonlySet<string>;
+  },
+): PriceScheduleGridRow[] => {
+  const includeUnscheduledOffers = options?.includeUnscheduledOffers !== false;
+  const expandedEndedKeys = options?.expandedEndedKeys ?? new Set<string>();
+  return groups.flatMap((group) => {
     const header: PriceScheduleGridRow = {
       kind: 'product',
       id: `product:${group.key}`,
       group,
     };
     if (collapsedKeys.has(group.key)) return [header];
-    return [
-      header,
-      ...group.schedules.map(
-        (schedule): PriceScheduleGridRow => ({
-          kind: 'schedule',
-          id: schedule.id,
-          groupKey: group.key,
-          schedule,
-        }),
-      ),
-    ];
+    const schedules = group.schedules.map(
+      (schedule): PriceScheduleGridRow => ({
+        kind: 'schedule',
+        id: schedule.id,
+        groupKey: group.key,
+        schedule,
+      }),
+    );
+    if (!includeUnscheduledOffers) return [header, ...schedules];
+    const sources = movableEndedSchedules(group.schedules);
+    const offerRows: PriceScheduleGridRow[] = group.offersWithoutSchedule
+      .filter(isSchedulableUnscheduledOffer)
+      .map((offer) => ({
+        kind: 'offer' as const,
+        id: `offer:${offer.linkId}`,
+        groupKey: group.key,
+        offer,
+        neighbor: group.schedules[0] ?? null,
+        moveSources: sources,
+      }));
+    const folded = foldedUnscheduledOffers(group);
+    const expanded = expandedEndedKeys.has(group.key);
+    const endedRows: PriceScheduleGridRow[] =
+      folded.length === 0
+        ? []
+        : [
+            {
+              kind: 'endedToggle',
+              id: `ended:${group.key}`,
+              groupKey: group.key,
+              offers: folded,
+              expanded,
+            },
+            ...(expanded
+              ? folded.map(
+                  (offer): PriceScheduleGridRow => ({
+                    kind: 'endedOffer',
+                    id: `ended-offer:${offer.linkId}`,
+                    groupKey: group.key,
+                    offer,
+                  }),
+                )
+              : []),
+          ];
+    return [header, ...schedules, ...offerRows, ...endedRows];
   });
+};
 
 export const pageOfGroups = <T>(
   groups: T[],

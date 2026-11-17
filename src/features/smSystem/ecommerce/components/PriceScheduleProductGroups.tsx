@@ -1,4 +1,5 @@
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import LinkIcon from '@mui/icons-material/Link';
@@ -6,6 +7,7 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import {
   Box,
+  Button,
   Checkbox,
   Chip,
   IconButton,
@@ -30,7 +32,8 @@ import {
   formatPriceScheduleEventLabel,
   formatPriceScheduleNextChange,
   formatPriceScheduleOneOff,
-  formatPriceScheduleWindows,
+  formatPriceScheduleWindow,
+  summarizePriceScheduleWindows,
   isPriceScheduleChannelMismatch,
   isPriceScheduleExpectingTemporary,
   isPriceScheduleOfferClosed,
@@ -39,6 +42,8 @@ import {
   priceScheduleOfferClosedHint,
 } from '../utils';
 import {
+  foldedUnscheduledOfferLabel,
+  isSchedulableUnscheduledOffer,
   NO_PRODUCT_GROUP_KEY,
   priceScheduleGridRows,
   type PriceScheduleGridRow,
@@ -48,6 +53,15 @@ import {
 // Product summary starts at temporaryPrice and covers the seven columns
 // before the pinned actions column.
 const PRODUCT_SUMMARY_SPAN = 7;
+
+const ROW_HEIGHT_BY_KIND: Record<PriceScheduleGridRow['kind'], number | 'auto'> =
+  {
+    product: 'auto',
+    schedule: 72,
+    offer: 56,
+    endedToggle: 40,
+    endedOffer: 36,
+  };
 
 const scheduleNoun = (count: number) => {
   if (count === 1) return 'harmonogram';
@@ -63,6 +77,63 @@ const productGroupTitle = (group: PriceScheduleProductGroup) =>
     ? 'Oferty bez przypisanego produktu'
     : group.productName || `Produkt #${group.productId}`;
 
+const WindowsCell = ({ schedule }: { schedule: ChannelPriceSchedule }) => {
+  const oneOffs = schedule.oneOffs ?? [];
+  const summary = summarizePriceScheduleWindows(schedule.windows);
+  if (!summary && oneOffs.length === 0) {
+    return (
+      <Typography variant="body2" color="text.secondary">
+        {'—'}
+      </Typography>
+    );
+  }
+  const line = summary || `Jednorazowo ${oneOffs.length}`;
+  return (
+    <Tooltip
+      placement="top-start"
+      slotProps={{ tooltip: { sx: { maxWidth: 360 } } }}
+      title={
+        <Stack spacing={0.25} sx={{ py: 0.5 }}>
+          {schedule.windows.map((window, index) => (
+            <Typography
+              key={window.id ?? index}
+              variant="caption"
+              component="div"
+            >
+              {formatPriceScheduleWindow(window)}
+            </Typography>
+          ))}
+          {oneOffs.length > 0 && (
+            <Typography variant="caption" fontWeight={600} sx={{ mt: 0.5 }}>
+              {'Jednorazowe'}
+            </Typography>
+          )}
+          {oneOffs.map((oneOff) => (
+            <Typography key={oneOff.id} variant="caption" component="div">
+              {formatPriceScheduleOneOff(oneOff)}
+            </Typography>
+          ))}
+        </Stack>
+      }
+    >
+      <Stack
+        direction="row"
+        spacing={0.5}
+        alignItems="center"
+        sx={{ minWidth: 0, width: '100%' }}
+      >
+        <Typography variant="body2" noWrap sx={{ minWidth: 0 }}>
+          {line}
+        </Typography>
+        {summary && oneOffs.length > 0 && (
+          <Chip size="small" variant="outlined" label={oneOffs.length} />
+        )}
+        <InfoOutlinedIcon fontSize="small" color="action" />
+      </Stack>
+    </Tooltip>
+  );
+};
+
 const ProductGroupSummary = ({
   group,
 }: {
@@ -72,63 +143,103 @@ const ProductGroupSummary = ({
     (schedule) => !schedule.isEnabled,
   ).length;
   return (
-    <Stack spacing={0.5} sx={{ py: 0.5, width: '100%', minWidth: 0 }}>
-      <Stack
-        direction="row"
-        alignItems="center"
-        flexWrap="wrap"
-        useFlexGap
-        gap={0.75}
-      >
+    <Stack
+      direction="row"
+      alignItems="center"
+      flexWrap="wrap"
+      useFlexGap
+      gap={0.75}
+      sx={{ py: 0.5, width: '100%', minWidth: 0 }}
+    >
+      <Chip
+        size="small"
+        variant="outlined"
+        label={`${group.schedules.length} ${scheduleNoun(group.schedules.length)}`}
+      />
+      {disabledCount > 0 && (
         <Chip
           size="small"
           variant="outlined"
-          label={`${group.schedules.length} ${scheduleNoun(group.schedules.length)}`}
+          label={`Wyłączone: ${disabledCount}`}
         />
-        {disabledCount > 0 && (
-          <Chip
-            size="small"
-            variant="outlined"
-            label={`Wyłączone: ${disabledCount}`}
-          />
-        )}
-        {group.appliedCount > 0 && (
-          <Chip
-            size="small"
-            color="success"
-            label={`Aktywna zmiana: ${group.appliedCount}`}
-          />
-        )}
-        {group.failingCount > 0 && (
-          <Chip
-            size="small"
-            color="error"
-            label={`Błąd: ${group.failingCount}`}
-          />
-        )}
-        {group.nextChangeAt && (
-          <Typography variant="caption" color="text.secondary">
-            {`Najbliższa zmiana ${dayjs(group.nextChangeAt).format('DD.MM HH:mm')}`}
-          </Typography>
-        )}
-      </Stack>
-      {group.offersWithoutSchedule.map((offer) => (
-        <UnscheduledOfferLine key={offer.linkId} offer={offer} />
-      ))}
+      )}
+      {group.appliedCount > 0 && (
+        <Chip
+          size="small"
+          color="success"
+          label={`Aktywna zmiana: ${group.appliedCount}`}
+        />
+      )}
+      {group.failingCount > 0 && (
+        <Chip size="small" color="error" label={`Błąd: ${group.failingCount}`} />
+      )}
+      {group.nextChangeAt && (
+        <Typography variant="caption" color="text.secondary">
+          {`Najbliższa zmiana ${dayjs(group.nextChangeAt).format('DD.MM HH:mm')}`}
+        </Typography>
+      )}
     </Stack>
   );
 };
 
-const UnscheduledOfferLine = ({
+const OfferSubrow = ({
   offer,
+  canMove,
+  disabled,
+  onMove,
 }: {
   offer: PriceScheduleUnscheduledOffer;
+  canMove: boolean;
+  disabled: boolean;
+  onMove: () => void;
 }) => {
-  const ended = isPriceScheduleOfferEnded(offer.offerStatus);
-  const inactive = !ended && offer.isActive === false;
-  let statusLabel = 'aktywna';
-  if (ended) statusLabel = 'zakończona';
-  else if (inactive) statusLabel = 'nieaktywna';
+  const price =
+    offer.price != null
+      ? formatPrice(offer.price, offer.currency || undefined)
+      : '—';
+  const label = `Oferta ${offer.externalOfferId} · aktywna · ${price}`;
+  return (
+    <Stack
+      direction="row"
+      alignItems="center"
+      spacing={1}
+      sx={{ minWidth: 0, width: '100%', pl: 5 }}
+    >
+      <Stack sx={{ flex: 1, minWidth: 0 }}>
+        <Typography
+          component="a"
+          href={allegroOfferUrl(offer.externalOfferId, offer.marketplace)}
+          target="_blank"
+          rel="noopener noreferrer"
+          variant="body2"
+          noWrap
+          title={label}
+          sx={{ color: 'text.primary', textDecoration: 'none' }}
+        >
+          {label}
+        </Typography>
+        <Typography variant="caption" color="text.secondary" noWrap>
+          {'Ta oferta nie ma harmonogramu'}
+        </Typography>
+      </Stack>
+      {canMove && (
+        <Button size="small" disabled={disabled} onClick={onMove}>
+          {'Przenieś'}
+        </Button>
+      )}
+    </Stack>
+  );
+};
+
+const unscheduledOfferStatusLabel = (offer: PriceScheduleUnscheduledOffer) => {
+  if (isPriceScheduleOfferEnded(offer.offerStatus)) return 'zakończona';
+  if (offer.isActive === false) return 'nieaktywna';
+  if (offer.price == null) return 'brak ceny';
+  return 'bez harmonogramu';
+};
+
+const FoldedOfferLine = ({ offer }: { offer: PriceScheduleUnscheduledOffer }) => {
+  const statusLabel = unscheduledOfferStatusLabel(offer);
   const price =
     offer.price != null
       ? formatPrice(offer.price, offer.currency || undefined)
@@ -140,14 +251,10 @@ const UnscheduledOfferLine = ({
       href={allegroOfferUrl(offer.externalOfferId, offer.marketplace)}
       target="_blank"
       rel="noopener noreferrer"
-      variant="caption"
+      variant="body2"
       noWrap
       title={label}
-      sx={{
-        color: ended || inactive ? 'text.secondary' : 'warning.main',
-        textDecoration: 'none',
-        maxWidth: '100%',
-      }}
+      sx={{ color: 'text.secondary', textDecoration: 'none', pl: 5 }}
     >
       {label}
     </Typography>
@@ -239,11 +346,37 @@ type GridRow =
   | (Extract<PriceScheduleGridRow, { kind: 'schedule' }> & {
       selected: boolean;
       busy: boolean;
+    })
+  | (Extract<PriceScheduleGridRow, { kind: 'offer' }> & {
+      busy: boolean;
+    })
+  | (Extract<PriceScheduleGridRow, { kind: 'endedToggle' }> & {
+      busy: boolean;
+    })
+  | (Extract<PriceScheduleGridRow, { kind: 'endedOffer' }> & {
+      busy: boolean;
     });
 
 const isScheduleRow = (
   row: GridRow,
 ): row is Extract<GridRow, { kind: 'schedule' }> => row.kind === 'schedule';
+
+const isProductRow = (
+  row: GridRow,
+): row is Extract<GridRow, { kind: 'product' }> => row.kind === 'product';
+
+const isOfferRow = (
+  row: GridRow,
+): row is Extract<GridRow, { kind: 'offer' }> => row.kind === 'offer';
+
+const isEndedToggleRow = (
+  row: GridRow,
+): row is Extract<GridRow, { kind: 'endedToggle' }> =>
+  row.kind === 'endedToggle';
+
+const isEndedOfferRow = (
+  row: GridRow,
+): row is Extract<GridRow, { kind: 'endedOffer' }> => row.kind === 'endedOffer';
 
 const ScheduleRowActions = ({
   schedule,
@@ -253,6 +386,8 @@ const ScheduleRowActions = ({
   onEnable,
   onDisableMenu,
   onDelete,
+  onMove,
+  onCopy,
 }: {
   schedule: ChannelPriceSchedule;
   disabled: boolean;
@@ -261,6 +396,8 @@ const ScheduleRowActions = ({
   onEnable: (schedule: ChannelPriceSchedule) => void;
   onDisableMenu: (schedule: ChannelPriceSchedule, anchor: HTMLElement) => void;
   onDelete: (schedule: ChannelPriceSchedule) => void;
+  onMove: (schedule: ChannelPriceSchedule) => void;
+  onCopy: (schedule: ChannelPriceSchedule) => void;
 }) => {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const close = () => setAnchor(null);
@@ -330,6 +467,40 @@ const ScheduleRowActions = ({
             {'Usuń'}
           </MenuItem>
         )}
+        <MenuItem
+          onClick={() => {
+            close();
+            onCopy(schedule);
+          }}
+        >
+          {'Kopiuj na inny produkt'}
+        </MenuItem>
+        {(() => {
+          const targets = (schedule.productOffersWithoutSchedule ?? []).filter(
+            isSchedulableUnscheduledOffer,
+          );
+          const blocked = schedule.isEnabled || schedule.isApplied;
+          const hint = blocked
+            ? 'Najpierw wyłącz harmonogram. Przenieść można tylko wyłączony harmonogram bez zastosowanej ceny.'
+            : 'Brak aktywnej oferty bez harmonogramu.';
+          const item = (
+            <MenuItem
+              disabled={disabled || blocked || targets.length === 0}
+              onClick={() => {
+                close();
+                onMove(schedule);
+              }}
+            >
+              {'Przenieś na nową ofertę'}
+            </MenuItem>
+          );
+          if (!blocked && targets.length > 0) return item;
+          return (
+            <Tooltip title={hint}>
+              <span>{item}</span>
+            </Tooltip>
+          );
+        })()}
       </Menu>
     </Stack>
   );
@@ -347,6 +518,17 @@ interface Props {
   onEnable: (schedule: ChannelPriceSchedule) => void;
   onDisableMenu: (schedule: ChannelPriceSchedule, anchor: HTMLElement) => void;
   onDelete: (schedule: ChannelPriceSchedule) => void;
+  onPlanOffer: (
+    offer: PriceScheduleUnscheduledOffer,
+    neighbor: ChannelPriceSchedule | null,
+  ) => void;
+  onMoveSchedule: (schedule: ChannelPriceSchedule) => void;
+  onMoveOntoOffer: (
+    offer: PriceScheduleUnscheduledOffer,
+    sources: ChannelPriceSchedule[],
+  ) => void;
+  onCopySchedule: (schedule: ChannelPriceSchedule) => void;
+  showUnscheduledOffers?: boolean;
   disabled?: boolean;
 }
 
@@ -362,8 +544,23 @@ export const PriceScheduleProductGroups = ({
   onEnable,
   onDisableMenu,
   onDelete,
+  onPlanOffer,
+  onMoveSchedule,
+  onMoveOntoOffer,
+  onCopySchedule,
+  showUnscheduledOffers = true,
   disabled = false,
 }: Props) => {
+  const [expandedEndedKeys, setExpandedEndedKeys] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const toggleEnded = (key: string) =>
+    setExpandedEndedKeys((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   const apiRef = useGridApiRef();
   const selected = useMemo(() => new Set(selectedIds), [selectedIds]);
   const selectedIdsRef = useRef(selectedIds);
@@ -376,6 +573,11 @@ export const PriceScheduleProductGroups = ({
     onEnable,
     onDisableMenu,
     onDelete,
+    onPlanOffer,
+    onMoveSchedule,
+    onMoveOntoOffer,
+    onCopySchedule,
+    onToggleEnded: toggleEnded,
     onSelectedIdsChange,
   });
   handlersRef.current = {
@@ -386,11 +588,19 @@ export const PriceScheduleProductGroups = ({
     onEnable,
     onDisableMenu,
     onDelete,
+    onPlanOffer,
+    onMoveSchedule,
+    onMoveOntoOffer,
+    onCopySchedule,
+    onToggleEnded: toggleEnded,
     onSelectedIdsChange,
   };
   const rows = useMemo<GridRow[]>(
     () =>
-      priceScheduleGridRows(groups, collapsedKeys).map((row) => {
+      priceScheduleGridRows(groups, collapsedKeys, {
+        includeUnscheduledOffers: showUnscheduledOffers,
+        expandedEndedKeys,
+      }).map((row) => {
         if (row.kind === 'product') {
           const selectedCount = row.group.schedules.filter((schedule) =>
             selected.has(schedule.id),
@@ -402,9 +612,18 @@ export const PriceScheduleProductGroups = ({
             busy: disabled,
           };
         }
-        return { ...row, selected: selected.has(row.id), busy: disabled };
+        if (row.kind === 'schedule')
+          return { ...row, selected: selected.has(row.id), busy: disabled };
+        return { ...row, busy: disabled };
       }),
-    [collapsedKeys, disabled, groups, selected],
+    [
+      collapsedKeys,
+      disabled,
+      expandedEndedKeys,
+      groups,
+      selected,
+      showUnscheduledOffers,
+    ],
   );
   usePinDataGridColumns(
     apiRef,
@@ -445,7 +664,8 @@ export const PriceScheduleProductGroups = ({
         disableColumnMenu: true,
         renderCell: (params) => {
           const row = params.row;
-          if (!isScheduleRow(row)) {
+          if (!isProductRow(row) && !isScheduleRow(row)) return null;
+          if (isProductRow(row)) {
             const group = row.group;
             const ids = group.schedules.map((schedule) => schedule.id);
             const count = row.selectedCount;
@@ -480,7 +700,42 @@ export const PriceScheduleProductGroups = ({
         minWidth: 240,
         sortable: false,
         renderCell: (params) => {
-          if (!isScheduleRow(params.row)) {
+          if (isOfferRow(params.row)) {
+            const row = params.row;
+            return (
+              <OfferSubrow
+                offer={row.offer}
+                canMove={row.moveSources.length > 0}
+                disabled={row.busy}
+                onMove={() =>
+                  handlersRef.current.onMoveOntoOffer(row.offer, row.moveSources)
+                }
+              />
+            );
+          }
+          if (isEndedToggleRow(params.row)) {
+            const row = params.row;
+            return (
+              <Button
+                size="small"
+                color="inherit"
+                startIcon={
+                  row.expanded ? (
+                    <KeyboardArrowDownIcon fontSize="small" />
+                  ) : (
+                    <KeyboardArrowRightIcon fontSize="small" />
+                  )
+                }
+                onClick={() => handlersRef.current.onToggleEnded(row.groupKey)}
+                sx={{ ml: 4 }}
+              >
+                {foldedUnscheduledOfferLabel(row.offers)}
+              </Button>
+            );
+          }
+          if (isEndedOfferRow(params.row))
+            return <FoldedOfferLine offer={params.row.offer} />;
+          if (isProductRow(params.row)) {
             const group = params.row.group;
             const title = productGroupTitle(group);
             const collapsed = params.row.collapsed;
@@ -576,8 +831,9 @@ export const PriceScheduleProductGroups = ({
         colSpan: (_value, row) =>
           row.kind === 'product' ? PRODUCT_SUMMARY_SPAN : 1,
         renderCell: (params) => {
-          if (!isScheduleRow(params.row))
+          if (isProductRow(params.row))
             return <ProductGroupSummary group={params.row.group} />;
+          if (!isScheduleRow(params.row)) return null;
           const schedule = params.row.schedule;
           return schedule.temporaryPrice == null
             ? '—'
@@ -639,47 +895,13 @@ export const PriceScheduleProductGroups = ({
       {
         field: 'windows',
         headerName: 'Okna',
-        flex: 1.6,
-        minWidth: 280,
+        flex: 1,
+        minWidth: 180,
         sortable: false,
-        renderCell: (params) => {
-          if (!isScheduleRow(params.row)) return null;
-          const schedule = params.row.schedule;
-          const weekly = formatPriceScheduleWindows(schedule.windows);
-          const oneOffs = schedule.oneOffs ?? [];
-          if (!weekly && oneOffs.length === 0) {
-            return (
-              <Typography variant="body2" color="text.secondary">
-                {'—'}
-              </Typography>
-            );
-          }
-          return (
-            <Stack
-              direction="row"
-              gap={0.5}
-              alignItems="center"
-              flexWrap="wrap"
-              useFlexGap
-              sx={{ minWidth: 0, py: 0.5 }}
-            >
-              {weekly && (
-                <Typography variant="body2" sx={{ minWidth: 0 }}>
-                  {weekly}
-                </Typography>
-              )}
-              {oneOffs.map((oneOff) => (
-                <Chip
-                  key={oneOff.id}
-                  size="small"
-                  variant="outlined"
-                  color="info"
-                  label={`Jednorazowo ${formatPriceScheduleOneOff(oneOff)}`}
-                />
-              ))}
-            </Stack>
-          );
-        },
+        renderCell: (params) =>
+          isScheduleRow(params.row) ? (
+            <WindowsCell schedule={params.row.schedule} />
+          ) : null,
       },
       {
         field: 'status',
@@ -755,10 +977,24 @@ export const PriceScheduleProductGroups = ({
       {
         field: 'actions',
         headerName: '',
-        width: 96,
-        minWidth: 96,
+        width: 118,
+        minWidth: 118,
         sortable: false,
         renderCell: (params) => {
+          if (isOfferRow(params.row)) {
+            const { offer, neighbor, busy } = params.row;
+            return (
+              <Button
+                size="small"
+                disabled={busy}
+                onClick={() =>
+                  handlersRef.current.onPlanOffer(offer, neighbor)
+                }
+              >
+                {'Zaplanuj'}
+              </Button>
+            );
+          }
           if (!isScheduleRow(params.row)) return null;
           return (
             <ScheduleRowActions
@@ -771,6 +1007,8 @@ export const PriceScheduleProductGroups = ({
                 handlersRef.current.onDisableMenu(schedule, anchor)
               }
               onDelete={(schedule) => handlersRef.current.onDelete(schedule)}
+              onMove={(schedule) => handlersRef.current.onMoveSchedule(schedule)}
+              onCopy={(schedule) => handlersRef.current.onCopySchedule(schedule)}
             />
           );
         },
@@ -791,10 +1029,14 @@ export const PriceScheduleProductGroups = ({
         // The render zone is translated while rows are virtualized, which
         // keeps a sticky product header from staying under the column titles.
         disableVirtualization
-        getRowHeight={() => 'auto'}
-        getRowClassName={(params) =>
-          params.row.kind === 'product' ? 'price-schedule-product-row' : ''
+        getRowHeight={(params) =>
+          ROW_HEIGHT_BY_KIND[(params.model as GridRow).kind]
         }
+        getRowClassName={(params) => {
+          if (params.row.kind === 'product') return 'price-schedule-product-row';
+          if (params.row.kind !== 'schedule') return 'price-schedule-offer-row';
+          return '';
+        }}
         localeText={plPL.components.MuiDataGrid.defaultProps.localeText}
         sx={{
           '& .MuiDataGrid-cell': {
@@ -828,6 +1070,11 @@ export const PriceScheduleProductGroups = ({
               `linear-gradient(${theme.palette.action.hover}, ${theme.palette.action.hover}), ${theme.palette.background.paper}`,
             boxShadow: (theme) => `inset 0 -1px 0 ${theme.palette.divider}`,
           },
+          '& .price-schedule-offer-row, & .price-schedule-offer-row .MuiDataGrid-cell--pinnedLeft, & .price-schedule-offer-row .MuiDataGrid-cell--pinnedRight':
+            {
+              background: (theme) =>
+                `linear-gradient(${theme.palette.action.hover}, ${theme.palette.action.hover}), ${theme.palette.background.paper}`,
+            },
           '& .price-schedule-product-row .MuiDataGrid-cell--pinnedLeft, & .price-schedule-product-row .MuiDataGrid-cell--pinnedRight':
             {
               zIndex: 36,

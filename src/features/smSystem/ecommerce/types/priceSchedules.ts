@@ -28,7 +28,8 @@ export type PriceScheduleEventType =
   | 'failed'
   | 'diverged'
   | 'disabled'
-  | 'enabled';
+  | 'enabled'
+  | 'moved';
 
 export interface PriceScheduleEvent {
   id: number;
@@ -137,9 +138,16 @@ export interface PriceScheduleBulkCreateError {
   error: string;
 }
 
+export interface PriceScheduleBulkCreateWarning {
+  /** Channel product link id the warning belongs to. */
+  id: number;
+  warning: string;
+}
+
 export interface PriceScheduleBulkCreateResponse {
   results: ChannelPriceSchedule[];
   errors: PriceScheduleBulkCreateError[];
+  warnings?: PriceScheduleBulkCreateWarning[];
 }
 
 export interface PriceScheduleBulkDisableResponse {

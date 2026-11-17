@@ -36,6 +36,7 @@ export * from './useGetEcommerceOffers';
 export * from './useGetErliOffers';
 export * from './useGetErliSyncStatus';
 export * from './useGetPriceSchedules';
+export * from './useMovePriceSchedule';
 export * from './useRefreshPriceSchedulePrices';
 export * from './useGetProductChannelLinks';
 export * from './useGetWooCommerceConnection';

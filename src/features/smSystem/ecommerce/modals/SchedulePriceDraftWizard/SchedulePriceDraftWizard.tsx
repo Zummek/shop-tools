@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { ChannelProductLink } from '../../types/channelLinks';
 import { PriceScheduleWindow } from '../../types/priceSchedules';
@@ -10,49 +10,52 @@ interface Props {
   onClose: () => void;
   /** Called when at least one draft was saved, including a partial batch. */
   onCreated?: (createdCount: number) => void;
+  initialLinks?: ChannelProductLink[];
+  initialWindows?: PriceScheduleWindow[];
+  initialStep?: 'pick' | 'settings';
+  discountFromScheduleId?: number | null;
 }
 
-export const SchedulePriceDraftWizard = ({
-  open,
+const WizardSteps = ({
   onClose,
   onCreated,
-}: Props) => {
-  const [step, setStep] = useState<'pick' | 'settings'>('pick');
-  const [links, setLinks] = useState<ChannelProductLink[]>([]);
-  const [windows, setWindows] = useState<PriceScheduleWindow[]>([]);
+  initialLinks = [],
+  initialWindows = [],
+  initialStep = 'pick',
+  discountFromScheduleId = null,
+}: Omit<Props, 'open'>) => {
+  const [step, setStep] = useState<'pick' | 'settings'>(initialStep);
+  const [links, setLinks] = useState<ChannelProductLink[]>(initialLinks);
+  const [windows, setWindows] =
+    useState<PriceScheduleWindow[]>(initialWindows);
 
-  useEffect(() => {
-    if (open) return;
-    setStep('pick');
-    setLinks([]);
-    setWindows([]);
-  }, [open]);
-
+  if (step === 'pick') {
+    return (
+      <SelectAllegroOfferForScheduleModal
+        open
+        initialSelected={links}
+        onClose={onClose}
+        onConfirm={(nextLinks) => {
+          setLinks(nextLinks);
+          setStep('settings');
+        }}
+      />
+    );
+  }
   return (
-    <>
-      {open && step === 'pick' && (
-        <SelectAllegroOfferForScheduleModal
-          open
-          initialSelected={links}
-          onClose={onClose}
-          onConfirm={(nextLinks) => {
-            setLinks(nextLinks);
-            setStep('settings');
-          }}
-        />
-      )}
-      {open && step === 'settings' && (
-        <BulkSchedulePriceDraftModal
-          open
-          links={links}
-          windows={windows}
-          onWindowsChange={setWindows}
-          onLinksChange={setLinks}
-          onBack={() => setStep('pick')}
-          onClose={onClose}
-          onCreated={(createdCount) => onCreated?.(createdCount)}
-        />
-      )}
-    </>
+    <BulkSchedulePriceDraftModal
+      open
+      links={links}
+      windows={windows}
+      onWindowsChange={setWindows}
+      onLinksChange={setLinks}
+      onBack={() => setStep('pick')}
+      onClose={onClose}
+      discountFromScheduleId={discountFromScheduleId}
+      onCreated={(createdCount) => onCreated?.(createdCount)}
+    />
   );
 };
+
+export const SchedulePriceDraftWizard = ({ open, ...rest }: Props) =>
+  open ? <WizardSteps {...rest} /> : null;

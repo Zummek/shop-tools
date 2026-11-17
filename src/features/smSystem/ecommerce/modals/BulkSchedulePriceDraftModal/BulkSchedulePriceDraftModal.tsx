@@ -7,12 +7,14 @@ import {
   AccordionSummary,
   Alert,
   Button,
+  Checkbox,
+  FormControlLabel,
   IconButton,
   Modal,
   Stack,
   Typography,
 } from '@mui/material';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { modalStyle } from '../../../../../components';
 import { useNotify } from '../../../../../hooks';
@@ -57,6 +59,7 @@ interface Props {
   onBack: () => void;
   onClose: () => void;
   onCreated: (createdCount: number) => void;
+  discountFromScheduleId?: number | null;
 }
 
 export const BulkSchedulePriceDraftModal = ({
@@ -68,6 +71,7 @@ export const BulkSchedulePriceDraftModal = ({
   onBack,
   onClose,
   onCreated,
+  discountFromScheduleId = null,
 }: Props) => {
   const { notify } = useNotify();
   const { bulkCreatePriceScheduleDrafts, isPending } =
@@ -75,8 +79,16 @@ export const BulkSchedulePriceDraftModal = ({
   const [rowErrors, setRowErrors] = useState<PriceScheduleBulkCreateError[]>(
     [],
   );
+  const [rowWarnings, setRowWarnings] = useState<string[]>([]);
+  const [copyDiscount, setCopyDiscount] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const submitLock = useRef(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setCopyDiscount(false);
+    setRowWarnings([]);
+  }, [open]);
 
   const allWindowsValid =
     windows.length > 0 && windows.every(isPriceScheduleWindowValid);
@@ -101,12 +113,20 @@ export const BulkSchedulePriceDraftModal = ({
       const result = await bulkCreatePriceScheduleDrafts({
         linkIds: links.map((link) => link.id),
         windows,
+        ...(copyDiscount && discountFromScheduleId
+          ? { discountPercentFromScheduleId: discountFromScheduleId }
+          : {}),
       });
+      const warningText = (result.warnings ?? [])
+        .map((warning) => warning.warning)
+        .join(' ');
+      setRowWarnings(warningText ? [warningText] : []);
       if (result.results.length > 0) onCreated(result.results.length);
       if (result.errors.length === 0) {
+        const created = `Utworzono ${result.results.length} ${draftNoun(result.results.length)}. Lista szkiców pokazuje nowe wpisy (bez filtra).`;
         notify(
-          'success',
-          `Utworzono ${result.results.length} ${draftNoun(result.results.length)}. Lista szkiców pokazuje nowe wpisy (bez filtra).`,
+          warningText ? 'warning' : 'success',
+          warningText ? `${created} ${warningText}` : created,
         );
         onClose();
         return;
@@ -230,6 +250,19 @@ export const BulkSchedulePriceDraftModal = ({
           </AccordionDetails>
         </Accordion>
 
+        {discountFromScheduleId != null && (
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={copyDiscount}
+                disabled={isPending}
+                onChange={(event) => setCopyDiscount(event.target.checked)}
+              />
+            }
+            label="Ustaw cenę tymczasową tym samym rabatem procentowym co kopiowany harmonogram"
+          />
+        )}
+
         <PriceScheduleWindowsEditor
           windows={windows}
           onChange={onWindowsChange}
@@ -243,6 +276,18 @@ export const BulkSchedulePriceDraftModal = ({
               {rowErrors.map((error) => (
                 <Typography key={error.id} variant="body2">
                   {`${nameById.get(error.id) || `Oferta ${error.id}`}: ${error.error}`}
+                </Typography>
+              ))}
+            </Stack>
+          </Alert>
+        )}
+
+        {rowWarnings.length > 0 && (
+          <Alert severity="warning">
+            <Stack spacing={0.5}>
+              {rowWarnings.map((warning) => (
+                <Typography key={warning} variant="body2">
+                  {warning}
                 </Typography>
               ))}
             </Stack>

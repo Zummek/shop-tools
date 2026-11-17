@@ -20,6 +20,7 @@ export const PRICE_SCHEDULE_EVENT_LABELS: Record<
   diverged: 'Cena zmieniona poza systemem',
   disabled: 'Harmonogram wyłączony',
   enabled: 'Harmonogram włączony',
+  moved: 'Przeniesiono na inną ofertę',
 };
 
 export const formatPriceScheduleWindow = (window: PriceScheduleWindow) =>
@@ -29,6 +30,60 @@ export const formatPriceScheduleWindow = (window: PriceScheduleWindow) =>
 
 export const formatPriceScheduleWindows = (windows: PriceScheduleWindow[]) =>
   windows.map(formatPriceScheduleWindow).join(' · ');
+
+const windowClock = (time: string) => time.slice(0, 5);
+
+const windowPatternKey = (window: PriceScheduleWindow) => {
+  const daySpan = (window.endWeekday - window.startWeekday + 7) % 7;
+  return `${windowClock(window.startTime)}|${windowClock(window.endTime)}|${daySpan}`;
+};
+
+const formatWindowGroup = (group: PriceScheduleWindow[]) => {
+  const first = group[0];
+  const last = group[group.length - 1];
+  const days =
+    group.length === 1
+      ? WEEKDAY_LABELS[first.startWeekday]
+      : `${WEEKDAY_LABELS[first.startWeekday]}-${WEEKDAY_LABELS[last.startWeekday]}`;
+  return `${days} ${windowClock(first.startTime)} → ${windowClock(first.endTime)}`;
+};
+
+export const summarizePriceScheduleWindows = (
+  windows: PriceScheduleWindow[],
+) => {
+  if (windows.length === 0) return '';
+  const sorted = [...windows].sort(
+    (a, b) =>
+      a.startWeekday - b.startWeekday ||
+      windowClock(a.startTime).localeCompare(windowClock(b.startTime)) ||
+      a.endWeekday - b.endWeekday ||
+      windowClock(a.endTime).localeCompare(windowClock(b.endTime)),
+  );
+  const groups: PriceScheduleWindow[][] = [];
+  for (const window of sorted) {
+    const current = groups[groups.length - 1];
+    const previous = current?.[current.length - 1];
+    const continues =
+      previous != null &&
+      windowPatternKey(previous) === windowPatternKey(window) &&
+      (previous.startWeekday + 1) % 7 === window.startWeekday;
+    if (continues && current) current.push(window);
+    else groups.push([window]);
+  }
+  const first = groups[0];
+  const last = groups[groups.length - 1];
+  const wrapsWeek =
+    groups.length > 1 &&
+    windowPatternKey(last[last.length - 1]) === windowPatternKey(first[0]) &&
+    (last[last.length - 1].startWeekday + 1) % 7 === first[0].startWeekday;
+  if (wrapsWeek) {
+    groups[0] = [...last, ...first];
+    groups.pop();
+  }
+  const head = formatWindowGroup(groups[0]);
+  if (groups.length === 1) return head;
+  return `${head} +${groups.length - 1}`;
+};
 
 /** "11.11 08:00–22:00", or with the end date when the interval crosses midnight. */
 export const formatPriceScheduleOneOff = (oneOff: PriceScheduleOneOff) => {

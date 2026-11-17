@@ -9,11 +9,15 @@ const isEndedOfferStatus = (status: string | null | undefined) =>
 export const isSchedulableUnscheduledOffer = (
   offer: PriceScheduleUnscheduledOffer,
 ) =>
-  offer.isActive && offer.price != null && !isEndedOfferStatus(offer.offerStatus);
+  offer.isActive &&
+  offer.price != null &&
+  !isEndedOfferStatus(offer.offerStatus);
 
 export const foldedUnscheduledOffers = (group: PriceScheduleProductGroup) =>
   group.offersWithoutSchedule.filter(
-    (offer) => !isSchedulableUnscheduledOffer(offer),
+    (offer) =>
+      !isSchedulableUnscheduledOffer(offer) &&
+      !isEndedOfferStatus(offer.offerStatus),
   );
 
 const polishCount = (count: number, one: string, few: string, many: string) => {
@@ -28,14 +32,6 @@ export const foldedUnscheduledOfferLabel = (
   offers: PriceScheduleUnscheduledOffer[],
 ) => {
   const count = offers.length;
-  if (offers.every((offer) => isEndedOfferStatus(offer.offerStatus))) {
-    return `+ ${count} ${polishCount(
-      count,
-      'zakończona oferta',
-      'zakończone oferty',
-      'zakończonych ofert',
-    )}`;
-  }
   return `+ ${count} ${polishCount(
     count,
     'oferta bez harmonogramu',
@@ -132,8 +128,7 @@ export const groupSchedulesByProduct = (
     if (
       nextTime != null &&
       nextIso &&
-      (group.nextChangeAt == null ||
-        nextTime < Date.parse(group.nextChangeAt))
+      (group.nextChangeAt == null || nextTime < Date.parse(group.nextChangeAt))
     )
       group.nextChangeAt = nextIso;
   }

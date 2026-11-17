@@ -144,7 +144,7 @@ test('active offers without a schedule become rows after the schedules', () => {
   const rows = priceScheduleGridRows(groups, new Set());
   assert.deepEqual(
     rows.map((row) => row.kind),
-    ['product', 'schedule', 'offer', 'endedToggle'],
+    ['product', 'schedule', 'offer'],
   );
   const offerRow = rows[2];
   assert.equal(offerRow.kind, 'offer');
@@ -170,7 +170,7 @@ test('active offers without a schedule become rows after the schedules', () => {
   });
   assert.deepEqual(
     expanded.map((row) => row.kind),
-    ['product', 'schedule', 'offer', 'endedToggle', 'endedOffer'],
+    ['product', 'schedule', 'offer'],
   );
   const expandedOffer = expanded.find((row) => row.kind === 'offer');
   assert.equal(expandedOffer?.kind, 'offer');
@@ -255,24 +255,36 @@ const foldedOffer = (offerStatus: string, isActive = false) => ({
 test('folded label uses Polish plural forms', () => {
   const labelFor = (count: number) =>
     foldedUnscheduledOfferLabel(
-      Array.from({ length: count }, () => foldedOffer('ENDED')),
+      Array.from({ length: count }, () => foldedOffer('INACTIVE')),
     );
-  assert.equal(labelFor(1), '+ 1 zakończona oferta');
-  assert.equal(labelFor(2), '+ 2 zakończone oferty');
-  assert.equal(labelFor(4), '+ 4 zakończone oferty');
-  assert.equal(labelFor(5), '+ 5 zakończonych ofert');
-  assert.equal(labelFor(12), '+ 12 zakończonych ofert');
-  assert.equal(labelFor(22), '+ 22 zakończone oferty');
+  assert.equal(labelFor(1), '+ 1 oferta bez harmonogramu');
+  assert.equal(labelFor(2), '+ 2 oferty bez harmonogramu');
+  assert.equal(labelFor(4), '+ 4 oferty bez harmonogramu');
+  assert.equal(labelFor(5), '+ 5 ofert bez harmonogramu');
+  assert.equal(labelFor(12), '+ 12 ofert bez harmonogramu');
+  assert.equal(labelFor(22), '+ 22 oferty bez harmonogramu');
 });
 
-test('folded label falls back when some offers are not ended', () => {
-  assert.equal(
-    foldedUnscheduledOfferLabel([
-      foldedOffer('ENDED'),
-      foldedOffer('INACTIVE'),
-    ]),
-    '+ 2 oferty bez harmonogramu',
+test('ended offers without a schedule are left out of the fold', () => {
+  const [group] = groupSchedulesByProduct([
+    schedule(2, 8, 'Magnez', {
+      productOffersWithoutSchedule: [
+        foldedOffer('ENDED', false),
+        { ...foldedOffer('INACTIVE'), linkId: 2, externalOfferId: '2' },
+      ],
+    }),
+  ]);
+  const rows = priceScheduleGridRows([group], new Set(), {
+    expandedEndedKeys: new Set(['8']),
+  });
+  assert.deepEqual(
+    rows.map((row) => row.kind),
+    ['product', 'schedule', 'endedToggle', 'endedOffer'],
   );
+  const line = rows.find((row) => row.kind === 'endedOffer');
+  assert.equal(line?.kind, 'endedOffer');
+  if (line?.kind === 'endedOffer')
+    assert.equal(line.offer.offerStatus, 'INACTIVE');
 });
 
 test('only disabled, not applied schedules on ended offers can be moved', () => {

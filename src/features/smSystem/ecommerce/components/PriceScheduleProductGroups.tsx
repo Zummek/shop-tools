@@ -983,10 +983,10 @@ export const PriceScheduleProductGroups = ({
             return (
               <Button
                 size="small"
-                color="inherit"
+                variant="contained"
                 disabled={busy}
                 onClick={() => handlersRef.current.onPlanOffer(offer, neighbor)}
-                sx={{ color: 'text.secondary', py: 0 }}
+                sx={{ py: 0 }}
               >
                 {'Zaplanuj'}
               </Button>

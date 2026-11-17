@@ -18,9 +18,8 @@ export const isEndedChannelOffer = (
   !link.isActive;
 
 /** Matches enable_schedule: only ENDED and an inactive link are rejected. */
-export const isPriceScheduleOfferEnded = (
-  status: string | null | undefined,
-) => (status ?? '').trim().toLowerCase() === 'ended';
+export const isPriceScheduleOfferEnded = (status: string | null | undefined) =>
+  (status ?? '').trim().toLowerCase() === 'ended';
 
 export const isPriceScheduleOfferClosed = (
   schedule: Pick<ChannelPriceSchedule, 'offerStatus' | 'linkIsActive'>,

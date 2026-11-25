@@ -19,8 +19,11 @@ const statusConfig: Record<
   CLOSED: { label: 'Zamknięty', color: 'success' },
 };
 
-const selectableStatuses = (status?: RemanentStatus): RemanentStatus[] =>
-  status === 'OPEN' ? ['CLOSED'] : [];
+const selectableStatuses = (status?: RemanentStatus): RemanentStatus[] => {
+  if (status === 'OPEN') return ['CLOSED'];
+  if (status === 'CLOSED') return ['OPEN'];
+  return [];
+};
 
 interface Props {
   status?: string | null;

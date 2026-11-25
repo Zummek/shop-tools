@@ -31,7 +31,7 @@ import {
   useGetRemanent,
   useGetRemanentDocuments,
   useGetRemanentLines,
-  useResolveRemanentProduct,
+  useReopenRemanent,
   useUpdateRemanent,
 } from '../api';
 import { RemanentStatusChip } from '../components/RemanentStatusChip';
@@ -40,9 +40,7 @@ import { RemanentBucket, RemanentLine, RemanentStatus } from '../types';
 import { errorMessage } from './errorMessage';
 
 const bucketLabel: Record<string, string> = {
-  default: 'Do wyjaśnienia',
   difference: 'Różnice',
-  conflict: 'Konflikty',
   match: 'Zgodne',
   unscanned: 'Nieskanowane',
   scanned: 'Wszystkie zeskanowane',
@@ -73,7 +71,7 @@ export const RemanentDetailsPage = () => {
   const [page, setPage] = useState(0);
   const [scansPage, setScansPage] = useState(0);
   const [tab, setTab] = useState<'lines' | 'scans'>('lines');
-  const [bucket, setBucket] = useState<RemanentBucket | 'default'>('default');
+  const [bucket, setBucket] = useState<RemanentBucket>('difference');
   const [name, setName] = useState('');
   const [editingName, setEditingName] = useState(false);
   const [documentId, setDocumentId] = useState<number | ''>('');
@@ -91,7 +89,7 @@ export const RemanentDetailsPage = () => {
   } = useGetRemanentLines({
     remanentId,
     page,
-    bucket: bucket === 'default' ? '' : bucket,
+    bucket,
   });
   const isOpen = remanent?.status === 'OPEN';
   const { documents: attachable, isLoading: attachableLoading } =
@@ -101,8 +99,9 @@ export const RemanentDetailsPage = () => {
     useAttachRemanentDocument(remanentId);
   const { detachDocument, isPending: isDetaching } =
     useDetachRemanentDocument(remanentId);
-  const { resolveProduct } = useResolveRemanentProduct(remanentId);
   const { closeRemanent, isPending: isClosing } = useCloseRemanent(remanentId);
+  const { reopenRemanent, isPending: isReopening } =
+    useReopenRemanent(remanentId);
   const { exportRemanent, isPending: isExporting } =
     useExportRemanent(remanentId);
 
@@ -144,59 +143,23 @@ export const RemanentDetailsPage = () => {
       {
         field: 'countedAmount',
         headerName: 'Policzone',
-        width: 140,
+        width: 180,
         renderCell: (params) => {
-          if (params.row.bucket !== 'conflict')
+          const scans = params.row.sessions;
+          if (scans.length < 2)
             return formatAmount(params.row.countedAmount);
-          const total = params.row.sessionsSum;
           return (
-            <Stack spacing={0.5} py={0.5}>
-              {params.row.sessions.map((session) => (
-                <Stack
+            <Stack spacing={0} py={0.5} sx={{ whiteSpace: 'normal' }}>
+              {scans.map((session) => (
+                <Typography
                   key={session.documentId}
-                  spacing={0}
-                  sx={{ whiteSpace: 'normal' }}
+                  variant="caption"
+                  color="text.secondary"
                 >
-                  <span>{`${session.documentName}: ${formatAmount(session.amount)}`}</span>
-                  {isOpen && (
-                    <Button
-                      size="small"
-                      onClick={() =>
-                        resolveProduct({
-                          productId: params.row.product.id,
-                          mode: 'PICK',
-                          documentId: session.documentId,
-                        }).catch((error) =>
-                          notify(
-                            'error',
-                            errorMessage(error, 'Nie udało się wybrać skanu'),
-                          ),
-                        )
-                      }
-                    >
-                      {'Zostaw'}
-                    </Button>
-                  )}
-                </Stack>
+                  {`${session.documentName}: ${formatAmount(session.amount)}`}
+                </Typography>
               ))}
-              {isOpen && (
-                <Button
-                  size="small"
-                  onClick={() =>
-                    resolveProduct({
-                      productId: params.row.product.id,
-                      mode: 'SUM',
-                    }).catch((error) =>
-                      notify(
-                        'error',
-                        errorMessage(error, 'Nie udało się zapisać sumy'),
-                      ),
-                    )
-                  }
-                >
-                  {`Suma (${formatAmount(total)})`}
-                </Button>
-              )}
+              <span>{formatAmount(params.row.countedAmount)}</span>
             </Stack>
           );
         },
@@ -226,11 +189,10 @@ export const RemanentDetailsPage = () => {
         valueGetter: (_value, row) => bucketLabel[row.bucket] || row.bucket,
       },
     ],
-    [isOpen, notify, referenceHeader, resolveProduct],
+    [isOpen, referenceHeader],
   );
 
   const rows = lines.map((line) => ({ ...line, id: line.product.id }));
-  const conflicts = remanent?.counts.conflict || 0;
 
   const saveHeader = async () => {
     try {
@@ -254,12 +216,27 @@ export const RemanentDetailsPage = () => {
   };
 
   const handleStatusChange = (nextStatus: RemanentStatus) => {
-    if (nextStatus !== 'CLOSED') return;
-    closeRemanent()
-      .then(() => notify('success', 'Remanent zamknięty'))
-      .catch((error) =>
-        notify('error', errorMessage(error, 'Nie udało się zamknąć remanentu')),
-      );
+    if (nextStatus === 'CLOSED') {
+      closeRemanent()
+        .then(() => notify('success', 'Remanent zamknięty'))
+        .catch((error) =>
+          notify(
+            'error',
+            errorMessage(error, 'Nie udało się zamknąć remanentu'),
+          ),
+        );
+      return;
+    }
+    if (nextStatus === 'OPEN') {
+      reopenRemanent()
+        .then(() => notify('success', 'Remanent otwarty'))
+        .catch((error) =>
+          notify(
+            'error',
+            errorMessage(error, 'Nie udało się otworzyć remanentu'),
+          ),
+        );
+    }
   };
 
   const handleExport = async () => {
@@ -288,7 +265,7 @@ export const RemanentDetailsPage = () => {
             <RemanentStatusChip
               status={remanent.status}
               onStatusChange={handleStatusChange}
-              isUpdating={isClosing}
+              isUpdating={isClosing || isReopening}
             />
           )}
         </Stack>
@@ -349,11 +326,6 @@ export const RemanentDetailsPage = () => {
           >
             {'Eksportuj do PC Market'}
           </LoadingButton>
-        )}
-        {conflicts > 0 && (
-          <Typography color="warning.main" alignSelf="center">
-            {`Konflikty do rozstrzygnięcia: ${conflicts}`}
-          </Typography>
         )}
       </Stack>
 
@@ -447,6 +419,13 @@ export const RemanentDetailsPage = () => {
               </LoadingButton>
             </Stack>
           )}
+          {isOpen && !attachableLoading && attachable.length === 0 && (
+            <Typography variant="body2" color="text.secondary">
+              {
+                'Dokument do podpięcia musi być z tego sklepu, utworzony po otwarciu remanentu, mieć pozycje, bez ujemnych ilości i nie być już podpięty.'
+              }
+            </Typography>
+          )}
         </>
       )}
 
@@ -456,7 +435,7 @@ export const RemanentDetailsPage = () => {
             exclusive
             size="small"
             value={bucket}
-            onChange={(_event, value: RemanentBucket | 'default' | null) => {
+            onChange={(_event, value: RemanentBucket | null) => {
               if (value === null) return;
               setBucket(value);
               setPage(0);
@@ -465,9 +444,6 @@ export const RemanentDetailsPage = () => {
             {Object.entries(bucketLabel).map(([value, label]) => (
               <ToggleButton key={value} value={value}>
                 {label}
-                {value === 'conflict' && remanent
-                  ? ` (${remanent.counts.conflict})`
-                  : ''}
                 {value === 'unscanned' && remanent
                   ? ` (${remanent.counts.unscanned})`
                   : ''}

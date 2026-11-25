@@ -94,23 +94,18 @@ export const useDetachRemanentDocument = (remanentId: number) => {
   return { detachDocument: mutateAsync, isPending };
 };
 
-export const useResolveRemanentProduct = (remanentId: number) => {
+export const useReopenRemanent = (remanentId: number) => {
   const queryClient = useQueryClient();
   const { mutateAsync, isPending } = useMutation({
-    mutationFn: async (payload: {
-      productId: number;
-      mode: 'SUM' | 'PICK';
-      documentId?: number;
-    }) => {
-      const response = await axiosInstance.put(
-        `/api/v1/remanents/${remanentId}/resolutions/`,
-        payload,
+    mutationFn: async () => {
+      const response = await axiosInstance.post(
+        `/api/v1/remanents/${remanentId}/reopen/`,
       );
       assertOk(response.status, response);
     },
     onSuccess: () => invalidate(queryClient, remanentId),
   });
-  return { resolveProduct: mutateAsync, isPending };
+  return { reopenRemanent: mutateAsync, isPending };
 };
 
 export const useCloseRemanent = (remanentId: number) => {

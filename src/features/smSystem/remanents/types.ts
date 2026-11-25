@@ -6,7 +6,6 @@ export type RemanentBucket =
   | 'match'
   | 'difference'
   | 'unscanned'
-  | 'conflict'
   | 'scanned';
 
 export interface RemanentListItem {
@@ -24,7 +23,6 @@ export interface RemanentCounts {
   match: number;
   difference: number;
   unscanned: number;
-  conflict: number;
 }
 
 export interface RemanentDocumentLink {
@@ -63,6 +61,4 @@ export interface RemanentLine {
   bucket: RemanentBucket;
   sessions: RemanentLineSession[];
   sessionsSum: string | null;
-  resolutionMode: 'SUM' | 'PICK' | null;
-  resolutionDocumentId: number | null;
 }

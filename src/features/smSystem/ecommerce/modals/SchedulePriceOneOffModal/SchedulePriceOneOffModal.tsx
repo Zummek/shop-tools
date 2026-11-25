@@ -136,9 +136,24 @@ export const SchedulePriceOneOffModal = ({
           {'Jednorazowe okno'}
         </Typography>
         <Alert severity="info">
-          {
-            'Okno nie ma własnej ceny. W jego trakcie oferta ma cenę okna regularnego, które już się zaczęło albo właśnie trwa. Godziny są wg czasu polskiego.'
-          }
+          <Stack spacing={0.5}>
+            <Typography variant="body2">
+              {
+                'Okno nie ma własnej ceny. W wybranych godzinach oferta ma cenę promocyjną ze swoich harmonogramów, także poza godzinami okien tygodniowych.'
+              }
+            </Typography>
+            <Typography variant="body2">
+              {'• Jedna cena promocyjna: obowiązuje przez całe okno.'}
+            </Typography>
+            <Typography variant="body2">
+              {
+                '• Kilka cen promocyjnych: obowiązuje cena okna tygodniowego, które w tym czasie trwa albo zaczęło się ostatnie. Przed pierwszym oknem obowiązuje cena tego pierwszego.'
+              }
+            </Typography>
+            <Typography variant="body2">
+              {'Godziny wg czasu polskiego.'}
+            </Typography>
+          </Stack>
         </Alert>
         <Typography variant="body2" color="text.secondary">
           {offers.length === 1

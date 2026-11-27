@@ -14,7 +14,6 @@ import {
   DialogTitle,
   FormControlLabel,
   Menu,
-  MenuItem,
   Paper,
   Stack,
   Switch,
@@ -44,6 +43,7 @@ import {
   notifyOfferStockPublishError,
   useSetOfferStockPublish,
 } from '../../../ecommerce/api';
+import { PriceScheduleDisableMenuItems } from '../../../ecommerce/components';
 import { SchedulePriceChangeModal } from '../../../ecommerce/modals';
 import {
   isEndedChannelOffer,
@@ -621,33 +621,21 @@ const ChannelOfferCard = ({ link, schedules }: ChannelOfferCardProps) => {
                   open={!!menuAnchor}
                   onClose={() => setMenuAnchor(null)}
                 >
-                  <MenuItem
-                    onClick={() => {
+                  <PriceScheduleDisableMenuItems
+                    applied={schedule.isApplied}
+                    onRevertNow={() => {
                       setConfirmDisable({ mode: 'revert_now' });
                       setMenuAnchor(null);
                     }}
-                  >
-                    {schedule.isApplied
-                      ? 'Wyłącz i przywróć cenę bazową teraz'
-                      : 'Wyłącz'}
-                  </MenuItem>
-                  <MenuItem
-                    onClick={() => {
+                    onRevertAtWindowEnd={() => {
                       setConfirmDisable({ mode: 'revert_at_window_end' });
                       setMenuAnchor(null);
                     }}
-                    disabled={!schedule.isApplied}
-                  >
-                    {'Wyłącz — cena wróci po zakończeniu okna'}
-                  </MenuItem>
-                  <MenuItem
-                    onClick={() => {
+                    onForce={() => {
                       setConfirmDisable({ mode: 'revert_now', force: true });
                       setMenuAnchor(null);
                     }}
-                  >
-                    {'Wyłącz bez zmiany ceny na kanale (wymuszone)'}
-                  </MenuItem>
+                  />
                 </Menu>
                 <Dialog
                   open={!!confirmDisable}

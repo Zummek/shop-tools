@@ -10,4 +10,5 @@ export * from './OrdersStatsCards';
 export * from './OrderProductFilter';
 export * from './OrdersDailyChart';
 export * from './PriceScheduleProductGroups';
+export * from './PriceScheduleDisableMenuItems';
 export * from './MovePriceScheduleDialog';

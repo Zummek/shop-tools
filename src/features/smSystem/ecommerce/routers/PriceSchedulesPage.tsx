@@ -52,6 +52,7 @@ import {
 } from '../api';
 import {
   MovePriceScheduleDialog,
+  PriceScheduleDisableMenuItems,
   PriceScheduleProductGroups,
   type MovePriceScheduleDraft,
 } from '../components';
@@ -961,33 +962,23 @@ export const PriceSchedulesPage = () => {
         open={!!menuState}
         onClose={() => setMenuState(null)}
       >
-        <MenuItem
-          onClick={() => {
+        <PriceScheduleDisableMenuItems
+          applied={!!menuState?.schedule.isApplied}
+          onRevertNow={() => {
             setConfirmDisable({
               schedule: menuState!.schedule,
               mode: 'revert_now',
             });
             setMenuState(null);
           }}
-        >
-          {menuState?.schedule.isApplied
-            ? 'Wyłącz i przywróć cenę bazową teraz'
-            : 'Wyłącz'}
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
+          onRevertAtWindowEnd={() => {
             setConfirmDisable({
               schedule: menuState!.schedule,
               mode: 'revert_at_window_end',
             });
             setMenuState(null);
           }}
-          disabled={!menuState?.schedule.isApplied}
-        >
-          {'Wyłącz — cena wróci po zakończeniu okna'}
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
+          onForce={() => {
             setConfirmDisable({
               schedule: menuState!.schedule,
               mode: 'revert_now',
@@ -995,9 +986,7 @@ export const PriceSchedulesPage = () => {
             });
             setMenuState(null);
           }}
-        >
-          {'Wyłącz bez zmiany ceny na kanale (wymuszone)'}
-        </MenuItem>
+        />
       </Menu>
 
       <Menu
@@ -1069,33 +1058,24 @@ export const PriceSchedulesPage = () => {
         open={!!bulkDisableMenuAnchor}
         onClose={() => setBulkDisableMenuAnchor(null)}
       >
-        <MenuItem
-          onClick={() => {
+        <PriceScheduleDisableMenuItems
+          applied={anySelectedApplied}
+          plural
+          onRevertNow={() => {
             setConfirmDisable({
               ids: selectedEnabledIds,
               mode: 'revert_now',
             });
             setBulkDisableMenuAnchor(null);
           }}
-        >
-          {anySelectedApplied
-            ? 'Wyłącz i przywróć cenę bazową teraz'
-            : 'Wyłącz'}
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
+          onRevertAtWindowEnd={() => {
             setConfirmDisable({
               ids: selectedEnabledIds,
               mode: 'revert_at_window_end',
             });
             setBulkDisableMenuAnchor(null);
           }}
-          disabled={!anySelectedApplied}
-        >
-          {'Wyłącz — cena wróci po zakończeniu okna'}
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
+          onForce={() => {
             setConfirmDisable({
               ids: selectedEnabledIds,
               mode: 'revert_now',
@@ -1103,9 +1083,7 @@ export const PriceSchedulesPage = () => {
             });
             setBulkDisableMenuAnchor(null);
           }}
-        >
-          {'Wyłącz bez zmiany ceny na kanale (wymuszone)'}
-        </MenuItem>
+        />
       </Menu>
 
       <Dialog
